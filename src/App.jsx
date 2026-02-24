@@ -18,6 +18,9 @@ import Enroll from './pages/Enroll'
 import Faq from './pages/Faq'
 import EditFAQ from './pages/EditFAQ'
 import AddFAQ from './pages/AddFAQ'
+import Blogs from './pages/Blogs'
+import AddBlog from './pages/AddBlog'
+import EditBlog from './pages/EditBlog'
 // import Users from './pages/Users'
 // import Analytics from './pages/Analytics'
 // import Orders from './pages/Orders'
@@ -61,6 +64,10 @@ export default function App() {
           <Route path="/faq" element={<Faq />} />
           <Route path="/add-faq" element={<AddFAQ />} />
           <Route path="/edit-faq/:id" element={<EditFAQ/>} />
+
+          <Route path="/blogs" element={<Blogs/>} />
+          <Route path="/add-blog" element={<AddBlog/>} />
+          <Route path="/edit-blog/:id" element={<EditBlog/>} />
           {/* <Route path="users" element={<Users />} />
           <Route path="analytics" element={<Analytics />} />
           <Route path="orders" element={<Orders />} />

@@ -34,6 +34,7 @@ export default function Modules() {
   const [viewMode, setViewMode] = useState("list"); // 'grid' or 'list'
   const [selectedCourse, setSelectedCourse] = useState("all");
   const [uniqueCourses, setUniqueCourses] = useState([]);
+  const [coursesMap, setCoursesMap] = useState({});
   const [showFilters, setShowFilters] = useState(false);
 
   // Modal states
@@ -49,10 +50,13 @@ export default function Modules() {
   const fetchModules = async () => {
     try {
       setLoading(true);
-      const response = await fetch(
-        "https://codingcloud.pythonanywhere.com/modules/",
-      );
-      const data = await response.json();
+      const [modulesRes, coursesRes] = await Promise.all([
+        fetch("https://codingcloud.pythonanywhere.com/modules/"),
+        fetch("https://codingcloud.pythonanywhere.com/course/")
+      ]);
+
+      const data = await modulesRes.json();
+      const coursesDataRes = await coursesRes.json();
 
       if (data.success) {
         setModules(data.data);
@@ -63,6 +67,16 @@ export default function Modules() {
           (a, b) => a - b,
         );
         setUniqueCourses(courses);
+
+        // Map courses
+        const courseMap = {};
+        const actualCourses = coursesDataRes.data || coursesDataRes;
+        if (Array.isArray(actualCourses)) {
+          actualCourses.forEach(course => {
+            courseMap[course.id] = course.name;
+          });
+        }
+        setCoursesMap(courseMap);
       } else {
         setError("Failed to fetch modules");
       }
@@ -267,22 +281,20 @@ export default function Modules() {
               <div className="flex bg-gray-100 rounded-lg p-1">
                 <button
                   onClick={() => setViewMode("grid")}
-                  className={`p-2 rounded-lg transition-colors ${
-                    viewMode === "grid"
+                  className={`p-2 rounded-lg transition-colors ${viewMode === "grid"
                       ? "bg-white text-indigo-600 shadow-sm"
                       : "text-gray-500 hover:text-gray-700"
-                  }`}
+                    }`}
                   title="Grid View"
                 >
                   <Grid size={18} />
                 </button>
                 <button
                   onClick={() => setViewMode("list")}
-                  className={`p-2 rounded-lg transition-colors ${
-                    viewMode === "list"
+                  className={`p-2 rounded-lg transition-colors ${viewMode === "list"
                       ? "bg-white text-indigo-600 shadow-sm"
                       : "text-gray-500 hover:text-gray-700"
-                  }`}
+                    }`}
                   title="List View"
                 >
                   <List size={18} />
@@ -292,11 +304,10 @@ export default function Modules() {
               {/* Filter Toggle Button */}
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
-                  showFilters
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${showFilters
                     ? "bg-indigo-50 border-indigo-200 text-indigo-600"
                     : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
-                }`}
+                  }`}
               >
                 <SlidersHorizontal size={18} />
                 <span className="hidden sm:inline">Filter</span>
@@ -324,7 +335,7 @@ export default function Modules() {
                     <option value="all">All Courses</option>
                     {uniqueCourses.map((courseId) => (
                       <option key={courseId} value={courseId}>
-                        Course ID: {courseId} (
+                        {coursesMap[courseId] || `Course ID: ${courseId}`} (
                         {
                           modules.filter((m) => m.course_data === courseId)
                             .length
@@ -341,7 +352,7 @@ export default function Modules() {
                 <div className="flex flex-wrap gap-2">
                   {selectedCourse !== "all" && (
                     <span className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-xs">
-                      Course: {selectedCourse}
+                      Course: {coursesMap[selectedCourse] || selectedCourse}
                       <button onClick={() => setSelectedCourse("all")}>
                         <X size={12} />
                       </button>
@@ -412,8 +423,8 @@ export default function Modules() {
                           ID: {module.id}
                         </span>
                       </div>
-                      <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
-                        Course {module.course_data}
+                      <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-center">
+                        {coursesMap[module.course_data] || `Course ${module.course_data}`}
                       </span>
                     </div>
 
@@ -473,7 +484,7 @@ export default function Modules() {
                               ID: {module.id}
                             </span>
                             <span className="text-xs bg-indigo-50 text-indigo-600 px-2 py-1 rounded-full">
-                              Course {module.course_data}
+                              {coursesMap[module.course_data] || `Course ${module.course_data}`}
                             </span>
                           </div>
                         </div>
@@ -557,7 +568,7 @@ export default function Modules() {
                           ID: {selectedModule.id}
                         </span>
                         <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-sm text-white">
-                          Course: {selectedModule.course_data}
+                          Course: {coursesMap[selectedModule.course_data] || selectedModule.course_data}
                         </span>
                       </div>
                     </div>
@@ -582,7 +593,7 @@ export default function Modules() {
                           <div>
                             <p className="text-xs text-gray-500">Course Name</p>
                             <p className="text-sm font-semibold text-gray-900">
-                              {selectedModule.course_data}
+                              {coursesMap[selectedModule.course_data] || selectedModule.course_data}
                             </p>
                           </div>
                         </div>

@@ -22,6 +22,7 @@ const navItems = [
   { to: "/contact", icon: LayoutDashboard, label: "Contact" },
   { to: "enroll", icon: LayoutDashboard, label: "Enroll" },
   { to: "faq", icon: LayoutDashboard, label: "Faq" },
+  { to: "Blogs", icon: LayoutDashboard, label: "Blogs" },
   // { to: '/users',     icon: Users,           label: 'Users' },
   // { to: '/analytics', icon: BarChart3,       label: 'Analytics' },
   // { to: '/orders',    icon: ShoppingCart,    label: 'Orders' },
