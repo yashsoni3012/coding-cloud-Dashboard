@@ -25,7 +25,7 @@ import {
   Database,
   Cloud,
   Palette,
-  Terminal
+  Terminal,
 } from "lucide-react";
 
 export default function Topics() {
@@ -64,7 +64,9 @@ export default function Topics() {
         setLoading(true);
 
         // Fetch courses
-        const coursesResponse = await fetch("https://codingcloud.pythonanywhere.com/course/");
+        const coursesResponse = await fetch(
+          "https://codingcloud.pythonanywhere.com/course/",
+        );
         const coursesData = await coursesResponse.json();
 
         if (coursesData.success) {
@@ -73,7 +75,9 @@ export default function Topics() {
         }
 
         // Fetch topics/modules
-        const topicsResponse = await fetch("https://codingcloud.pythonanywhere.com/topics/");
+        const topicsResponse = await fetch(
+          "https://codingcloud.pythonanywhere.com/topics/",
+        );
         const topicsData = await topicsResponse.json();
 
         if (topicsData.status === "success") {
@@ -114,24 +118,24 @@ export default function Topics() {
         (module) =>
           module.module_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           module.topics.some((topic) =>
-            topic.name.toLowerCase().includes(searchTerm.toLowerCase())
-          )
+            topic.name.toLowerCase().includes(searchTerm.toLowerCase()),
+          ),
       );
     }
 
     if (selectedCourse !== "all") {
       // Filter modules by course (you'll need to map courses to modules)
-      const course = courses.find(c => c.id === parseInt(selectedCourse));
+      const course = courses.find((c) => c.id === parseInt(selectedCourse));
       if (course) {
-        filtered = filtered.filter(module =>
-          module.module_name.toLowerCase().includes(course.name.toLowerCase())
+        filtered = filtered.filter((module) =>
+          module.module_name.toLowerCase().includes(course.name.toLowerCase()),
         );
       }
     }
 
     if (selectedModule !== "all") {
       filtered = filtered.filter(
-        (module) => module.module_id === parseInt(selectedModule)
+        (module) => module.module_id === parseInt(selectedModule),
       );
     }
 
@@ -141,9 +145,9 @@ export default function Topics() {
   // Get icon for course category
   const getCourseIcon = (category) => {
     switch (category?.toLowerCase()) {
-      case 'it and software':
+      case "it and software":
         return <Code size={20} className="text-blue-600" />;
-      case 'mobile application':
+      case "mobile application":
         return <Smartphone size={20} className="text-green-600" />;
       default:
         return <Globe size={20} className="text-purple-600" />;
@@ -205,13 +209,15 @@ export default function Topics() {
           headers: {
             "Content-Type": "application/json",
           },
-        }
+        },
       );
 
       if (response.ok || response.status === 204) {
         setDeleteSuccess("Topic deleted successfully!");
         // Refresh topics
-        const topicsResponse = await fetch("https://codingcloud.pythonanywhere.com/topics/");
+        const topicsResponse = await fetch(
+          "https://codingcloud.pythonanywhere.com/topics/",
+        );
         const topicsData = await topicsResponse.json();
         if (topicsData.status === "success") {
           setTopicsData(topicsData.data);
@@ -238,15 +244,15 @@ export default function Topics() {
     e.stopPropagation();
     navigate(`/edit-topic/${topic.id}`, {
       state: {
-        topic: { ...topic, module_name: moduleName, module_id: moduleId }
-      }
+        topic: { ...topic, module_name: moduleName, module_id: moduleId },
+      },
     });
   };
 
   // Calculate totals
   const totalTopics = topicsData.reduce(
     (acc, module) => acc + module.topics.length,
-    0
+    0,
   );
 
   if (loading) {
@@ -291,7 +297,8 @@ export default function Topics() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Course Topics</h1>
           <p className="text-gray-500 text-sm mt-1">
-            {courses.length} courses • {topicsData.length} modules • {totalTopics} topics
+            {courses.length} courses • {topicsData.length} modules •{" "}
+            {totalTopics} topics
           </p>
         </div>
 
@@ -341,20 +348,22 @@ export default function Topics() {
               <div className="flex bg-gray-100 rounded-lg p-1">
                 <button
                   onClick={() => setViewMode("grid")}
-                  className={`p-2 rounded-lg transition-colors ${viewMode === "grid"
-                    ? "bg-white text-indigo-600 shadow-sm"
-                    : "text-gray-500 hover:text-gray-700"
-                    }`}
+                  className={`p-2 rounded-lg transition-colors ${
+                    viewMode === "grid"
+                      ? "bg-white text-indigo-600 shadow-sm"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
                   title="Grid View"
                 >
                   <Grid size={18} />
                 </button>
                 <button
                   onClick={() => setViewMode("list")}
-                  className={`p-2 rounded-lg transition-colors ${viewMode === "list"
-                    ? "bg-white text-indigo-600 shadow-sm"
-                    : "text-gray-500 hover:text-gray-700"
-                    }`}
+                  className={`p-2 rounded-lg transition-colors ${
+                    viewMode === "list"
+                      ? "bg-white text-indigo-600 shadow-sm"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
                   title="List View"
                 >
                   <List size={18} />
@@ -364,10 +373,11 @@ export default function Topics() {
               {/* Filter Toggle Button */}
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${showFilters
-                  ? "bg-indigo-50 border-indigo-200 text-indigo-600"
-                  : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
-                  }`}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
+                  showFilters
+                    ? "bg-indigo-50 border-indigo-200 text-indigo-600"
+                    : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
+                }`}
               >
                 <SlidersHorizontal size={18} />
                 <span className="hidden sm:inline">Filter</span>
@@ -395,7 +405,8 @@ export default function Topics() {
                     <option value="all">All Courses</option>
                     {courses.map((course) => (
                       <option key={course.id} value={course.id}>
-                        {course.name} ({course.category_details?.name || 'General'})
+                        {course.name} (
+                        {course.category_details?.name || "General"})
                       </option>
                     ))}
                   </select>
@@ -426,7 +437,11 @@ export default function Topics() {
                 <div className="flex flex-wrap gap-2">
                   {selectedCourse !== "all" && (
                     <span className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-xs">
-                      Course: {courses.find(c => c.id === parseInt(selectedCourse))?.name}
+                      Course:{" "}
+                      {
+                        courses.find((c) => c.id === parseInt(selectedCourse))
+                          ?.name
+                      }
                       <button onClick={() => setSelectedCourse("all")}>
                         <X size={12} />
                       </button>
@@ -434,7 +449,12 @@ export default function Topics() {
                   )}
                   {selectedModule !== "all" && (
                     <span className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-xs">
-                      Module: {uniqueModules.find(m => m.id === parseInt(selectedModule))?.name}
+                      Module:{" "}
+                      {
+                        uniqueModules.find(
+                          (m) => m.id === parseInt(selectedModule),
+                        )?.name
+                      }
                       <button onClick={() => setSelectedModule("all")}>
                         <X size={12} />
                       </button>
@@ -505,7 +525,8 @@ export default function Topics() {
                           {module.module_name}
                         </h3>
                         <p className="text-xs text-gray-500 mt-0.5">
-                          Module ID: {module.module_id} • {module.topics.length} topics
+                          Module ID: {module.module_id} • {module.topics.length}{" "}
+                          topics
                         </p>
                       </div>
                     </div>
@@ -528,7 +549,10 @@ export default function Topics() {
                         >
                           <div className="flex items-start justify-between mb-2">
                             <div className="flex items-center gap-2">
-                              <BookMarked size={14} className="text-indigo-600" />
+                              <BookMarked
+                                size={14}
+                                className="text-indigo-600"
+                              />
                               <span className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
                                 ID: {topic.id}
                               </span>
@@ -541,20 +565,33 @@ export default function Topics() {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                openTopicModal(topic, module.module_name, module.module_id);
+                                openTopicModal(
+                                  topic,
+                                  module.module_name,
+                                  module.module_id,
+                                );
                               }}
                               className="px-1.5 py-1 text-xs bg-indigo-50 text-indigo-600 rounded hover:bg-indigo-100 transition-colors font-medium"
                             >
                               View
                             </button>
                             <button
-                              onClick={(e) => handleEdit(e, topic, module.module_name, module.module_id)}
+                              onClick={(e) =>
+                                handleEdit(
+                                  e,
+                                  topic,
+                                  module.module_name,
+                                  module.module_id,
+                                )
+                              }
                               className="px-1.5 py-1 text-xs bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors font-medium"
                             >
                               Edit
                             </button>
                             <button
-                              onClick={(e) => handleDeleteClick(e, topic, module.module_name)}
+                              onClick={(e) =>
+                                handleDeleteClick(e, topic, module.module_name)
+                              }
                               className="px-1.5 py-1 text-xs bg-red-50 text-red-600 rounded hover:bg-red-100 transition-colors font-medium"
                             >
                               Delete
@@ -589,7 +626,8 @@ export default function Topics() {
                           {module.module_name}
                         </h3>
                         <p className="text-xs text-gray-500 mt-0.5">
-                          Module ID: {module.module_id} • {module.topics.length} topics
+                          Module ID: {module.module_id} • {module.topics.length}{" "}
+                          topics
                         </p>
                       </div>
                     </div>
@@ -613,7 +651,10 @@ export default function Topics() {
                           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-1">
-                                <BookMarked size={14} className="text-indigo-600" />
+                                <BookMarked
+                                  size={14}
+                                  className="text-indigo-600"
+                                />
                                 <span className="text-xs font-medium text-gray-500">
                                   Topic ID: {topic.id}
                                 </span>
@@ -626,20 +667,37 @@ export default function Topics() {
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  openTopicModal(topic, module.module_name, module.module_id);
+                                  openTopicModal(
+                                    topic,
+                                    module.module_name,
+                                    module.module_id,
+                                  );
                                 }}
                                 className="px-3 py-1.5 text-xs bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors font-medium"
                               >
                                 View
                               </button>
                               <button
-                                onClick={(e) => handleEdit(e, topic, module.module_name, module.module_id)}
+                                onClick={(e) =>
+                                  handleEdit(
+                                    e,
+                                    topic,
+                                    module.module_name,
+                                    module.module_id,
+                                  )
+                                }
                                 className="px-3 py-1.5 text-xs bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors font-medium"
                               >
                                 Edit
                               </button>
                               <button
-                                onClick={(e) => handleDeleteClick(e, topic, module.module_name)}
+                                onClick={(e) =>
+                                  handleDeleteClick(
+                                    e,
+                                    topic,
+                                    module.module_name,
+                                  )
+                                }
                                 className="px-3 py-1.5 text-xs bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors font-medium"
                               >
                                 Delete
@@ -741,7 +799,12 @@ export default function Topics() {
                     <button
                       onClick={(e) => {
                         closeTopicModal();
-                        handleEdit(e, selectedTopic, selectedTopic.module_name, selectedTopic.module_id);
+                        handleEdit(
+                          e,
+                          selectedTopic,
+                          selectedTopic.module_name,
+                          selectedTopic.module_id,
+                        );
                       }}
                       className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
                     >
@@ -843,10 +906,6 @@ export default function Topics() {
     </div>
   );
 }
-
-
-
-
 
 // import React, { useState, useEffect } from "react";
 // import useFetch from "../../hooks/useFetch";

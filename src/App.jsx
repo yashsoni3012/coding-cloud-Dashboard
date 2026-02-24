@@ -13,6 +13,11 @@ import AddModule from './pages/AddModule'
 import EditModule from './pages/EditModule'
 import AddTopic from './pages/AddTopic'
 import EditTopic from './pages/EditTopic'
+import ContactUs from './pages/ContactUs'
+import Enroll from './pages/Enroll'
+import Faq from './pages/Faq'
+import EditFAQ from './pages/EditFAQ'
+import AddFAQ from './pages/AddFAQ'
 // import Users from './pages/Users'
 // import Analytics from './pages/Analytics'
 // import Orders from './pages/Orders'
@@ -50,6 +55,12 @@ export default function App() {
           <Route path="/topics" element={<Topics />} />
           <Route path="/add-topic" element={<AddTopic />} />
           <Route path="/edit-topic/:id" element={<EditTopic />} />
+
+          <Route path="/contact" element={<ContactUs />} />
+          <Route path="/enroll" element={<Enroll />} />
+          <Route path="/faq" element={<Faq />} />
+          <Route path="/add-faq" element={<AddFAQ />} />
+          <Route path="/edit-faq/:id" element={<EditFAQ/>} />
           {/* <Route path="users" element={<Users />} />
           <Route path="analytics" element={<Analytics />} />
           <Route path="orders" element={<Orders />} />
