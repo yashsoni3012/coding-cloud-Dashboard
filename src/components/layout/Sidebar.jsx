@@ -18,6 +18,7 @@ const navItems = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard" },
   { to: "/course", icon: LayoutDashboard, label: "Courses" },
   { to: "/modules", icon: LayoutDashboard, label: "Modules" },
+  { to: "/topics", icon: LayoutDashboard, label: "Topics" },
   // { to: '/users',     icon: Users,           label: 'Users' },
   // { to: '/analytics', icon: BarChart3,       label: 'Analytics' },
   // { to: '/orders',    icon: ShoppingCart,    label: 'Orders' },
