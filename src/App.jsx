@@ -9,6 +9,10 @@ import Modules from './pages/Modules'
 import Topics from './pages/Topics'
 import AddCourse from './pages/AddCourse'
 import EditCourse from './pages/EditCourse'
+import AddModule from './pages/AddModule'
+import EditModule from './pages/EditModule'
+import AddTopic from './pages/AddTopic'
+import EditTopic from './pages/EditTopic'
 // import Users from './pages/Users'
 // import Analytics from './pages/Analytics'
 // import Orders from './pages/Orders'
@@ -37,8 +41,15 @@ export default function App() {
           <Route path="/add-course" element={<AddCourse />} />
           <Route path="/edit-course/:id" element={<EditCourse />} />
 
+          {/* modules */}
           <Route path="/modules" element={<Modules />} />
+          <Route path="/add-module" element={<AddModule />} />
+          <Route path="/edit-module/:id" element={<EditModule />} />
+
+
           <Route path="/topics" element={<Topics />} />
+          <Route path="/add-topic" element={<AddTopic />} />
+          <Route path="/edit-topic/:id" element={<EditTopic />} />
           {/* <Route path="users" element={<Users />} />
           <Route path="analytics" element={<Analytics />} />
           <Route path="orders" element={<Orders />} />
