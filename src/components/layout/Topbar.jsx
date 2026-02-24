@@ -1,37 +1,35 @@
-import { Menu, Bell, Search, X } from 'lucide-react'
+import { Bell, Search, X } from 'lucide-react'
 import { useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 
 const pageTitles = {
-  '/':          'Dashboard',
-  '/users':     'Users',
-  '/analytics': 'Analytics',
-  '/orders':    'Orders',
-  '/settings':  'Settings',
+  '/':            'Dashboard',
+  '/course':      'Courses',
+  '/modules':     'Modules',
+  '/topics':      'Topics',
+  '/contact':     'Contact',
+  '/users':       'Users',
+  '/analytics':   'Analytics',
+  '/orders':      'Orders',
+  '/settings':    'Settings',
 }
 
-export default function Topbar({ onMenuClick, sidebarOpen }) {
+export default function Topbar() {
   const { pathname } = useLocation()
   const [showSearch, setShowSearch] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
   const [showProfileMenu, setShowProfileMenu] = useState(false)
-  
+
   const title = pageTitles[pathname] ?? 'Admin'
 
-  // Check if mobile
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 640)
-    }
-    
+    const checkMobile = () => setIsMobile(window.innerWidth < 640)
     checkMobile()
     window.addEventListener('resize', checkMobile)
-    
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  // Mock notifications
   const notifications = [
     { id: 1, text: 'New user registered', time: '5 min ago', unread: true },
     { id: 2, text: 'Order #1234 completed', time: '1 hour ago', unread: true },
@@ -40,55 +38,45 @@ export default function Topbar({ onMenuClick, sidebarOpen }) {
 
   return (
     <>
-      <header className="sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 bg-white border-b border-gray-200 shrink-0 shadow-sm">
+      <header className="sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 bg-white border-b border-slate-200/80 shrink-0 shadow-[0_1px_12px_rgba(0,0,0,0.06)]">
         {/* Left section */}
-        <div className="flex items-center gap-2 sm:gap-4">
-          <button
-            onClick={onMenuClick}
-            className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-            aria-label="Toggle menu"
-          >
-            <Menu size={20} />
-          </button>
-          
-          {/* Page title with breadcrumb */}
-          <div className="flex items-center gap-2">
-            <h1 className="text-base sm:text-lg font-semibold text-gray-900">
+        <div className="flex items-center gap-3">
+          <div>
+            <h1 className="text-[15px] sm:text-base font-bold text-slate-800 leading-tight">
               {title}
             </h1>
             {!isMobile && (
-              <span className="text-xs text-gray-500">
-                {new Date().toLocaleDateString('en-US', { 
-                  weekday: 'short', 
-                  month: 'short', 
-                  day: 'numeric' 
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                {new Date().toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  month: 'long',
+                  day: 'numeric',
                 })}
-              </span>
+              </p>
             )}
           </div>
         </div>
 
         {/* Right section */}
-        <div className="flex items-center gap-1 sm:gap-3">
+        <div className="flex items-center gap-1.5 sm:gap-2.5">
           {/* Mobile search toggle */}
           {isMobile ? (
             <button
               onClick={() => setShowSearch(!showSearch)}
-              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
               aria-label="Toggle search"
             >
               <Search size={18} />
             </button>
           ) : (
-            /* Desktop search */
             <div className="relative">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
                 placeholder="Search anything..."
-                className="pl-9 pr-4 py-2 w-48 lg:w-64 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                className="pl-9 pr-10 py-2 w-44 lg:w-60 bg-slate-50 border border-slate-200 rounded-xl text-[13px] text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-400 transition-all"
               />
-              <kbd className="absolute right-2 top-1/2 -translate-y-1/2 hidden lg:inline-flex items-center gap-0.5 text-xs text-gray-400 bg-white border border-gray-200 rounded px-1.5 py-0.5">
+              <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 hidden lg:inline-flex items-center text-[10px] text-slate-400 bg-white border border-slate-200 rounded-md px-1.5 py-0.5 font-mono">
                 ⌘K
               </kbd>
             </div>
@@ -97,43 +85,49 @@ export default function Topbar({ onMenuClick, sidebarOpen }) {
           {/* Notifications */}
           <div className="relative">
             <button
-              onClick={() => setShowNotifications(!showNotifications)}
-              className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              onClick={() => {
+                setShowNotifications(!showNotifications)
+                setShowProfileMenu(false)
+              }}
+              className="relative p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
               aria-label="Notifications"
             >
               <Bell size={18} />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-white" />
             </button>
 
-            {/* Notifications dropdown */}
             {showNotifications && (
               <>
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setShowNotifications(false)}
-                />
-                <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50 overflow-hidden">
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-                    <h3 className="font-semibold text-gray-900">Notifications</h3>
-                    <button className="text-xs text-indigo-600 hover:text-indigo-700 font-medium">
+                <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)} />
+                <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-slate-200/80 z-50 overflow-hidden">
+                  <div className="flex items-center justify-between px-4 py-3.5 border-b border-slate-100">
+                    <h3 className="text-[13px] font-semibold text-slate-800">Notifications</h3>
+                    <button className="text-[11px] text-sky-600 hover:text-sky-700 font-semibold">
                       Mark all as read
                     </button>
                   </div>
-                  <div className="max-h-96 overflow-y-auto">
+                  <div className="max-h-80 overflow-y-auto divide-y divide-slate-100">
                     {notifications.map((notif) => (
                       <div
                         key={notif.id}
-                        className={`px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors ${
-                          notif.unread ? 'bg-indigo-50/50' : ''
+                        className={`px-4 py-3 hover:bg-slate-50 cursor-pointer transition-colors ${
+                          notif.unread ? 'bg-sky-50/40' : ''
                         }`}
                       >
-                        <p className="text-sm text-gray-900">{notif.text}</p>
-                        <p className="text-xs text-gray-500 mt-1">{notif.time}</p>
+                        <div className="flex items-start gap-2.5">
+                          {notif.unread && (
+                            <span className="mt-1.5 w-1.5 h-1.5 bg-sky-500 rounded-full shrink-0" />
+                          )}
+                          <div className={notif.unread ? '' : 'pl-4'}>
+                            <p className="text-[13px] text-slate-700 font-medium">{notif.text}</p>
+                            <p className="text-[11px] text-slate-400 mt-0.5">{notif.time}</p>
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
-                  <div className="px-4 py-3 border-t border-gray-200 text-center">
-                    <button className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
+                  <div className="px-4 py-3 border-t border-slate-100 text-center">
+                    <button className="text-[12px] text-sky-600 hover:text-sky-700 font-semibold">
                       View all notifications
                     </button>
                   </div>
@@ -142,45 +136,57 @@ export default function Topbar({ onMenuClick, sidebarOpen }) {
             )}
           </div>
 
+          {/* Divider */}
+          <div className="w-px h-6 bg-slate-200 hidden sm:block" />
+
           {/* Profile */}
           <div className="relative">
             <button
-              onClick={() => setShowProfileMenu(!showProfileMenu)}
-              className="flex items-center gap-2 p-1 hover:bg-gray-100 rounded-lg transition-colors"
+              onClick={() => {
+                setShowProfileMenu(!showProfileMenu)
+                setShowNotifications(false)
+              }}
+              className="flex items-center gap-2.5 pl-1 pr-2 py-1 hover:bg-slate-100 rounded-xl transition-colors"
               aria-label="Profile menu"
             >
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center text-xs font-bold text-white shadow-sm">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center text-[11px] font-bold text-white shadow-sm shadow-sky-500/20">
                 AK
               </div>
               {!isMobile && (
                 <div className="hidden lg:block text-left">
-                  <p className="text-sm font-medium text-gray-900">Admin Kumar</p>
-                  <p className="text-xs text-gray-500">admin@example.com</p>
+                  <p className="text-[13px] font-semibold text-slate-700 leading-tight">Admin Kumar</p>
+                  <p className="text-[11px] text-slate-400">admin@example.com</p>
                 </div>
               )}
             </button>
 
-            {/* Profile dropdown */}
             {showProfileMenu && (
               <>
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setShowProfileMenu(false)}
-                />
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50 overflow-hidden">
-                  <div className="px-4 py-3 border-b border-gray-200 lg:hidden">
-                    <p className="text-sm font-medium text-gray-900">Admin Kumar</p>
-                    <p className="text-xs text-gray-500">admin@example.com</p>
+                <div className="fixed inset-0 z-40" onClick={() => setShowProfileMenu(false)} />
+                <div className="absolute right-0 mt-2 w-52 bg-white rounded-2xl shadow-xl border border-slate-200/80 z-50 overflow-hidden">
+                  <div className="px-4 py-3.5 border-b border-slate-100">
+                    <p className="text-[13px] font-semibold text-slate-800">Admin Kumar</p>
+                    <p className="text-[11px] text-slate-400 mt-0.5">admin@example.com</p>
                   </div>
-                  {['Profile', 'Settings', 'Help', 'Sign out'].map((item) => (
+                  <div className="py-1">
+                    {['Profile', 'Settings', 'Help'].map((item) => (
+                      <button
+                        key={item}
+                        className="w-full px-4 py-2.5 text-[13px] text-slate-600 hover:bg-slate-50 hover:text-slate-800 text-left transition-colors font-medium"
+                        onClick={() => setShowProfileMenu(false)}
+                      >
+                        {item}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="border-t border-slate-100 py-1">
                     <button
-                      key={item}
-                      className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 text-left transition-colors"
+                      className="w-full px-4 py-2.5 text-[13px] text-rose-500 hover:bg-rose-50 hover:text-rose-600 text-left transition-colors font-medium"
                       onClick={() => setShowProfileMenu(false)}
                     >
-                      {item}
+                      Sign out
                     </button>
-                  ))}
+                  </div>
                 </div>
               </>
             )}
@@ -190,22 +196,22 @@ export default function Topbar({ onMenuClick, sidebarOpen }) {
 
       {/* Mobile search overlay */}
       {isMobile && showSearch && (
-        <div className="fixed inset-x-0 top-0 z-40 bg-white border-b border-gray-200 p-4 shadow-lg animate-slideDown">
+        <div className="fixed inset-x-0 top-0 z-40 bg-white border-b border-slate-200 p-4 shadow-lg">
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
                 placeholder="Search..."
-                className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[13px] text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-400"
                 autoFocus
               />
             </div>
             <button
               onClick={() => setShowSearch(false)}
-              className="p-2 text-gray-600 hover:text-gray-900"
+              className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
           </div>
         </div>
