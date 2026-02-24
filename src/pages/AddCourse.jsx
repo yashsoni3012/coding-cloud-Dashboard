@@ -823,32 +823,6 @@ export default function AddCourse() {
             </div>
           </div>
         </div>
-
-        {/* Help Section */}
-        <div className="bg-indigo-50 rounded-xl p-5 border border-indigo-100">
-          <div className="flex items-start gap-3">
-            <HelpCircle size={20} className="text-indigo-600 shrink-0 mt-0.5" />
-            <div>
-              <h4 className="text-sm font-semibold text-indigo-900 mb-1">
-                Quick Tips
-              </h4>
-              <ul className="text-xs text-indigo-700 space-y-1 list-disc list-inside">
-                <li>
-                  Fields marked with <span className="text-red-500">*</span> are
-                  required
-                </li>
-                <li>
-                  Slug should be URL-friendly (use hyphens instead of spaces)
-                </li>
-                <li>You can add media files now or edit the course later</li>
-                <li>
-                  Category ID must match existing categories (40: IT & Software,
-                  43: Mobile App)
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
       </form>
     </div>
   );

@@ -99,18 +99,20 @@ export default function FAQs() {
 
     // Apply course filter
     if (selectedCourse !== "all") {
-      filtered = filtered.filter((faq) => faq.course === parseInt(selectedCourse));
+      filtered = filtered.filter(
+        (faq) => faq.course === parseInt(selectedCourse),
+      );
     }
 
     setFilteredFaqs(filtered);
-    
+
     // Clear expanded state when filters change
     setExpandedFaqs(new Set());
   }, [searchTerm, selectedCourse, faqs, courses]);
 
   // Toggle FAQ expansion
   const toggleFaq = (faqId) => {
-    setExpandedFaqs(prev => {
+    setExpandedFaqs((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(faqId)) {
         newSet.delete(faqId);
@@ -123,7 +125,7 @@ export default function FAQs() {
 
   // Expand all FAQs
   const expandAll = () => {
-    setExpandedFaqs(new Set(filteredFaqs.map(faq => faq.id)));
+    setExpandedFaqs(new Set(filteredFaqs.map((faq) => faq.id)));
   };
 
   // Collapse all FAQs
@@ -183,9 +185,9 @@ export default function FAQs() {
   };
 
   // Get unique courses for filter
-  const uniqueCourses = Object.keys(courses).map(id => ({
+  const uniqueCourses = Object.keys(courses).map((id) => ({
     id: parseInt(id),
-    name: courses[id]
+    name: courses[id],
   }));
 
   if (loading) {
@@ -194,7 +196,10 @@ export default function FAQs() {
         <div className="relative">
           <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
           <div className="absolute inset-0 flex items-center justify-center">
-            <MessageCircleQuestion size={24} className="text-indigo-600 animate-pulse" />
+            <MessageCircleQuestion
+              size={24}
+              className="text-indigo-600 animate-pulse"
+            />
           </div>
           <p className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-gray-500 text-sm whitespace-nowrap">
             Loading FAQs...
@@ -232,7 +237,7 @@ export default function FAQs() {
       <div className="relative overflow-hidden bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl p-8 text-white">
         <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-40 h-40 bg-purple-500/20 rounded-full blur-3xl"></div>
-        
+
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold mb-2">FAQs</h1>
@@ -245,7 +250,10 @@ export default function FAQs() {
             onClick={() => navigate("/add-faq")}
             className="px-6 py-3 bg-white text-indigo-600 rounded-xl hover:bg-indigo-50 transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl active:scale-95 font-medium group"
           >
-            <Plus size={20} className="group-hover:rotate-90 transition-transform duration-200" />
+            <Plus
+              size={20}
+              className="group-hover:rotate-90 transition-transform duration-200"
+            />
             <span>Add New FAQ</span>
           </button>
         </div>
@@ -292,7 +300,7 @@ export default function FAQs() {
             </select>
 
             <span className="text-sm text-gray-500 bg-gray-100 px-3 py-2 rounded-xl">
-              {filteredFaqs.length} {filteredFaqs.length === 1 ? 'FAQ' : 'FAQs'}
+              {filteredFaqs.length} {filteredFaqs.length === 1 ? "FAQ" : "FAQs"}
             </span>
           </div>
 
@@ -328,7 +336,7 @@ export default function FAQs() {
             No FAQs found
           </h3>
           <p className="text-gray-500 mb-6 max-w-md mx-auto">
-            {searchTerm || selectedCourse !== "all" 
+            {searchTerm || selectedCourse !== "all"
               ? "Try adjusting your search or filter to find what you're looking for."
               : "Get started by creating your first FAQ."}
           </p>
@@ -368,12 +376,18 @@ export default function FAQs() {
                     {faq.question}
                   </h3>
                 </div>
-                
+
                 <div className="flex items-center gap-2">
                   {expandedFaqs.has(faq.id) ? (
-                    <ChevronUp size={20} className="text-gray-400 group-hover:text-indigo-600 transition-colors" />
+                    <ChevronUp
+                      size={20}
+                      className="text-gray-400 group-hover:text-indigo-600 transition-colors"
+                    />
                   ) : (
-                    <ChevronDown size={20} className="text-gray-400 group-hover:text-indigo-600 transition-colors" />
+                    <ChevronDown
+                      size={20}
+                      className="text-gray-400 group-hover:text-indigo-600 transition-colors"
+                    />
                   )}
                 </div>
               </button>
