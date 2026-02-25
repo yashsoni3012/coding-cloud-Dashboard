@@ -18,10 +18,10 @@ import {
 export default function AddTestimonial() {
   const navigate = useNavigate();
 
-  // Categories state
-  const [categories, setCategories] = useState([]);
-  const [categoriesLoading, setCategoriesLoading] = useState(true);
-  const [categoriesError, setCategoriesError] = useState("");
+  // Courses state
+  const [courses, setCourses] = useState([]);
+  const [coursesLoading, setCoursesLoading] = useState(true);
+  const [coursesError, setCoursesError] = useState("");
 
   // Form state
   const [formData, setFormData] = useState({
@@ -29,7 +29,7 @@ export default function AddTestimonial() {
     review: "",
     rating: 5,
     image: null,
-    category: "", // Will be set after categories load
+    course: "", // Will be set after courses load
   });
 
   // UI state
@@ -65,52 +65,50 @@ export default function AddTestimonial() {
     width: 8, height: 8, borderRadius: "50%", background: color, flexShrink: 0,
   });
 
-  // Fetch categories on component mount
+  // Fetch courses on component mount
   useEffect(() => {
-    fetchCategories();
+    fetchCourses();
   }, []);
 
-const fetchCategories = async () => {
-  try {
-    setCategoriesLoading(true);
+  const fetchCourses = async () => {
+    try {
+      setCoursesLoading(true);
 
-    const response = await fetch(
-      "https://codingcloud.pythonanywhere.com/category/"
-    );
+      const response = await fetch(
+        "https://codingcloud.pythonanywhere.com/course/"
+      );
 
-    if (!response.ok) {
-      throw new Error("Failed to fetch categories");
-    }
-
-    const data = await response.json();
-
-    console.log("Categories data:", data);
-
-    // FIX HERE ✅
-    if (Array.isArray(data)) {
-      setCategories(data);
-
-      const defaultCategory =
-        data.find((cat) => cat.id === 41) || data[0];
-
-      if (defaultCategory) {
-        setFormData((prev) => ({
-          ...prev,
-          category: defaultCategory.id,
-        }));
+      if (!response.ok) {
+        throw new Error("Failed to fetch courses");
       }
-    } else {
-      throw new Error("Invalid categories format");
+
+      const data = await response.json();
+
+      console.log("Courses data:", data);
+
+      // Handle the API response format with success, data wrapper
+      if (data.success && Array.isArray(data.data)) {
+        setCourses(data.data);
+
+        // Set default course if available (you can change this logic)
+        if (data.data.length > 0) {
+          setFormData((prev) => ({
+            ...prev,
+            course: data.data[0].id,
+          }));
+        }
+      } else {
+        throw new Error("Invalid courses format");
+      }
+    } catch (err) {
+      console.error("Error fetching courses:", err);
+      setCoursesError(
+        "Failed to load courses. Please refresh the page."
+      );
+    } finally {
+      setCoursesLoading(false);
     }
-  } catch (err) {
-    console.error("Error fetching categories:", err);
-    setCategoriesError(
-      "Failed to load categories. Please refresh the page."
-    );
-  } finally {
-    setCategoriesLoading(false);
-  }
-};
+  };
 
   // Handle input changes
   const handleChange = (e) => {
@@ -118,7 +116,7 @@ const fetchCategories = async () => {
     setFormData((prev) => ({
       ...prev,
       [name]:
-        name === "rating" || name === "category" ? parseInt(value) || 0 : value,
+        name === "rating" || name === "course" ? parseInt(value) || 0 : value,
     }));
   };
 
@@ -173,8 +171,8 @@ const fetchCategories = async () => {
       setError("Rating must be between 1 and 5");
       return false;
     }
-    if (!formData.category) {
-      setError("Please select a category");
+    if (!formData.course) {
+      setError("Please select a course");
       return false;
     }
     return true;
@@ -203,7 +201,7 @@ const fetchCategories = async () => {
       formDataToSend.append("name", formData.name.trim());
       formDataToSend.append("review", formData.review.trim());
       formDataToSend.append("rating", formData.rating.toString());
-      formDataToSend.append("category_id", formData.category.toString());
+      formDataToSend.append("course_id", formData.course.toString()); // Changed from category_id to course_id
 
       // Append image if exists
       if (formData.image) {
@@ -247,7 +245,7 @@ const fetchCategories = async () => {
           review: "",
           rating: 5,
           image: null,
-          category: categories.find(cat => cat.id === 41)?.id || categories[0]?.id || "",
+          course: courses.length > 0 ? courses[0].id : "",
         });
         setImagePreview(null);
         if (document.getElementById("image-upload")) {
@@ -315,10 +313,16 @@ const fetchCategories = async () => {
     );
   };
 
-  // Get category name by ID
-  const getCategoryName = (categoryId) => {
-    const category = categories.find(cat => cat.id === categoryId);
-    return category ? category.name : "Unknown Category";
+  // Get course name by ID
+  const getCourseName = (courseId) => {
+    const course = courses.find(c => c.id === courseId);
+    return course ? course.name : "Unknown Course";
+  };
+
+  // Get category name from course
+  const getCategoryNameFromCourse = (courseId) => {
+    const course = courses.find(c => c.id === courseId);
+    return course?.category_details?.name || "N/A";
   };
 
   return (
@@ -352,8 +356,8 @@ const fetchCategories = async () => {
             style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 18px", border: "1px solid #e5e7eb", borderRadius: 10, background: "#fff", color: "#374151", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
             <X size={15} /> Cancel
           </button>
-          <button onClick={handleSubmit} disabled={loading || categoriesLoading || !formData.category}
-            style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 20px", border: "none", borderRadius: 10, background: (loading || categoriesLoading || !formData.category) ? "#93c5fd" : "#2563eb", color: "#fff", fontSize: 13, fontWeight: 600, cursor: (loading || categoriesLoading || !formData.category) ? "not-allowed" : "pointer", minWidth: 140, justifyContent: "center" }}>
+          <button onClick={handleSubmit} disabled={loading || coursesLoading || !formData.course}
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 20px", border: "none", borderRadius: 10, background: (loading || coursesLoading || !formData.course) ? "#93c5fd" : "#2563eb", color: "#fff", fontSize: 13, fontWeight: 600, cursor: (loading || coursesLoading || !formData.course) ? "not-allowed" : "pointer", minWidth: 140, justifyContent: "center" }}>
             {loading ? (
               <>
                 <div style={{ width: 14, height: 14, border: "2px solid rgba(255,255,255,0.4)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
@@ -367,16 +371,16 @@ const fetchCategories = async () => {
       </div>
 
       {/* ── Alerts ── */}
-      {categoriesError && (
+      {coursesError && (
         <div style={{ marginBottom: 16, padding: "12px 16px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 12, display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ width: 30, height: 30, borderRadius: "50%", background: "#fee2e2", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
             <AlertCircle size={14} color="#dc2626" />
           </div>
           <div>
             <p style={{ fontSize: 13, fontWeight: 600, color: "#dc2626", margin: 0 }}>Error</p>
-            <p style={{ fontSize: 12, color: "#ef4444", margin: "2px 0 0" }}>{categoriesError}</p>
+            <p style={{ fontSize: 12, color: "#ef4444", margin: "2px 0 0" }}>{coursesError}</p>
           </div>
-          <button onClick={() => setCategoriesError("")} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "#9ca3af" }}><X size={14} /></button>
+          <button onClick={() => setCoursesError("")} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "#9ca3af" }}><X size={14} /></button>
         </div>
       )}
 
@@ -458,22 +462,22 @@ const fetchCategories = async () => {
               />
             </div>
 
-            {/* Category */}
+            {/* Course */}
             <div>
               <label style={labelStyle}>
-                Category <span style={{ color: "#ef4444" }}>*</span>
+                Course <span style={{ color: "#ef4444" }}>*</span>
               </label>
-              {categoriesLoading ? (
+              {coursesLoading ? (
                 <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 10 }}>
                   <div style={{ width: 16, height: 16, border: "2px solid #e5e7eb", borderTopColor: "#2563eb", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-                  <span style={{ fontSize: 13, color: "#6b7280" }}>Loading categories...</span>
+                  <span style={{ fontSize: 13, color: "#6b7280" }}>Loading courses...</span>
                 </div>
               ) : (
                 <>
                   <div style={{ position: "relative" }}>
                     <select
-                      name="category"
-                      value={formData.category}
+                      name="course"
+                      value={formData.course}
                       onChange={handleChange}
                       style={{ 
                         ...inputStyle, 
@@ -483,10 +487,10 @@ const fetchCategories = async () => {
                       }}
                       required
                     >
-                      <option value="">Select a category</option>
-                      {categories.map((category) => (
-                        <option key={category.id} value={category.id}>
-                          {category.name} {category.id === 41 ? "(Customer Service)" : ""}
+                      <option value="">Select a course</option>
+                      {courses.map((course) => (
+                        <option key={course.id} value={course.id}>
+                          {course.name} ({course.category_details?.name || "No Category"})
                         </option>
                       ))}
                     </select>
@@ -504,11 +508,12 @@ const fetchCategories = async () => {
                     </div>
                   </div>
                   
-                  {/* Show selected category info */}
-                  {formData.category && (
-                    <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 5 }}>
-                      Selected: {getCategoryName(formData.category)} (ID: {formData.category})
-                    </p>
+                  {/* Show selected course info */}
+                  {formData.course && (
+                    <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 5 }}>
+                      <p style={{ margin: 0 }}>Selected: {getCourseName(formData.course)}</p>
+                      <p style={{ margin: "2px 0 0" }}>Category: {getCategoryNameFromCourse(formData.course)}</p>
+                    </div>
                   )}
                 </>
               )}
@@ -628,6 +633,7 @@ const fetchCategories = async () => {
                 <li>Include specific details about their experience</li>
                 <li>Ratings should reflect the overall satisfaction</li>
                 <li>Profile images help build trust with potential customers</li>
+                <li>Select the appropriate course that the testimonial is about</li>
               </ul>
             </div>
           </div>
@@ -639,8 +645,8 @@ const fetchCategories = async () => {
             style={{ display: "flex", alignItems: "center", gap: 6, padding: "11px 22px", border: "1px solid #e5e7eb", borderRadius: 10, background: "#fff", color: "#374151", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
             <X size={15} /> Cancel
           </button>
-          <button onClick={handleSubmit} disabled={loading || categoriesLoading || !formData.category}
-            style={{ display: "flex", alignItems: "center", gap: 6, padding: "11px 24px", border: "none", borderRadius: 10, background: (loading || categoriesLoading || !formData.category) ? "#93c5fd" : "#2563eb", color: "#fff", fontSize: 13, fontWeight: 600, cursor: (loading || categoriesLoading || !formData.category) ? "not-allowed" : "pointer", minWidth: 160, justifyContent: "center" }}>
+          <button onClick={handleSubmit} disabled={loading || coursesLoading || !formData.course}
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "11px 24px", border: "none", borderRadius: 10, background: (loading || coursesLoading || !formData.course) ? "#93c5fd" : "#2563eb", color: "#fff", fontSize: 13, fontWeight: 600, cursor: (loading || coursesLoading || !formData.course) ? "not-allowed" : "pointer", minWidth: 160, justifyContent: "center" }}>
             {loading ? (
               <>
                 <div style={{ width: 14, height: 14, border: "2px solid rgba(255,255,255,0.4)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />

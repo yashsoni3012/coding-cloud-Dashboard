@@ -24,6 +24,10 @@ import EditBlog from "./pages/EditBlog";
 import Testimonials from "./pages/Testimonials";
 import AddTestimonial from "./pages/AddTestimonial";
 import EditTestimonial from "./pages/EditTestimonial";
+import Category from "./pages/Categories";
+import AddCategory from "./pages/AddCategory";
+import EditCategory from "./pages/EditCategory";
+
 
 // import Users from './pages/Users'
 // import Analytics from './pages/Analytics'
@@ -80,6 +84,11 @@ export default function App() {
           <Route path="/testimonials" element={<Testimonials />} />
           <Route path="/add-testimonial" element={<AddTestimonial />} />
           <Route path="/edit-testimonial/:id" element={<EditTestimonial />} />
+
+          <Route path="/category" element={<Category />} />
+          <Route path="/add-category" element={<AddCategory />} />
+          <Route path="/edit-category/:id" element={<EditCategory />} />
+
           {/* <Route path="users" element={<Users />} />
           <Route path="analytics" element={<Analytics />} />
           <Route path="orders" element={<Orders />} />

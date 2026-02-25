@@ -443,7 +443,7 @@ export default function AddModule() {
               }}>
                 <label style={labelStyle}>
                   <BookOpen size={12} style={{ display: "inline", marginRight: 5, verticalAlign: "middle" }} />
-                  Or select from existing courses:
+                  Or select from existing course:
                 </label>
                 <select
                   onChange={(e) => {
@@ -475,155 +475,7 @@ export default function AddModule() {
           </div>
         </div>
 
-        {/* Preview Section - Updated to show Course ID */}
-        <div style={sectionStyle}>
-          <div style={sectionHeaderStyle}>
-            <div style={sectionDotStyle("#8b5cf6")} />
-            <div>
-              <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: "#111827" }}>
-                Module Preview
-              </p>
-              <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>
-                Preview of your module details
-              </p>
-            </div>
-          </div>
-          
-          <div style={{ padding: 24 }}>
-            <div style={{
-              background: "#f8fafc",
-              borderRadius: 12,
-              padding: 16,
-              border: "1px solid #e5e7eb"
-            }}>
-              {formData.name || formData.course_data ? (
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-                    <div style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: 8,
-                      background: "#e0f2fe",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexShrink: 0
-                    }}>
-                      <Layers size={16} color="#0284c7" />
-                    </div>
-                    <div>
-                      <p style={{ fontSize: 11, color: "#6b7280", margin: "0 0 2px" }}>Module</p>
-                      <p style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: 0 }}>
-                        {formData.name || "Not specified"}
-                      </p>
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-                    <div style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: 8,
-                      background: "#fef3c7",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexShrink: 0
-                    }}>
-                      <Hash size={16} color="#d97706" />
-                    </div>
-                    <div>
-                      <p style={{ fontSize: 11, color: "#6b7280", margin: "0 0 2px" }}>Course ID</p>
-                      <p style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: 0 }}>
-                        {formData.course_data || "Not specified"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div style={{ textAlign: "center", padding: "20px 0" }}>
-                  <div style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: "50%",
-                    background: "#f3f4f6",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    margin: "0 auto 12px"
-                  }}>
-                    <Layers size={20} color="#9ca3af" />
-                  </div>
-                  <p style={{ fontSize: 13, color: "#6b7280", margin: 0 }}>
-                    Fill in the fields to see preview
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Help Section */}
-        <div style={sectionStyle}>
-          <div style={sectionHeaderStyle}>
-            <div style={sectionDotStyle("#10b981")} />
-            <div>
-              <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: "#111827" }}>
-                Module Creation Tips
-              </p>
-              <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>
-                Best practices for creating modules
-              </p>
-            </div>
-          </div>
-          
-          <div style={{ padding: 24 }}>
-            <div style={{
-              background: "#f0f9ff",
-              borderRadius: 12,
-              padding: 16,
-              border: "1px solid #bae6fd"
-            }}>
-              <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-                <div style={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: "50%",
-                  background: "#fff",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.05)"
-                }}>
-                  <HelpCircle size={16} color="#0284c7" />
-                </div>
-                <div>
-                  <p style={{
-                    fontSize: 13,
-                    fontWeight: 600,
-                    color: "#0369a1",
-                    margin: "0 0 8px"
-                  }}>
-                    Module Creation Best Practices
-                  </p>
-                  <ul style={{
-                    margin: 0,
-                    paddingLeft: 20,
-                    fontSize: 12,
-                    color: "#075985",
-                    lineHeight: 1.8
-                  }}>
-                    <li>Module names should be descriptive and unique within a course</li>
-                    <li>Course ID must be a valid existing course ID</li>
-                    <li>You can find Course IDs in the Courses section</li>
-                    <li>Example formats: "Module 1 - Introduction", "Chapter 2: Basics"</li>
-                    <li>Modules help organize course content into manageable sections</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+      
 
         {/* Footer Actions */}
         <div style={{
@@ -632,60 +484,7 @@ export default function AddModule() {
           gap: 10,
           paddingTop: 4
         }}>
-          <button
-            type="button"
-            onClick={() => navigate("/modules")}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              padding: "11px 22px",
-              border: "1px solid #e5e7eb",
-              borderRadius: 10,
-              background: "#fff",
-              color: "#374151",
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: "pointer"
-            }}
-          >
-            <X size={15} /> Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={loading}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              padding: "11px 24px",
-              border: "none",
-              borderRadius: 10,
-              background: loading ? "#93c5fd" : "#2563eb",
-              color: "#fff",
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: loading ? "not-allowed" : "pointer",
-              minWidth: 140,
-              justifyContent: "center"
-            }}
-          >
-            {loading ? (
-              <>
-                <div style={{
-                  width: 14,
-                  height: 14,
-                  border: "2px solid rgba(255,255,255,0.4)",
-                  borderTopColor: "#fff",
-                  borderRadius: "50%",
-                  animation: "spin 0.8s linear infinite"
-                }} />
-                Saving...
-              </>
-            ) : (
-              <><Save size={15} /> Save Module</>
-            )}
-          </button>
+       
         </div>
       </form>
     </div>
