@@ -3,21 +3,20 @@ import { useNavigate } from "react-router-dom";
 import {
   BookOpen,
   Search,
-  Filter,
   X,
-  Grid,
-  List,
   SlidersHorizontal,
   Plus,
-  FolderOpen,
   ChevronRight,
-  Eye,
   Edit,
   Trash2,
   AlertCircle,
   CheckCircle,
   Hash,
   BookMarked,
+  Layers,
+  Clock,
+  FolderOpen,
+  Eye,
 } from "lucide-react";
 
 export default function Modules() {
@@ -31,7 +30,6 @@ export default function Modules() {
 
   // UI State
   const [searchTerm, setSearchTerm] = useState("");
-  const [viewMode, setViewMode] = useState("list"); // 'grid' or 'list'
   const [selectedCourse, setSelectedCourse] = useState("all");
   const [uniqueCourses, setUniqueCourses] = useState([]);
   const [coursesMap, setCoursesMap] = useState({});
@@ -46,13 +44,17 @@ export default function Modules() {
   const [deleteSuccess, setDeleteSuccess] = useState("");
   const [deleteError, setDeleteError] = useState("");
 
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 12;
+
   // Fetch modules
   const fetchModules = async () => {
     try {
       setLoading(true);
       const [modulesRes, coursesRes] = await Promise.all([
         fetch("https://codingcloud.pythonanywhere.com/modules/"),
-        fetch("https://codingcloud.pythonanywhere.com/course/")
+        fetch("https://codingcloud.pythonanywhere.com/course/"),
       ]);
 
       const data = await modulesRes.json();
@@ -72,7 +74,7 @@ export default function Modules() {
         const courseMap = {};
         const actualCourses = coursesDataRes.data || coursesDataRes;
         if (Array.isArray(actualCourses)) {
-          actualCourses.forEach(course => {
+          actualCourses.forEach((course) => {
             courseMap[course.id] = course.name;
           });
         }
@@ -109,6 +111,7 @@ export default function Modules() {
     }
 
     setFilteredModules(filtered);
+    setCurrentPage(1);
   }, [searchTerm, selectedCourse, modules]);
 
   const resetFilters = () => {
@@ -141,13 +144,18 @@ export default function Modules() {
   const handleDeleteConfirm = async () => {
     if (!moduleToDelete) return;
 
-    setDeleteLoading(true);
-    setDeleteError("");
-    setDeleteSuccess("");
+    // Optimistic UI update - remove module immediately
+    const moduleId = moduleToDelete.id;
+    setModules(prev => prev.filter(m => m.id !== moduleId));
+    setFilteredModules(prev => prev.filter(m => m.id !== moduleId));
+    
+    // Close modal immediately for better UX
+    setShowDeleteModal(false);
+    setDeleteLoading(false);
 
     try {
       const response = await fetch(
-        `https://codingcloud.pythonanywhere.com/modules/${moduleToDelete.id}/`,
+        `https://codingcloud.pythonanywhere.com/modules/${moduleId}/`,
         {
           method: "DELETE",
           headers: {
@@ -156,23 +164,18 @@ export default function Modules() {
         },
       );
 
-      if (response.ok || response.status === 204) {
-        setDeleteSuccess("Module deleted successfully!");
-        await fetchModules(); // Refresh the list
-        setTimeout(() => {
-          setShowDeleteModal(false);
-          setModuleToDelete(null);
-          setDeleteSuccess("");
-        }, 1500);
-      } else {
-        const data = await response.json();
-        setDeleteError(data.message || "Failed to delete module");
+      if (!response.ok && response.status !== 204) {
+        // If deletion fails, refetch modules to restore data
+        await fetchModules();
+        setDeleteError("Failed to delete module. Data has been restored.");
+        setTimeout(() => setDeleteError(""), 3000);
       }
     } catch (err) {
       console.error("Error deleting module:", err);
+      // Refetch modules on error to ensure consistency
+      await fetchModules();
       setDeleteError("Network error. Please try again.");
-    } finally {
-      setDeleteLoading(false);
+      setTimeout(() => setDeleteError(""), 3000);
     }
   };
 
@@ -182,14 +185,57 @@ export default function Modules() {
     navigate(`/edit-module/${moduleId}`);
   };
 
+  // Pagination
+  const paginatedModules = filteredModules.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+  const totalPages = Math.ceil(filteredModules.length / ITEMS_PER_PAGE);
+
+  // Stat card data
+  const totalCourses = uniqueCourses.length;
+  const statCards = [
+    { label: "Total Modules", value: modules.length, color: "#2563eb", pct: 72 },
+    { label: "Total Courses", value: totalCourses, color: "#2563eb", pct: 58 },
+    { label: "Avg Modules/Course", value: modules.length ? Math.round(modules.length / totalCourses) : 0, color: "#2563eb", pct: 45 },
+  ];
+
+  const CircularProgress = ({ pct, color, size = 52 }) => {
+    const r = 20;
+    const circ = 2 * Math.PI * r;
+    const offset = circ - (pct / 100) * circ;
+    return (
+      <svg width={size} height={size} viewBox="0 0 48 48">
+        <circle cx="24" cy="24" r={r} fill="none" stroke="#e5e7eb" strokeWidth="4" />
+        <circle
+          cx="24" cy="24" r={r}
+          fill="none"
+          stroke={color}
+          strokeWidth="4"
+          strokeDasharray={circ}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          transform="rotate(-90 24 24)"
+        />
+        <foreignObject x="8" y="8" width="32" height="32">
+          <div style={{ width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Layers size={14} color={color} />
+          </div>
+        </foreignObject>
+      </svg>
+    );
+  };
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="relative">
-          <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
-          <p className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-gray-500 text-sm whitespace-nowrap">
-            Loading modules...
-          </p>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{
+            width: 48, height: 48, border: "3px solid #e5e7eb", borderTopColor: "#2563eb",
+            borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 12px"
+          }} />
+          <p style={{ color: "#6b7280", fontSize: 14 }}>Loading modules...</p>
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
       </div>
     );
@@ -197,19 +243,15 @@ export default function Modules() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center">
-          <div className="bg-red-50 rounded-full p-4 w-20 h-20 mx-auto mb-4 flex items-center justify-center">
-            <X size={32} className="text-red-500" />
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ background: "#fee2e2", borderRadius: "50%", padding: 16, width: 64, height: 64, margin: "0 auto 16px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <X size={28} color="#dc2626" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            Oops! Something went wrong
-          </h3>
-          <p className="text-gray-500 mb-4">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-          >
+          <h3 style={{ fontSize: 18, fontWeight: 600, color: "#111827", marginBottom: 8 }}>Something went wrong</h3>
+          <p style={{ color: "#6b7280", marginBottom: 16 }}>{error}</p>
+          <button onClick={() => window.location.reload()}
+            style={{ padding: "8px 20px", background: "#2563eb", color: "#fff", borderRadius: 8, border: "none", cursor: "pointer", fontWeight: 500 }}>
             Try Again
           </button>
         </div>
@@ -218,241 +260,207 @@ export default function Modules() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header with Add Module Button */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Course Modules</h1>
-          <p className="text-gray-500 text-sm mt-1">
-            {filteredModules.length} of {modules.length} modules •{" "}
-            {uniqueCourses.length} courses
-          </p>
-        </div>
+    <div style={{ fontFamily: "'DM Sans', 'Segoe UI', sans-serif", background: "#f4f5f7", minHeight: "100vh", padding: "24px 20px" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+        .module-card:hover { transform: translateY(-2px); box-shadow: 0 12px 24px -8px rgba(0,0,0,0.15); }
+        .filter-sel { border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px 10px; font-size: 13px; color: #374151; background: #fff; outline: none; appearance: none; cursor: pointer; }
+        .filter-sel:focus { border-color: #2563eb; }
+        .page-btn { border: 1px solid #e5e7eb; border-radius: 6px; padding: 6px 14px; font-size: 13px; font-weight: 500; background: #fff; color: #374151; cursor: pointer; transition: background 0.15s; }
+        .page-btn:hover:not(:disabled) { background: #f3f4f6; }
+        .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16; }
+        @media (max-width: 640px) {
+          .stat-grid { grid-template-columns: 1fr 1fr !important; }
+          .filter-section { flex-direction: column; }
+        }
+        @media (max-width: 400px) {
+          .stat-grid { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
 
-        <div className="flex items-center gap-3">
-          {/* Stats Card */}
-          <div className="hidden sm:block bg-white rounded-lg border border-gray-200 px-4 py-2">
-            <p className="text-xs text-gray-500">Total Modules</p>
-            <p className="text-lg font-semibold text-gray-900">
-              {modules.length}
-            </p>
+      {/* ── Stat Cards ── */}
+      <div className="stat-grid" style={{ marginBottom: 24 }}>
+        {statCards.map((s, i) => (
+          <div key={i} style={{ background: "#fff", borderRadius: 14, padding: "18px 20px", display: "flex", alignItems: "center", gap: 16, boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
+            <CircularProgress pct={s.pct} color={s.color} />
+            <div>
+              <p style={{ fontSize: 12, color: "#9ca3af", margin: 0, fontWeight: 500 }}>{s.label}</p>
+              <p style={{ fontSize: 22, fontWeight: 700, color: "#111827", margin: "2px 0 0" }}>{s.value}</p>
+            </div>
           </div>
-          <button
-            onClick={() => navigate("/add-module")}
-            className="px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md active:scale-95"
-          >
-            <Plus size={18} />
-            <span className="hidden sm:inline font-medium">Add Module</span>
-            <span className="sm:hidden font-medium">Add</span>
-          </button>
-        </div>
+        ))}
       </div>
 
-      {/* Search and Filter Bar */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
-        <div className="p-4">
-          <div className="flex flex-col lg:flex-row gap-4">
-            {/* Search */}
-            <div className="flex-1 relative">
-              <Search
-                size={18}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-              />
-              <input
-                type="text"
-                placeholder="Search modules by name..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              />
-              {searchTerm && (
-                <button
-                  onClick={() => setSearchTerm("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  <X size={16} />
-                </button>
-              )}
-            </div>
+      {/* Error Toast */}
+      {deleteError && (
+        <div style={{ 
+          position: "fixed", 
+          top: 24, 
+          right: 24, 
+          zIndex: 100,
+          background: "#fef2f2", 
+          border: "1px solid #fecaca", 
+          borderRadius: 10, 
+          padding: "12px 16px",
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
+        }}>
+          <X size={16} color="#dc2626" />
+          <p style={{ fontSize: 13, color: "#dc2626", margin: 0 }}>{deleteError}</p>
+        </div>
+      )}
 
-            {/* View Toggle & Filter Button */}
-            <div className="flex gap-2">
-              {/* View Mode Toggle */}
-              <div className="flex bg-gray-100 rounded-lg p-1">
-                <button
-                  onClick={() => setViewMode("grid")}
-                  className={`p-2 rounded-lg transition-colors ${viewMode === "grid"
-                      ? "bg-white text-indigo-600 shadow-sm"
-                      : "text-gray-500 hover:text-gray-700"
-                    }`}
-                  title="Grid View"
-                >
-                  <Grid size={18} />
-                </button>
-                <button
-                  onClick={() => setViewMode("list")}
-                  className={`p-2 rounded-lg transition-colors ${viewMode === "list"
-                      ? "bg-white text-indigo-600 shadow-sm"
-                      : "text-gray-500 hover:text-gray-700"
-                    }`}
-                  title="List View"
-                >
-                  <List size={18} />
-                </button>
+      {/* ── Main Card ── */}
+      <div style={{ background: "#fff", borderRadius: 16, boxShadow: "0 1px 4px rgba(0,0,0,0.07)", overflow: "hidden" }}>
+
+        {/* Toolbar */}
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10, padding: "16px 20px", borderBottom: "1px solid #f3f4f6" }}>
+          {/* Left: Filter + Add */}
+          <button onClick={() => setShowFilters(!showFilters)}
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", border: "1px solid #e5e7eb", borderRadius: 8, background: "#fff", color: "#374151", fontSize: 13, fontWeight: 500, cursor: "pointer" }}>
+            <SlidersHorizontal size={15} />
+            Filters
+            {(selectedCourse !== "all") && (
+              <span style={{ width: 7, height: 7, background: "#2563eb", borderRadius: "50%", display: "inline-block" }} />
+            )}
+          </button>
+
+          <button onClick={() => navigate("/add-module")}
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 8, background: "#2563eb", color: "#fff", fontSize: 13, fontWeight: 600, border: "none", cursor: "pointer" }}>
+            <Plus size={15} />
+            Add Module
+          </button>
+
+          {/* Spacer */}
+          <div style={{ flex: 1 }} />
+
+          {/* Search */}
+          <div style={{ position: "relative", minWidth: 200 }}>
+            <Search size={15} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#9ca3af" }} />
+            <input
+              type="text"
+              placeholder="Search modules..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{ paddingLeft: 32, paddingRight: searchTerm ? 32 : 12, paddingTop: 8, paddingBottom: 8, border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, color: "#374151", background: "#f9fafb", outline: "none", width: "100%" }}
+            />
+            {searchTerm && (
+              <button onClick={() => setSearchTerm("")}
+                style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: 0 }}>
+                <X size={14} />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Advanced Filters */}
+        {showFilters && (
+          <div style={{ padding: "14px 20px", borderBottom: "1px solid #f3f4f6", background: "#f9fafb" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "flex-end" }}>
+              <div>
+                <p style={{ fontSize: 11, fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Course</p>
+                <select className="filter-sel" value={selectedCourse} onChange={(e) => setSelectedCourse(e.target.value)}>
+                  <option value="all">All Courses</option>
+                  {uniqueCourses.map((courseId) => (
+                    <option key={courseId} value={courseId}>
+                      {coursesMap[courseId] || `Course ${courseId}`} ({modules.filter(m => m.course_data === courseId).length})
+                    </option>
+                  ))}
+                </select>
               </div>
-
-              {/* Filter Toggle Button */}
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${showFilters
-                    ? "bg-indigo-50 border-indigo-200 text-indigo-600"
-                    : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
-                  }`}
-              >
-                <SlidersHorizontal size={18} />
-                <span className="hidden sm:inline">Filter</span>
-                {selectedCourse !== "all" && (
-                  <span className="w-2 h-2 bg-indigo-600 rounded-full"></span>
-                )}
+              <button onClick={resetFilters}
+                style={{ padding: "8px 14px", border: "none", background: "none", color: "#2563eb", fontSize: 13, fontWeight: 500, cursor: "pointer" }}>
+                Reset
               </button>
             </div>
           </div>
+        )}
 
-          {/* Filter Panel */}
-          {showFilters && (
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Course Filter */}
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">
-                    Filter by Course ID
-                  </label>
-                  <select
-                    value={selectedCourse}
-                    onChange={(e) => setSelectedCourse(e.target.value)}
-                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  >
-                    <option value="all">All Courses</option>
-                    {uniqueCourses.map((courseId) => (
-                      <option key={courseId} value={courseId}>
-                        {coursesMap[courseId] || `Course ID: ${courseId}`} (
-                        {
-                          modules.filter((m) => m.course_data === courseId)
-                            .length
-                        }{" "}
-                        modules)
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Active Filters & Reset */}
-              <div className="mt-4 flex items-center justify-between">
-                <div className="flex flex-wrap gap-2">
-                  {selectedCourse !== "all" && (
-                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-xs">
-                      Course: {coursesMap[selectedCourse] || selectedCourse}
-                      <button onClick={() => setSelectedCourse("all")}>
-                        <X size={12} />
-                      </button>
-                    </span>
-                  )}
-                </div>
-                <button
-                  onClick={resetFilters}
-                  className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
-                >
-                  Reset filters
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Results Count */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-500">
-          Showing{" "}
-          <span className="font-medium text-gray-900">
-            {filteredModules.length}
-          </span>{" "}
-          results
-        </p>
-      </div>
-
-      {/* Modules Grid/List View */}
-      {filteredModules.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-          <div className="bg-gray-100 rounded-full p-4 w-20 h-20 mx-auto mb-4 flex items-center justify-center">
-            <BookOpen size={32} className="text-gray-400" />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            No modules found
-          </h3>
-          <p className="text-gray-500 mb-4">
-            Try adjusting your search or filter criteria
+        {/* Results Count */}
+        <div style={{ padding: "12px 20px", borderBottom: "1px solid #f3f4f6", background: "#fafbfc" }}>
+          <p style={{ fontSize: 13, color: "#6b7280", margin: 0 }}>
+            Showing <span style={{ fontWeight: 600, color: "#111827" }}>{filteredModules.length}</span> results
           </p>
-          <button
-            onClick={resetFilters}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-          >
-            Clear all filters
-          </button>
         </div>
-      ) : (
-        <>
-          {/* Grid View */}
-          {viewMode === "grid" && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filteredModules.map((module) => (
+
+        {/* Modules Grid */}
+        {filteredModules.length === 0 ? (
+          <div style={{ padding: "60px 20px", textAlign: "center" }}>
+            <div style={{ background: "#f3f4f6", borderRadius: "50%", width: 64, height: 64, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+              <BookOpen size={28} color="#9ca3af" />
+            </div>
+            <h3 style={{ fontSize: 16, fontWeight: 600, color: "#111827", marginBottom: 6 }}>No modules found</h3>
+            <p style={{ color: "#6b7280", marginBottom: 16, fontSize: 14 }}>Try adjusting your search or filter criteria</p>
+            <button onClick={resetFilters}
+              style={{ padding: "8px 20px", background: "#2563eb", color: "#fff", borderRadius: 8, border: "none", cursor: "pointer", fontWeight: 500 }}>
+              Clear filters
+            </button>
+          </div>
+        ) : (
+          <>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16, padding: 20 }}>
+              {paginatedModules.map((module) => (
                 <div
                   key={module.id}
                   onClick={() => openModuleModal(module)}
-                  className="group bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer hover:-translate-y-1"
+                  className="module-card"
+                  style={{ 
+                    background: "#fff", 
+                    borderRadius: 12, 
+                    border: "1px solid #f0f0f0", 
+                    overflow: "hidden",
+                    cursor: "pointer",
+                    transition: "all 0.25s ease",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.02)"
+                  }}
                 >
-                  <div className="p-5">
-                    {/* Header with ID */}
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
-                          <Hash size={16} className="text-indigo-600" />
+                  <div style={{ padding: 18 }}>
+                    {/* Header */}
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <div style={{ width: 32, height: 32, background: "#eef2ff", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <Hash size={16} color="#4f46e5" />
                         </div>
-                        <span className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full">
+                        <span style={{ fontSize: 11, fontWeight: 600, color: "#6b7280", background: "#f3f4f6", padding: "3px 8px", borderRadius: 12 }}>
                           ID: {module.id}
                         </span>
                       </div>
-                      <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-center">
+                      <span style={{ fontSize: 11, fontWeight: 500, color: "#4f46e5", background: "#eef2ff", padding: "3px 8px", borderRadius: 12, maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {coursesMap[module.course_data] || `Course ${module.course_data}`}
                       </span>
                     </div>
 
                     {/* Module Name */}
-                    <h3 className="font-semibold text-gray-900 text-base mb-4 line-clamp-2 min-h-[3rem] group-hover:text-indigo-600 transition-colors">
+                    <h3 style={{ fontSize: 15, fontWeight: 600, color: "#111827", margin: "0 0 18px 0", lineHeight: 1.4, minHeight: 42 }}>
                       {module.name}
                     </h3>
 
-                    {/* Action Buttons - REPLACED ICONS WITH BUTTONS */}
-                    <div className="grid grid-cols-3 gap-2 pt-3 border-t border-gray-100">
+                    {/* Action Buttons */}
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, borderTop: "1px solid #f3f4f6", paddingTop: 14 }}>
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openModuleModal(module);
-                        }}
-                        className="px-2 py-1.5 text-xs bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors font-medium"
+                        onClick={(e) => { e.stopPropagation(); openModuleModal(module); }}
+                        style={{ padding: "6px 0", background: "#eef2ff", border: "none", borderRadius: 6, fontSize: 11, fontWeight: 600, color: "#4f46e5", cursor: "pointer", transition: "background 0.15s" }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = "#e0e7ff"}
+                        onMouseLeave={(e) => e.currentTarget.style.background = "#eef2ff"}
                       >
                         View
                       </button>
                       <button
                         onClick={(e) => handleEdit(e, module.id)}
-                        className="px-2 py-1.5 text-xs bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors font-medium"
+                        style={{ padding: "6px 0", background: "#dbeafe", border: "none", borderRadius: 6, fontSize: 11, fontWeight: 600, color: "#2563eb", cursor: "pointer", transition: "background 0.15s" }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = "#bfdbfe"}
+                        onMouseLeave={(e) => e.currentTarget.style.background = "#dbeafe"}
                       >
                         Edit
                       </button>
                       <button
                         onClick={(e) => handleDeleteClick(e, module)}
-                        className="px-2 py-1.5 text-xs bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors font-medium"
+                        style={{ padding: "6px 0", background: "#fee2e2", border: "none", borderRadius: 6, fontSize: 11, fontWeight: 600, color: "#dc2626", cursor: "pointer", transition: "background 0.15s" }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = "#fecaca"}
+                        onMouseLeave={(e) => e.currentTarget.style.background = "#fee2e2"}
                       >
                         Delete
                       </button>
@@ -461,246 +469,122 @@ export default function Modules() {
                 </div>
               ))}
             </div>
-          )}
 
-          {/* List View */}
-          {viewMode === "list" && (
-            <div className="space-y-3">
-              {filteredModules.map((module) => (
-                <div
-                  key={module.id}
-                  onClick={() => openModuleModal(module)}
-                  className="group bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer"
-                >
-                  <div className="p-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
-                            <BookMarked size={16} className="text-indigo-600" />
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-medium text-gray-500">
-                              ID: {module.id}
-                            </span>
-                            <span className="text-xs bg-indigo-50 text-indigo-600 px-2 py-1 rounded-full">
-                              {coursesMap[module.course_data] || `Course ${module.course_data}`}
-                            </span>
-                          </div>
-                        </div>
-                        <h3 className="font-medium text-gray-900 group-hover:text-indigo-600 transition-colors">
-                          {module.name}
-                        </h3>
-                      </div>
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", borderTop: "1px solid #f3f4f6" }}>
+                <button className="page-btn" onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1}>
+                  Previous
+                </button>
+                <span style={{ fontSize: 13, color: "#6b7280" }}>
+                  Page <strong style={{ color: "#111827" }}>{currentPage}</strong> of {totalPages}
+                </span>
+                <button className="page-btn" onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>
+                  Next
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
 
-                      {/* Action Buttons - REPLACED ICONS WITH BUTTONS */}
-                      <div className="flex items-center gap-2 sm:pl-4">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openModuleModal(module);
-                          }}
-                          className="px-3 py-1.5 text-xs bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors font-medium"
-                        >
-                          View
-                        </button>
-                        <button
-                          onClick={(e) => handleEdit(e, module.id)}
-                          className="px-3 py-1.5 text-xs bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors font-medium"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={(e) => handleDeleteClick(e, module)}
-                          className="px-3 py-1.5 text-xs bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors font-medium"
-                        >
-                          Delete
-                        </button>
-                        <ChevronRight
-                          size={18}
-                          className="text-gray-400 group-hover:text-indigo-600 transition-colors ml-1"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </>
-      )}
-
-      {/* Module Details Modal */}
+      {/* ── Module Details Modal ── */}
       {showModal && selectedModule && (
-        <div
-          className="fixed inset-0 z-50 overflow-y-auto"
-          aria-labelledby="modal-title"
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-            <div
-              className="fixed inset-0 bg-gray-900/75 backdrop-blur-sm transition-opacity"
-              onClick={closeModuleModal}
-              aria-hidden="true"
-            />
+        <div style={{ position: "fixed", inset: 0, zIndex: 50, overflowY: "auto", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+          <div style={{ position: "fixed", inset: 0, background: "rgba(17,24,39,0.7)", backdropFilter: "blur(4px)" }} onClick={closeModuleModal} />
+          <div style={{ position: "relative", background: "#fff", borderRadius: 20, width: "100%", maxWidth: 600, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 25px 60px rgba(0,0,0,0.2)" }}>
+            <button onClick={closeModuleModal}
+              style={{ position: "absolute", top: 16, right: 16, zIndex: 10, width: 36, height: 36, background: "rgba(255,255,255,0.9)", border: "none", borderRadius: "50%", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.15)" }}>
+              <X size={18} color="#374151" />
+            </button>
 
-            <div className="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl w-full">
-              <div className="relative">
-                {/* Header with gradient */}
-                <div className="bg-gradient-to-r from-indigo-600 to-indigo-700 px-6 py-8">
-                  <button
-                    onClick={closeModuleModal}
-                    className="absolute top-4 right-4 w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-colors"
-                  >
-                    <X size={20} className="text-white" />
-                  </button>
-                  <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
-                      <BookOpen size={32} className="text-white" />
+            {/* Header */}
+            <div style={{ background: "linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)", padding: 32 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                <div style={{ width: 64, height: 64, background: "rgba(255,255,255,0.2)", backdropFilter: "blur(8px)", borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <BookOpen size={32} color="#fff" />
+                </div>
+                <div>
+                  <h2 style={{ color: "#fff", fontWeight: 700, fontSize: 22, margin: "0 0 4px" }}>{selectedModule.name}</h2>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <span style={{ padding: "4px 10px", background: "rgba(255,255,255,0.2)", backdropFilter: "blur(4px)", borderRadius: 20, fontSize: 12, color: "#fff" }}>
+                      ID: {selectedModule.id}
+                    </span>
+                    <span style={{ padding: "4px 10px", background: "rgba(255,255,255,0.2)", backdropFilter: "blur(4px)", borderRadius: 20, fontSize: 12, color: "#fff" }}>
+                      {coursesMap[selectedModule.course_data] || `Course ${selectedModule.course_data}`}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div style={{ padding: 28 }}>
+              <div style={{ marginBottom: 24 }}>
+                <h3 style={{ fontSize: 16, fontWeight: 600, color: "#111827", marginBottom: 12 }}>Module Information</h3>
+                <div style={{ background: "#f9fafb", borderRadius: 12, padding: 16 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                    <div>
+                      <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 4 }}>Module Name</p>
+                      <p style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: 0 }}>{selectedModule.name}</p>
                     </div>
                     <div>
-                      <h2 className="text-2xl font-bold text-white mb-1">
-                        {selectedModule.name}
-                      </h2>
-                      <div className="flex items-center gap-3">
-                        <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-sm text-white">
-                          ID: {selectedModule.id}
-                        </span>
-                        <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-sm text-white">
-                          Course: {coursesMap[selectedModule.course_data] || selectedModule.course_data}
-                        </span>
-                      </div>
+                      <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 4 }}>Course</p>
+                      <p style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: 0 }}>
+                        {coursesMap[selectedModule.course_data] || selectedModule.course_data}
+                      </p>
                     </div>
                   </div>
                 </div>
+              </div>
 
-                {/* Content */}
-                <div className="p-6">
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="text-sm font-medium text-gray-500 mb-2">
-                        Module Details
-                      </h3>
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <p className="text-xs text-gray-500">Module Name</p>
-                            <p className="text-sm font-semibold text-gray-900">
-                              {selectedModule.name}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-gray-500">Course Name</p>
-                            <p className="text-sm font-semibold text-gray-900">
-                              {coursesMap[selectedModule.course_data] || selectedModule.course_data}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="mt-6 flex flex-col sm:flex-row gap-3">
-                    <button
-                      onClick={(e) => {
-                        closeModuleModal();
-                        handleEdit(e, selectedModule.id);
-                      }}
-                      className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
-                    >
-                      <Edit size={18} />
-                      Edit Module
-                    </button>
-                    <button
-                      onClick={closeModuleModal}
-                      className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                    >
-                      Close
-                    </button>
-                  </div>
-                </div>
+              {/* Actions */}
+              <div style={{ display: "flex", gap: 10 }}>
+                <button onClick={(e) => { closeModuleModal(); handleEdit(e, selectedModule.id); }}
+                  style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "12px", background: "#2563eb", color: "#fff", borderRadius: 10, border: "none", cursor: "pointer", fontWeight: 600, fontSize: 14 }}>
+                  <Edit size={16} />
+                  Edit Module
+                </button>
+                <button onClick={closeModuleModal}
+                  style={{ flex: 1, padding: "12px", border: "1px solid #e5e7eb", color: "#374151", borderRadius: 10, background: "#fff", cursor: "pointer", fontWeight: 600, fontSize: 14 }}>
+                  Close
+                </button>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
+      {/* ── Delete Modal ── */}
       {showDeleteModal && moduleToDelete && (
-        <div
-          className="fixed inset-0 z-50 overflow-y-auto"
-          aria-labelledby="delete-modal-title"
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-            <div
-              className="fixed inset-0 bg-gray-900/75 backdrop-blur-sm transition-opacity"
-              onClick={() => !deleteLoading && setShowDeleteModal(false)}
-              aria-hidden="true"
-            />
+        <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+          <div style={{ position: "fixed", inset: 0, background: "rgba(17,24,39,0.7)", backdropFilter: "blur(4px)" }}
+            onClick={() => setShowDeleteModal(false)} />
+          <div style={{ position: "relative", background: "#fff", borderRadius: 20, width: "100%", maxWidth: 440, padding: 32, boxShadow: "0 25px 60px rgba(0,0,0,0.2)" }}>
+            <div style={{ width: 60, height: 60, borderRadius: "50%", background: "#fee2e2", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+              <AlertCircle size={28} color="#dc2626" />
+            </div>
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: "#111827", textAlign: "center", marginBottom: 8 }}>Delete Module</h3>
+            <p style={{ fontSize: 14, color: "#6b7280", textAlign: "center", marginBottom: 24, lineHeight: 1.6 }}>
+              Are you sure you want to delete <strong style={{ color: "#111827" }}>"{moduleToDelete.name}"</strong>? This cannot be undone.
+            </p>
 
-            <div className="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full">
-              <div className="p-6">
-                <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
-                  <AlertCircle size={32} className="text-red-600" />
-                </div>
-
-                <h3 className="text-lg font-semibold text-gray-900 text-center mb-2">
-                  Delete Module
-                </h3>
-
-                <p className="text-sm text-gray-500 text-center mb-6">
-                  Are you sure you want to delete{" "}
-                  <span className="font-semibold text-gray-900">
-                    "{moduleToDelete.name}"
-                  </span>
-                  ? This action cannot be undone.
-                </p>
-
-                {deleteSuccess && (
-                  <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
-                    <CheckCircle size={16} className="text-green-600" />
-                    <p className="text-sm text-green-600">{deleteSuccess}</p>
-                  </div>
-                )}
-
-                {deleteError && (
-                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
-                    <X size={16} className="text-red-600" />
-                    <p className="text-sm text-red-600">{deleteError}</p>
-                  </div>
-                )}
-
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setShowDeleteModal(false)}
-                    disabled={deleteLoading}
-                    className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleDeleteConfirm}
-                    disabled={deleteLoading || deleteSuccess}
-                    className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  >
-                    {deleteLoading ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        Deleting...
-                      </>
-                    ) : (
-                      <>
-                        <Trash2 size={18} />
-                        Delete
-                      </>
-                    )}
-                  </button>
-                </div>
+            {deleteSuccess && (
+              <div style={{ marginBottom: 16, padding: "10px 14px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10, display: "flex", alignItems: "center", gap: 8 }}>
+                <CheckCircle size={16} color="#16a34a" />
+                <p style={{ fontSize: 13, color: "#16a34a", margin: 0 }}>{deleteSuccess}</p>
               </div>
+            )}
+
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={() => setShowDeleteModal(false)}
+                style={{ flex: 1, padding: "11px", border: "1px solid #e5e7eb", borderRadius: 10, background: "#fff", color: "#374151", fontWeight: 600, fontSize: 14, cursor: "pointer" }}>
+                Cancel
+              </button>
+              <button onClick={handleDeleteConfirm}
+                style={{ flex: 1, padding: "11px", border: "none", borderRadius: 10, background: "#dc2626", color: "#fff", fontWeight: 600, fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                <Trash2 size={16} /> Delete
+              </button>
             </div>
           </div>
         </div>

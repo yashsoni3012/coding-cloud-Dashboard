@@ -1,66 +1,50 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Search,
-  Plus,
-  Edit,
-  Trash2,
-  AlertCircle,
-  CheckCircle,
-  X,
-  ChevronDown,
-  ChevronUp,
-  BookOpen,
-  MessageCircleQuestion,
+  Search, Plus, Edit, Trash2, AlertCircle, CheckCircle,
+  X, ChevronDown, ChevronUp, BookOpen, MessageCircleQuestion,
+  ArrowUpRight, RefreshCw,
 } from "lucide-react";
+
+const ITEMS_PER_PAGE = 10;
 
 export default function FAQs() {
   const navigate = useNavigate();
 
-  // State for data
   const [faqs, setFaqs] = useState([]);
   const [filteredFaqs, setFilteredFaqs] = useState([]);
-  const [courses, setCourses] = useState({}); // Map of courseId -> courseName
+  const [courses, setCourses] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // UI State
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedFaqs, setExpandedFaqs] = useState(new Set());
   const [selectedCourse, setSelectedCourse] = useState("all");
 
-  // Modal states
+  // Checkbox + Pagination
+  const [selectedRows, setSelectedRows] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [faqToDelete, setFaqToDelete] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteSuccess, setDeleteSuccess] = useState("");
   const [deleteError, setDeleteError] = useState("");
 
-  // Fetch initial data
   const fetchData = async () => {
     try {
       setLoading(true);
-
-      // Fetch both FAQs and Courses in parallel
       const [faqsRes, coursesRes] = await Promise.all([
         fetch("https://codingcloud.pythonanywhere.com/faqs/"),
         fetch("https://codingcloud.pythonanywhere.com/course/"),
       ]);
-
       if (faqsRes.ok && coursesRes.ok) {
         const faqsData = await faqsRes.json();
         const coursesDataRes = await coursesRes.json();
-
-        // Create a lookup map for courses: { id: name }
         const courseMap = {};
         const actualCourses = coursesDataRes.data || coursesDataRes;
-        if (Array.isArray(actualCourses)) {
-          actualCourses.forEach((course) => {
-            courseMap[course.id] = course.name;
-          });
-        }
+        if (Array.isArray(actualCourses)) actualCourses.forEach(c => { courseMap[c.id] = c.name; });
         setCourses(courseMap);
-
         const actualFaqs = faqsData.data || faqsData;
         const faqsList = Array.isArray(actualFaqs) ? actualFaqs : [];
         setFaqs(faqsList);
@@ -70,24 +54,18 @@ export default function FAQs() {
       }
     } catch (err) {
       setError("Network error. Please try again.");
-      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  useEffect(() => { fetchData(); }, []);
 
-  // Filter based on search and course
   useEffect(() => {
     let filtered = faqs;
-
-    // Apply search filter
     if (searchTerm) {
       const lowerSearch = searchTerm.toLowerCase();
-      filtered = filtered.filter((faq) => {
+      filtered = filtered.filter(faq => {
         const courseName = courses[faq.course] || "";
         return (
           faq.question.toLowerCase().includes(lowerSearch) ||
@@ -96,44 +74,24 @@ export default function FAQs() {
         );
       });
     }
-
-    // Apply course filter
-    if (selectedCourse !== "all") {
-      filtered = filtered.filter(
-        (faq) => faq.course === parseInt(selectedCourse),
-      );
-    }
-
+    if (selectedCourse !== "all") filtered = filtered.filter(faq => faq.course === parseInt(selectedCourse));
     setFilteredFaqs(filtered);
-
-    // Clear expanded state when filters change
     setExpandedFaqs(new Set());
+    setCurrentPage(1);
+    setSelectedRows([]);
   }, [searchTerm, selectedCourse, faqs, courses]);
 
-  // Toggle FAQ expansion
   const toggleFaq = (faqId) => {
-    setExpandedFaqs((prev) => {
+    setExpandedFaqs(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(faqId)) {
-        newSet.delete(faqId);
-      } else {
-        newSet.add(faqId);
-      }
+      newSet.has(faqId) ? newSet.delete(faqId) : newSet.add(faqId);
       return newSet;
     });
   };
 
-  // Expand all FAQs
-  const expandAll = () => {
-    setExpandedFaqs(new Set(filteredFaqs.map((faq) => faq.id)));
-  };
+  const expandAll = () => setExpandedFaqs(new Set(paginated.map(f => f.id)));
+  const collapseAll = () => setExpandedFaqs(new Set());
 
-  // Collapse all FAQs
-  const collapseAll = () => {
-    setExpandedFaqs(new Set());
-  };
-
-  // Delete handlers
   const handleDeleteClick = (faq) => {
     setFaqToDelete(faq);
     setShowDeleteModal(true);
@@ -143,370 +101,358 @@ export default function FAQs() {
 
   const handleDeleteConfirm = async () => {
     if (!faqToDelete) return;
-
     setDeleteLoading(true);
     setDeleteError("");
     setDeleteSuccess("");
-
     try {
-      const response = await fetch(
-        `https://codingcloud.pythonanywhere.com/faqs/${faqToDelete.id}/`,
-        {
-          method: "DELETE",
-        },
-      );
-
+      const response = await fetch(`https://codingcloud.pythonanywhere.com/faqs/${faqToDelete.id}/`, { method: "DELETE" });
       if (response.ok || response.status === 204) {
         setDeleteSuccess("FAQ deleted successfully!");
-        fetchData(); // Refresh list
-        setTimeout(() => {
-          setShowDeleteModal(false);
-          setFaqToDelete(null);
-          setDeleteSuccess("");
-        }, 1500);
+        fetchData();
+        setTimeout(() => { setShowDeleteModal(false); setFaqToDelete(null); setDeleteSuccess(""); }, 1500);
       } else {
         try {
           const data = await response.json();
           setDeleteError(data.message || "Failed to delete FAQ.");
-        } catch {
-          setDeleteError(`HTTP Error: ${response.status}`);
-        }
+        } catch { setDeleteError(`HTTP Error: ${response.status}`); }
       }
     } catch (err) {
-      console.error("Error deleting FAQ:", err);
       setDeleteError("Network error. Please try again.");
     } finally {
       setDeleteLoading(false);
     }
   };
 
-  const handleEdit = (faq) => {
-    navigate(`/edit-faq/${faq.id}`, { state: { faq } });
+  const handleEdit = (faq) => navigate(`/edit-faq/${faq.id}`, { state: { faq } });
+
+  const uniqueCourses = Object.keys(courses).map(id => ({ id: parseInt(id), name: courses[id] }));
+
+  // Pagination
+  const totalPages = Math.ceil(filteredFaqs.length / ITEMS_PER_PAGE);
+  const paginated = filteredFaqs.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
+  // Checkboxes
+  const allOnPageSelected = paginated.length > 0 && paginated.every(f => selectedRows.includes(f.id));
+  const toggleSelectAll = () => {
+    if (allOnPageSelected) setSelectedRows(prev => prev.filter(id => !paginated.map(f => f.id).includes(id)));
+    else setSelectedRows(prev => [...prev, ...paginated.map(f => f.id).filter(id => !prev.includes(id))]);
+  };
+  const toggleRow = (id) => setSelectedRows(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+
+  // Stat cards
+  const uniqueCourseCount = Object.keys(courses).length;
+  const statCards = [
+    { label: "Total FAQs", value: faqs.length, pct: 72 },
+    { label: "Filtered FAQs", value: filteredFaqs.length, pct: 55 },
+    { label: "Courses", value: uniqueCourseCount, pct: 42 },
+    { label: "Expanded", value: expandedFaqs.size, pct: 30 },
+  ];
+
+  const CircularProgress = ({ pct }) => {
+    const r = 20, circ = 2 * Math.PI * r;
+    const offset = circ - (pct / 100) * circ;
+    return (
+      <svg width="52" height="52" viewBox="0 0 48 48">
+        <circle cx="24" cy="24" r={r} fill="none" stroke="#e5e7eb" strokeWidth="4" />
+        <circle cx="24" cy="24" r={r} fill="none" stroke="#2563eb" strokeWidth="4"
+          strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round" transform="rotate(-90 24 24)" />
+        <foreignObject x="8" y="8" width="32" height="32">
+          <div style={{ width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <ArrowUpRight size={14} color="#2563eb" />
+          </div>
+        </foreignObject>
+      </svg>
+    );
   };
 
-  // Get unique courses for filter
-  const uniqueCourses = Object.keys(courses).map((id) => ({
-    id: parseInt(id),
-    name: courses[id],
-  }));
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="relative">
-          <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <MessageCircleQuestion
-              size={24}
-              className="text-indigo-600 animate-pulse"
-            />
-          </div>
-          <p className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-gray-500 text-sm whitespace-nowrap">
-            Loading FAQs...
-          </p>
-        </div>
+  if (loading) return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
+      <div style={{ textAlign: "center" }}>
+        <div style={{ width: 48, height: 48, border: "3px solid #e5e7eb", borderTopColor: "#2563eb", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 12px" }} />
+        <p style={{ color: "#6b7280", fontSize: 14, fontFamily: "'DM Sans', sans-serif" }}>Loading FAQs...</p>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
-    );
-  }
+    </div>
+  );
 
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center">
-          <div className="bg-red-50 rounded-full p-4 w-20 h-20 mx-auto mb-4 flex items-center justify-center">
-            <X size={32} className="text-red-500" />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            Oops! Something went wrong
-          </h3>
-          <p className="text-gray-500 mb-4">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-          >
-            Try Again
-          </button>
+  if (error) return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh", fontFamily: "'DM Sans', sans-serif" }}>
+      <div style={{ textAlign: "center" }}>
+        <div style={{ background: "#fee2e2", borderRadius: "50%", width: 64, height: 64, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+          <X size={28} color="#dc2626" />
         </div>
+        <h3 style={{ fontSize: 18, fontWeight: 600, color: "#111827", marginBottom: 8 }}>Something went wrong</h3>
+        <p style={{ color: "#6b7280", marginBottom: 16 }}>{error}</p>
+        <button onClick={fetchData}
+          style={{ padding: "8px 20px", background: "#2563eb", color: "#fff", borderRadius: 8, border: "none", cursor: "pointer", fontWeight: 500, fontFamily: "inherit" }}>
+          Try Again
+        </button>
       </div>
-    );
-  }
+    </div>
+  );
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      {/* Header with gradient */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl p-8 text-white">
-        <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-40 h-40 bg-purple-500/20 rounded-full blur-3xl"></div>
+    <div style={{ fontFamily: "'DM Sans', 'Segoe UI', sans-serif", background: "#f4f5f7", minHeight: "100vh", padding: "24px 20px" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+        .faq-card { transition: box-shadow 0.18s; }
+        .faq-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.09) !important; }
+        .faq-header-btn { width: 100%; background: none; border: none; cursor: pointer; text-align: left; transition: background 0.15s; border-radius: 0; }
+        .faq-header-btn:hover { background: #f9fafb; }
+        .action-btn-f { background: none; border: none; cursor: pointer; display: flex; align-items: center; gap: 5px; padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 500; font-family: inherit; transition: background 0.15s; }
+        .cb-f { width: 17px; height: 17px; border: 1.5px solid #d1d5db; border-radius: 4px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: border-color 0.15s, background 0.15s; }
+        .cb-f.checked { background: #2563eb; border-color: #2563eb; }
+        .page-btn-f { border: 1px solid #e5e7eb; border-radius: 6px; padding: 6px 14px; font-size: 13px; font-weight: 500; background: #fff; color: #374151; cursor: pointer; font-family: inherit; transition: background 0.15s; }
+        .page-btn-f:hover:not(:disabled) { background: #f3f4f6; }
+        .page-btn-f:disabled { opacity: 0.4; cursor: not-allowed; }
+        .faq-answer { animation: slideDown 0.18s ease; }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+        @media (max-width: 640px) {
+          .stat-grid-f { grid-template-columns: 1fr 1fr !important; }
+          .toolbar-f { flex-wrap: wrap; }
+          .hide-mob-f { display: none !important; }
+        }
+        @media (max-width: 400px) { .stat-grid-f { grid-template-columns: 1fr !important; } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
 
-        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">FAQs</h1>
-            <p className="text-indigo-100 text-sm">
-              Manage your Frequently Asked Questions
-            </p>
+      {/* ── Stat Cards ── */}
+      <div className="stat-grid-f" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16, marginBottom: 24 }}>
+        {statCards.map((s, i) => (
+          <div key={i} style={{ background: "#fff", borderRadius: 14, padding: "18px 20px", display: "flex", alignItems: "center", gap: 16, boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
+            <CircularProgress pct={s.pct} />
+            <div>
+              <p style={{ fontSize: 12, color: "#9ca3af", margin: 0, fontWeight: 500 }}>{s.label}</p>
+              <p style={{ fontSize: 22, fontWeight: 700, color: "#111827", margin: "2px 0 0" }}>{s.value}</p>
+            </div>
           </div>
+        ))}
+      </div>
 
-          <button
-            onClick={() => navigate("/add-faq")}
-            className="px-6 py-3 bg-white text-indigo-600 rounded-xl hover:bg-indigo-50 transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl active:scale-95 font-medium group"
-          >
-            <Plus
-              size={20}
-              className="group-hover:rotate-90 transition-transform duration-200"
-            />
-            <span>Add New FAQ</span>
+      {/* ── Main Card ── */}
+      <div style={{ background: "#fff", borderRadius: 16, boxShadow: "0 1px 4px rgba(0,0,0,0.07)", overflow: "hidden" }}>
+
+        {/* Toolbar */}
+        <div className="toolbar-f" style={{ display: "flex", alignItems: "center", gap: 10, padding: "16px 20px", borderBottom: "1px solid #f3f4f6" }}>
+          {/* Course filter */}
+          <select value={selectedCourse} onChange={(e) => setSelectedCourse(e.target.value)}
+            style={{ padding: "8px 12px", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, color: "#374151", background: "#fff", outline: "none", fontFamily: "inherit", cursor: "pointer" }}>
+            <option value="all">All Courses</option>
+            {uniqueCourses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+
+          <button onClick={() => navigate("/add-faq")}
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 8, background: "#2563eb", color: "#fff", fontSize: 13, fontWeight: 600, border: "none", cursor: "pointer", fontFamily: "inherit" }}>
+            <Plus size={15} />
+            Add FAQ
           </button>
-        </div>
-      </div>
 
-      {/* Search and Filter Bar */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 space-y-4">
-        <div className="relative">
-          <Search
-            size={20}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-          />
-          <input
-            type="text"
-            placeholder="Search questions, answers, or courses..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-          />
-          {searchTerm && (
-            <button
-              onClick={() => setSearchTerm("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1 rounded-full transition-colors"
-            >
-              <X size={16} />
-            </button>
-          )}
-        </div>
+          <button onClick={fetchData}
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", border: "1px solid #e5e7eb", borderRadius: 8, background: "#fff", color: "#374151", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: "inherit" }}>
+            <RefreshCw size={14} />
+            <span className="hide-mob-f">Refresh</span>
+          </button>
 
-        <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
-          {/* Course Filter */}
-          <div className="flex items-center gap-3">
-            <select
-              value={selectedCourse}
-              onChange={(e) => setSelectedCourse(e.target.value)}
-              className="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-            >
-              <option value="all">All Courses</option>
-              {uniqueCourses.map((course) => (
-                <option key={course.id} value={course.id}>
-                  {course.name}
-                </option>
-              ))}
-            </select>
-
-            <span className="text-sm text-gray-500 bg-gray-100 px-3 py-2 rounded-xl">
-              {filteredFaqs.length} {filteredFaqs.length === 1 ? "FAQ" : "FAQs"}
-            </span>
-          </div>
-
-          {/* Expand/Collapse Buttons */}
           {filteredFaqs.length > 0 && (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={expandAll}
-                className="px-4 py-2.5 text-sm font-medium text-gray-700 hover:text-indigo-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors flex items-center gap-2 border border-gray-200"
-              >
-                <ChevronDown size={16} />
-                Expand All
+            <div style={{ display: "flex", gap: 6 }} className="hide-mob-f">
+              <button onClick={expandAll} className="action-btn-f" style={{ color: "#6b7280", background: "#f3f4f6", fontSize: 12 }}>
+                <ChevronDown size={13} /> Expand All
               </button>
-              <button
-                onClick={collapseAll}
-                className="px-4 py-2.5 text-sm font-medium text-gray-700 hover:text-indigo-600 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors flex items-center gap-2 border border-gray-200"
-              >
-                <ChevronUp size={16} />
-                Collapse All
+              <button onClick={collapseAll} className="action-btn-f" style={{ color: "#6b7280", background: "#f3f4f6", fontSize: 12 }}>
+                <ChevronUp size={13} /> Collapse All
               </button>
             </div>
           )}
-        </div>
-      </div>
 
-      {/* FAQs Accordion */}
-      {filteredFaqs.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 p-16 text-center">
-          <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-full p-6 w-28 h-28 mx-auto mb-6 flex items-center justify-center">
-            <MessageCircleQuestion size={48} className="text-indigo-400" />
+          {selectedRows.length > 0 && (
+            <span style={{ fontSize: 13, color: "#6b7280", fontWeight: 500 }}>{selectedRows.length} selected</span>
+          )}
+
+          <div style={{ flex: 1 }} />
+
+          {/* Search */}
+          <div style={{ position: "relative", minWidth: 220 }}>
+            <Search size={15} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#9ca3af" }} />
+            <input type="text" placeholder="Search FAQs..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
+              style={{ paddingLeft: 32, paddingRight: searchTerm ? 32 : 12, paddingTop: 8, paddingBottom: 8, border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, color: "#374151", background: "#f9fafb", outline: "none", width: "100%", fontFamily: "inherit" }} />
+            {searchTerm && (
+              <button onClick={() => setSearchTerm("")} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: 0, display: "flex" }}>
+                <X size={14} />
+              </button>
+            )}
           </div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">
-            No FAQs found
-          </h3>
-          <p className="text-gray-500 mb-6 max-w-md mx-auto">
-            {searchTerm || selectedCourse !== "all"
-              ? "Try adjusting your search or filter to find what you're looking for."
-              : "Get started by creating your first FAQ."}
-          </p>
-          {(searchTerm || selectedCourse !== "all") && (
-            <button
-              onClick={() => {
-                setSearchTerm("");
-                setSelectedCourse("all");
-              }}
-              className="px-4 py-2 text-indigo-600 hover:text-indigo-700 font-medium"
-            >
-              Clear filters
-            </button>
-          )}
         </div>
-      ) : (
-        <div className="space-y-3">
-          {filteredFaqs.map((faq) => (
-            <div
-              key={faq.id}
-              className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-all duration-200"
-            >
-              {/* FAQ Header - Clickable */}
-              <button
-                onClick={() => toggleFaq(faq.id)}
-                className="w-full px-6 py-5 flex items-start gap-4 hover:bg-gray-50/50 transition-colors text-left group"
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 mb-2">
-                    <span className="flex-shrink-0 inline-flex items-center rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-700/10">
-                      <BookOpen size={12} className="mr-1" />
-                      {courses[faq.course] || `Course ${faq.course}`}
-                    </span>
-                    <span className="text-xs text-gray-400">ID: {faq.id}</span>
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 pr-8">
-                    {faq.question}
-                  </h3>
-                </div>
 
-                <div className="flex items-center gap-2">
-                  {expandedFaqs.has(faq.id) ? (
-                    <ChevronUp
-                      size={20}
-                      className="text-gray-400 group-hover:text-indigo-600 transition-colors"
-                    />
-                  ) : (
-                    <ChevronDown
-                      size={20}
-                      className="text-gray-400 group-hover:text-indigo-600 transition-colors"
-                    />
-                  )}
-                </div>
-              </button>
-
-              {/* FAQ Answer - Expandable */}
-              {expandedFaqs.has(faq.id) && (
-                <div className="px-6 pb-5">
-                  <div className="border-t border-gray-100 pt-4">
-                    <div className="bg-gradient-to-br from-gray-50 to-indigo-50/30 rounded-xl p-5 border border-indigo-100/50">
-                      <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
-                        {faq.answer}
-                      </p>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex items-center justify-end gap-3 mt-4">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEdit(faq);
-                        }}
-                        className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors flex items-center gap-2"
-                      >
-                        <Edit size={16} />
-                        Edit
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteClick(faq);
-                        }}
-                        className="px-4 py-2 bg-white border border-red-200 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors flex items-center gap-2"
-                      >
-                        <Trash2 size={16} />
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
+        {/* FAQ List */}
+        {filteredFaqs.length === 0 ? (
+          <div style={{ padding: "60px 20px", textAlign: "center" }}>
+            <div style={{ background: "#f3f4f6", borderRadius: "50%", width: 64, height: 64, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+              <MessageCircleQuestion size={28} color="#9ca3af" />
             </div>
-          ))}
-        </div>
-      )}
-
-      {/* Delete Confirmation Modal */}
-      {showDeleteModal && faqToDelete && (
-        <div
-          className="fixed inset-0 z-50 overflow-y-auto"
-          aria-labelledby="delete-modal-title"
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-            <div
-              className="fixed inset-0 bg-gray-900/75 backdrop-blur-sm transition-opacity"
-              onClick={() => !deleteLoading && setShowDeleteModal(false)}
-              aria-hidden="true"
-            />
-
-            <div className="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full">
-              <div className="p-6">
-                <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
-                  <AlertCircle size={32} className="text-red-600" />
-                </div>
-
-                <h3 className="text-lg font-semibold text-gray-900 text-center mb-2">
-                  Delete FAQ
-                </h3>
-
-                <p className="text-sm text-gray-500 text-center mb-6">
-                  Are you sure you want to delete the question{" "}
-                  <span className="font-semibold text-gray-900 border-b border-gray-300 pb-0.5">
-                    "{faqToDelete.question}"
-                  </span>
-                  ? This action cannot be undone.
-                </p>
-
-                {deleteSuccess && (
-                  <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
-                    <CheckCircle size={16} className="text-green-600" />
-                    <p className="text-sm text-green-600">{deleteSuccess}</p>
-                  </div>
-                )}
-
-                {deleteError && (
-                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
-                    <AlertCircle
-                      size={16}
-                      className="text-red-600 mt-0.5 shrink-0"
-                    />
-                    <p className="text-sm text-red-600">{deleteError}</p>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-2 gap-3 mt-2">
-                  <button
-                    onClick={() => setShowDeleteModal(false)}
-                    disabled={deleteLoading}
-                    className="w-full px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 font-medium"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleDeleteConfirm}
-                    disabled={deleteLoading}
-                    className="w-full px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 font-medium"
-                  >
-                    {deleteLoading ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        Deleting...
-                      </>
-                    ) : (
-                      "Delete FAQ"
-                    )}
-                  </button>
+            <h3 style={{ fontSize: 16, fontWeight: 600, color: "#111827", marginBottom: 6 }}>No FAQs found</h3>
+            <p style={{ color: "#6b7280", fontSize: 14, marginBottom: 16 }}>
+              {searchTerm || selectedCourse !== "all" ? "Try adjusting your search or filters." : "Get started by adding your first FAQ."}
+            </p>
+            {(searchTerm || selectedCourse !== "all") && (
+              <button onClick={() => { setSearchTerm(""); setSelectedCourse("all"); }}
+                style={{ padding: "8px 20px", background: "#2563eb", color: "#fff", borderRadius: 8, border: "none", cursor: "pointer", fontWeight: 500, fontFamily: "inherit" }}>
+                Clear Filters
+              </button>
+            )}
+          </div>
+        ) : (
+          <>
+            {/* Column Header Row */}
+            <div style={{ display: "flex", alignItems: "center", padding: "10px 20px", borderBottom: "1px solid #f3f4f6", background: "#fafafa" }}>
+              <div style={{ width: 44, flexShrink: 0 }}>
+                <div className={`cb-f${allOnPageSelected ? " checked" : ""}`} onClick={toggleSelectAll}>
+                  {allOnPageSelected && <svg width="10" height="10" viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2" fill="none" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>}
                 </div>
               </div>
+              <p style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.08em", margin: 0, flex: 1 }}>Question</p>
+              <p style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.08em", margin: 0, width: 140 }} className="hide-mob-f">Course</p>
+              <p style={{ fontSize: 11, fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.08em", margin: 0, width: 80, textAlign: "center" }} className="hide-mob-f">ID</p>
+              <div style={{ width: 90 }} />
+            </div>
+
+            {/* FAQ Rows */}
+            <div style={{ divide: "1px solid #f3f4f6" }}>
+              {paginated.map((faq) => {
+                const isExpanded = expandedFaqs.has(faq.id);
+                const isSelected = selectedRows.includes(faq.id);
+                return (
+                  <div key={faq.id} className="faq-card"
+                    style={{ borderBottom: "1px solid #f3f4f6", background: isSelected ? "#eff6ff" : "#fff" }}>
+
+                    {/* Header row */}
+                    <div style={{ display: "flex", alignItems: "center", padding: "0 20px" }}>
+                      {/* Checkbox */}
+                      <div style={{ width: 44, flexShrink: 0, display: "flex", alignItems: "center" }}
+                        onClick={(e) => e.stopPropagation()}>
+                        <div className={`cb-f${isSelected ? " checked" : ""}`} onClick={() => toggleRow(faq.id)}>
+                          {isSelected && <svg width="10" height="10" viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2" fill="none" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+                        </div>
+                      </div>
+
+                      {/* Question (clickable) */}
+                      <button className="faq-header-btn" onClick={() => toggleFaq(faq.id)}
+                        style={{ flex: 1, display: "flex", alignItems: "center", padding: "16px 0", gap: 12 }}>
+                        <div style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
+                          <p style={{ fontWeight: 600, color: "#111827", margin: 0, fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: isExpanded ? "normal" : "nowrap", paddingRight: 8 }}>
+                            {faq.question}
+                          </p>
+                        </div>
+                      </button>
+
+                      {/* Course badge */}
+                      <div style={{ width: 140, flexShrink: 0 }} className="hide-mob-f">
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "3px 10px", background: "#eff6ff", borderRadius: 20, fontSize: 11, color: "#2563eb", fontWeight: 500, maxWidth: 130, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          <BookOpen size={10} />
+                          {courses[faq.course] || `Course ${faq.course}`}
+                        </span>
+                      </div>
+
+                      {/* ID */}
+                      <div style={{ width: 80, flexShrink: 0, textAlign: "center" }} className="hide-mob-f">
+                        <span style={{ fontFamily: "monospace", fontSize: 12, color: "#6b7280", background: "#f3f4f6", padding: "2px 8px", borderRadius: 6 }}>#{faq.id}</span>
+                      </div>
+
+                      {/* Toggle + Actions */}
+                      <div style={{ width: 90, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 4 }}>
+                        <button onClick={(e) => { e.stopPropagation(); handleEdit(faq); }}
+                          style={{ width: 30, height: 30, borderRadius: 6, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af", transition: "background 0.15s, color 0.15s" }}
+                          onMouseEnter={e => { e.currentTarget.style.background = "#f3f4f6"; e.currentTarget.style.color = "#374151"; }}
+                          onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#9ca3af"; }}>
+                          <Edit size={14} />
+                        </button>
+                        <button onClick={(e) => { e.stopPropagation(); handleDeleteClick(faq); }}
+                          style={{ width: 30, height: 30, borderRadius: 6, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#f87171", transition: "background 0.15s" }}
+                          onMouseEnter={e => e.currentTarget.style.background = "#fef2f2"}
+                          onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                          <Trash2 size={14} />
+                        </button>
+                        <button onClick={() => toggleFaq(faq.id)}
+                          style={{ width: 30, height: 30, borderRadius: 6, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af", transition: "background 0.15s" }}
+                          onMouseEnter={e => e.currentTarget.style.background = "#f3f4f6"}
+                          onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                          {isExpanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Expanded Answer */}
+                    {isExpanded && (
+                      <div className="faq-answer" style={{ padding: "0 20px 18px 64px" }}>
+                        <div style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 12, padding: "16px 18px" }}>
+                          {/* Course chip on mobile */}
+                          <div style={{ display: "none" }} className="show-mob-only">
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "3px 10px", background: "#eff6ff", borderRadius: 20, fontSize: 11, color: "#2563eb", fontWeight: 500, marginBottom: 10 }}>
+                              <BookOpen size={10} />
+                              {courses[faq.course] || `Course ${faq.course}`}
+                            </span>
+                          </div>
+                          <p style={{ fontSize: 13, color: "#4b5563", lineHeight: 1.75, margin: 0, whiteSpace: "pre-wrap" }}>{faq.answer}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Pagination */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", borderTop: "1px solid #f3f4f6" }}>
+              <button className="page-btn-f" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>Previous</button>
+              <span style={{ fontSize: 13, color: "#6b7280" }}>
+                Page <strong style={{ color: "#111827" }}>{currentPage}</strong> of {totalPages}&nbsp;·&nbsp;{filteredFaqs.length} FAQs
+              </span>
+              <button className="page-btn-f" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>Next</button>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* ── Delete Modal ── */}
+      {showDeleteModal && faqToDelete && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+          <div style={{ position: "fixed", inset: 0, background: "rgba(17,24,39,0.7)", backdropFilter: "blur(4px)" }}
+            onClick={() => !deleteLoading && setShowDeleteModal(false)} />
+          <div style={{ position: "relative", background: "#fff", borderRadius: 20, width: "100%", maxWidth: 440, padding: 32, boxShadow: "0 25px 60px rgba(0,0,0,0.2)" }}>
+            <div style={{ width: 56, height: 56, borderRadius: "50%", background: "#fee2e2", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+              <AlertCircle size={26} color="#dc2626" />
+            </div>
+            <h3 style={{ fontSize: 17, fontWeight: 700, color: "#111827", textAlign: "center", marginBottom: 8 }}>Delete FAQ</h3>
+            <p style={{ fontSize: 13, color: "#6b7280", textAlign: "center", marginBottom: 20, lineHeight: 1.6 }}>
+              Are you sure you want to delete <strong style={{ color: "#111827" }}>"{faqToDelete.question}"</strong>? This cannot be undone.
+            </p>
+
+            {deleteSuccess && (
+              <div style={{ marginBottom: 14, padding: "10px 14px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10, display: "flex", alignItems: "center", gap: 8 }}>
+                <CheckCircle size={15} color="#16a34a" />
+                <p style={{ fontSize: 13, color: "#16a34a", margin: 0 }}>{deleteSuccess}</p>
+              </div>
+            )}
+            {deleteError && (
+              <div style={{ marginBottom: 14, padding: "10px 14px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 10, display: "flex", alignItems: "center", gap: 8 }}>
+                <X size={15} color="#dc2626" />
+                <p style={{ fontSize: 13, color: "#dc2626", margin: 0 }}>{deleteError}</p>
+              </div>
+            )}
+
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={() => setShowDeleteModal(false)} disabled={deleteLoading}
+                style={{ flex: 1, padding: 11, border: "1px solid #e5e7eb", borderRadius: 10, background: "#fff", color: "#374151", fontWeight: 600, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
+                Cancel
+              </button>
+              <button onClick={handleDeleteConfirm} disabled={deleteLoading || !!deleteSuccess}
+                style={{ flex: 1, padding: 11, border: "none", borderRadius: 10, background: "#dc2626", color: "#fff", fontWeight: 600, fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "inherit", opacity: (deleteLoading || !!deleteSuccess) ? 0.6 : 1 }}>
+                {deleteLoading ? (
+                  <>
+                    <div style={{ width: 15, height: 15, border: "2px solid rgba(255,255,255,0.4)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                    Deleting...
+                  </>
+                ) : <><Trash2 size={15} /> Delete FAQ</>}
+              </button>
             </div>
           </div>
         </div>

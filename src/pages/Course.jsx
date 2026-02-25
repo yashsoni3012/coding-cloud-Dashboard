@@ -11,19 +11,23 @@ import {
   Search,
   Filter,
   X,
-  ChevronRight,
   Download,
-  Grid,
-  List,
   SlidersHorizontal,
-  Star,
   FileText,
   Eye,
   Edit,
   Trash2,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  Plus,
+  ArrowUpRight,
+  Layers,
 } from "lucide-react";
+
+const ITEMS_PER_PAGE = 8;
 
 export default function Courses() {
   const [courses, setCourses] = useState([]);
@@ -35,7 +39,6 @@ export default function Courses() {
   const [categories, setCategories] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const [viewMode, setViewMode] = useState("list");
   const [sortBy, setSortBy] = useState("default");
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
@@ -44,6 +47,9 @@ export default function Courses() {
     certificate: "all",
     duration: "all",
   });
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Delete confirmation state
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -59,7 +65,7 @@ export default function Courses() {
     try {
       setLoading(true);
       const response = await fetch(
-        "https://codingcloud.pythonanywhere.com/course/",
+        "https://codingcloud.pythonanywhere.com/course/"
       );
       const data = await response.json();
 
@@ -67,13 +73,12 @@ export default function Courses() {
         setCourses(data.data);
         setFilteredCourses(data.data);
 
-        // Extract unique categories
         const uniqueCategories = [
           ...new Map(
             data.data.map((course) => [
               course.category_details.id,
               course.category_details,
-            ]),
+            ])
           ).values(),
         ];
         setCategories(uniqueCategories);
@@ -96,7 +101,6 @@ export default function Courses() {
   useEffect(() => {
     let filtered = [...courses];
 
-    // Search filter
     if (searchTerm) {
       filtered = filtered.filter(
         (course) =>
@@ -104,28 +108,27 @@ export default function Courses() {
           course.text?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           course.category_details.name
             .toLowerCase()
-            .includes(searchTerm.toLowerCase()),
+            .includes(searchTerm.toLowerCase())
       );
     }
 
-    // Category filter
     if (selectedCategory !== "all") {
       filtered = filtered.filter(
-        (course) => course.category_details.id === parseInt(selectedCategory),
+        (course) => course.category_details.id === parseInt(selectedCategory)
       );
     }
 
-    // Advanced filters
     if (filters.level !== "all") {
       filtered = filtered.filter(
-        (course) => course.level?.toLowerCase() === filters.level.toLowerCase(),
+        (course) =>
+          course.level?.toLowerCase() === filters.level.toLowerCase()
       );
     }
 
     if (filters.language !== "all") {
       filtered = filtered.filter(
         (course) =>
-          course.language?.toLowerCase() === filters.language.toLowerCase(),
+          course.language?.toLowerCase() === filters.language.toLowerCase()
       );
     }
 
@@ -133,7 +136,7 @@ export default function Courses() {
       filtered = filtered.filter(
         (course) =>
           (filters.certificate === "yes" && course.certificate === "Yes") ||
-          (filters.certificate === "no" && course.certificate === "No"),
+          (filters.certificate === "no" && course.certificate === "No")
       );
     }
 
@@ -149,7 +152,6 @@ export default function Courses() {
       });
     }
 
-    // Sorting
     switch (sortBy) {
       case "name-asc":
         filtered.sort((a, b) => a.name.localeCompare(b.name));
@@ -173,15 +175,15 @@ export default function Courses() {
         break;
       case "students":
         filtered.sort(
-          (a, b) => (parseInt(b.students) || 0) - (parseInt(a.students) || 0),
+          (a, b) => (parseInt(b.students) || 0) - (parseInt(a.students) || 0)
         );
         break;
       default:
-        // Default sorting by id (newest first)
         filtered.sort((a, b) => b.id - a.id);
     }
 
     setFilteredCourses(filtered);
+    setCurrentPage(1);
   }, [searchTerm, selectedCategory, filters, sortBy, courses]);
 
   const openCourseModal = (course) => {
@@ -199,22 +201,15 @@ export default function Courses() {
   const resetFilters = () => {
     setSearchTerm("");
     setSelectedCategory("all");
-    setFilters({
-      level: "all",
-      language: "all",
-      certificate: "all",
-      duration: "all",
-    });
+    setFilters({ level: "all", language: "all", certificate: "all", duration: "all" });
     setSortBy("default");
   };
 
-  // Handle edit
   const handleEdit = (e, courseId) => {
     e.stopPropagation();
     navigate(`/edit-course/${courseId}`);
   };
 
-  // Handle delete confirmation
   const handleDeleteClick = (e, course) => {
     e.stopPropagation();
     setCourseToDelete(course);
@@ -223,79 +218,107 @@ export default function Courses() {
     setDeleteSuccess("");
   };
 
-  // Handle delete course
   const handleDeleteConfirm = async () => {
     if (!courseToDelete) return;
-
-    setDeleteLoading(true);
-    setDeleteError("");
-    setDeleteSuccess("");
-
+    
+    // Optimistic UI update - remove course immediately
+    const courseId = courseToDelete.id;
+    setCourses(prev => prev.filter(c => c.id !== courseId));
+    setFilteredCourses(prev => prev.filter(c => c.id !== courseId));
+    
+    // Close modal immediately for better UX
+    setShowDeleteModal(false);
+    setDeleteLoading(false);
+    
     try {
       const response = await fetch(
-        `https://codingcloud.pythonanywhere.com/course/${courseToDelete.id}/`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
+        `https://codingcloud.pythonanywhere.com/course/${courseId}/`,
+        { method: "DELETE", headers: { "Content-Type": "application/json" } }
       );
 
-      if (response.ok || response.status === 204) {
-        setDeleteSuccess("Course deleted successfully!");
-        
-        // Refresh courses list
+      if (!response.ok && response.status !== 204) {
+        // If deletion fails, refetch courses to restore data
         await fetchCourses();
-        
-        // Close modal after 1.5 seconds
-        setTimeout(() => {
-          setShowDeleteModal(false);
-          setCourseToDelete(null);
-          setDeleteSuccess("");
-        }, 1500);
-      } else {
-        const data = await response.json();
-        setDeleteError(data.message || "Failed to delete course");
+        setDeleteError("Failed to delete course. Data has been restored.");
+        setTimeout(() => setDeleteError(""), 3000);
       }
     } catch (err) {
       console.error("Error deleting course:", err);
+      // Refetch courses on error to ensure consistency
+      await fetchCourses();
       setDeleteError("Network error. Please try again.");
-    } finally {
-      setDeleteLoading(false);
+      setTimeout(() => setDeleteError(""), 3000);
     }
   };
 
-  // Get unique languages for filter
-  const languages = [
-    ...new Set(courses.map((c) => c.language).filter(Boolean)),
+  const languages = [...new Set(courses.map((c) => c.language).filter(Boolean))];
+
+  const getLevelBadge = (level) => {
+    if (!level) return { bg: "#f3f4f6", color: "#6b7280" };
+    switch (level.toLowerCase()) {
+      case "beginner": return { bg: "#dcfce7", color: "#16a34a" };
+      case "intermediate": return { bg: "#fef9c3", color: "#ca8a04" };
+      case "hard":
+      case "advanced": return { bg: "#fee2e2", color: "#dc2626" };
+      default: return { bg: "#dbeafe", color: "#2563eb" };
+    }
+  };
+
+  const paginatedCourses = filteredCourses.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+  const totalPages = Math.ceil(filteredCourses.length / ITEMS_PER_PAGE);
+
+  // Stat card data
+  const totalStudents = courses.reduce(
+    (acc, c) => acc + (parseInt(c.students) || 0),
+    0
+  );
+  const certCourses = courses.filter((c) => c.certificate === "Yes").length;
+  const statCards = [
+    { label: "Total Courses", value: courses.length, color: "#2563eb", pct: 72 },
+    { label: "Total Students", value: `${totalStudents}+`, color: "#2563eb", pct: 58 },
+    { label: "Categories", value: categories.length, color: "#2563eb", pct: 45 },
+    { label: "With Certificate", value: certCourses, color: "#2563eb", pct: 83 },
   ];
 
-  // Get level badge color
-  const getLevelBadge = (level) => {
-    if (!level) return "bg-gray-100 text-gray-600";
-
-    switch (level.toLowerCase()) {
-      case "beginner":
-        return "bg-green-100 text-green-700";
-      case "intermediate":
-        return "bg-yellow-100 text-yellow-700";
-      case "hard":
-      case "advanced":
-        return "bg-red-100 text-red-700";
-      default:
-        return "bg-blue-100 text-blue-700";
-    }
+  const CircularProgress = ({ pct, color, size = 52 }) => {
+    const r = 20;
+    const circ = 2 * Math.PI * r;
+    const offset = circ - (pct / 100) * circ;
+    return (
+      <svg width={size} height={size} viewBox="0 0 48 48">
+        <circle cx="24" cy="24" r={r} fill="none" stroke="#e5e7eb" strokeWidth="4" />
+        <circle
+          cx="24" cy="24" r={r}
+          fill="none"
+          stroke={color}
+          strokeWidth="4"
+          strokeDasharray={circ}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          transform="rotate(-90 24 24)"
+        />
+        <foreignObject x="8" y="8" width="32" height="32">
+          <div style={{ width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <ArrowUpRight size={14} color={color} />
+          </div>
+        </foreignObject>
+      </svg>
+    );
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="relative">
-          <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
-          <p className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-gray-500 text-sm whitespace-nowrap">
-            Loading courses...
-          </p>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{
+            width: 48, height: 48, border: "3px solid #e5e7eb", borderTopColor: "#2563eb",
+            borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 12px"
+          }} />
+          <p style={{ color: "#6b7280", fontSize: 14 }}>Loading courses...</p>
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
       </div>
     );
@@ -303,19 +326,15 @@ export default function Courses() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center">
-          <div className="bg-red-50 rounded-full p-4 w-20 h-20 mx-auto mb-4 flex items-center justify-center">
-            <X size={32} className="text-red-500" />
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ background: "#fee2e2", borderRadius: "50%", padding: 16, width: 64, height: 64, margin: "0 auto 16px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <X size={28} color="#dc2626" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            Oops! Something went wrong
-          </h3>
-          <p className="text-gray-500 mb-4">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-          >
+          <h3 style={{ fontSize: 18, fontWeight: 600, color: "#111827", marginBottom: 8 }}>Something went wrong</h3>
+          <p style={{ color: "#6b7280", marginBottom: 16 }}>{error}</p>
+          <button onClick={() => window.location.reload()}
+            style={{ padding: "8px 20px", background: "#2563eb", color: "#fff", borderRadius: 8, border: "none", cursor: "pointer", fontWeight: 500 }}>
             Try Again
           </button>
         </div>
@@ -324,885 +343,401 @@ export default function Courses() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Our Courses</h1>
-          <p className="text-gray-500 text-sm mt-1">
-            {filteredCourses.length} of {courses.length} courses • {categories.length} categories
-          </p>
-        </div>
-        
-        <div className="flex items-center gap-3">
-          {/* Stats Cards */}
-          <div className="hidden sm:flex gap-3">
-            <div className="bg-white rounded-lg border border-gray-200 px-4 py-2">
-              <p className="text-xs text-gray-500">Total Students</p>
-              <p className="text-lg font-semibold text-gray-900">
-                {courses.reduce((acc, course) => acc + (parseInt(course.students) || 0), 0)}+
-              </p>
-            </div>
-            <div className="bg-white rounded-lg border border-gray-200 px-4 py-2">
-              <p className="text-xs text-gray-500">Avg. Duration</p>
-              <p className="text-lg font-semibold text-gray-900">40h</p>
+    <div style={{ fontFamily: "'DM Sans', 'Segoe UI', sans-serif", background: "#f4f5f7", minHeight: "100vh", padding: "24px 20px" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+        .course-row:hover { background: #f9fafb; }
+        .action-btn { transition: all 0.15s; }
+        .action-btn:hover { background: #f3f4f6; transform: scale(1.05); }
+        .filter-sel { border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px 10px; font-size: 13px; color: #374151; background: #fff; outline: none; appearance: none; cursor: pointer; }
+        .filter-sel:focus { border-color: #2563eb; }
+        .page-btn { border: 1px solid #e5e7eb; border-radius: 6px; padding: 6px 14px; font-size: 13px; font-weight: 500; background: #fff; color: #374151; cursor: pointer; transition: background 0.15s; }
+        .page-btn:hover:not(:disabled) { background: #f3f4f6; }
+        .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        @media (max-width: 640px) {
+          .stat-grid { grid-template-columns: 1fr 1fr !important; }
+          .table-wrap { overflow-x: auto; }
+          .hide-mobile { display: none !important; }
+        }
+        @media (max-width: 400px) {
+          .stat-grid { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
+
+      {/* ── Stat Cards ── */}
+      <div className="stat-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 24 }}>
+        {statCards.map((s, i) => (
+          <div key={i} style={{ background: "#fff", borderRadius: 14, padding: "18px 20px", display: "flex", alignItems: "center", gap: 16, boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
+            <CircularProgress pct={s.pct} color={s.color} />
+            <div>
+              <p style={{ fontSize: 12, color: "#9ca3af", margin: 0, fontWeight: 500 }}>{s.label}</p>
+              <p style={{ fontSize: 22, fontWeight: 700, color: "#111827", margin: "2px 0 0" }}>{s.value}</p>
             </div>
           </div>
-
-          {/* Add Course Button */}
-          <button
-            onClick={() => navigate('/add-course')}
-            className="px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all duration-200 flex items-center gap-2 shadow-sm hover:shadow-md active:scale-95"
-          >
-            <span className="text-lg font-bold leading-none">+</span>
-            <span className="hidden sm:inline font-medium">Add Course</span>
-            <span className="sm:hidden font-medium">Add</span>
-          </button>
-        </div>
+        ))}
       </div>
 
-      {/* Search and Filter Bar */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
-        <div className="p-4">
-          <div className="flex flex-col lg:flex-row gap-4">
-            {/* Search */}
-            <div className="flex-1 relative">
-              <Search
-                size={18}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-              />
-              <input
-                type="text"
-                placeholder="Search courses by name, description or category..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              />
-              {searchTerm && (
-                <button
-                  onClick={() => setSearchTerm("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  <X size={16} />
-                </button>
-              )}
-            </div>
+      {/* Error Toast */}
+      {deleteError && (
+        <div style={{ 
+          position: "fixed", 
+          top: 24, 
+          right: 24, 
+          zIndex: 100,
+          background: "#fef2f2", 
+          border: "1px solid #fecaca", 
+          borderRadius: 10, 
+          padding: "12px 16px",
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
+        }}>
+          <X size={16} color="#dc2626" />
+          <p style={{ fontSize: 13, color: "#dc2626", margin: 0 }}>{deleteError}</p>
+        </div>
+      )}
 
-            {/* View Toggle & Filter Button */}
-            <div className="flex gap-2">
-              {/* View Mode Toggle */}
-              <div className="flex bg-gray-100 rounded-lg p-1">
-                <button
-                  onClick={() => setViewMode("grid")}
-                  className={`p-2 rounded-lg transition-colors ${
-                    viewMode === "grid"
-                      ? "bg-white text-indigo-600 shadow-sm"
-                      : "text-gray-500 hover:text-gray-700"
-                  }`}
-                  title="Grid View"
-                >
-                  <Grid size={18} />
-                </button>
-                <button
-                  onClick={() => setViewMode("list")}
-                  className={`p-2 rounded-lg transition-colors ${
-                    viewMode === "list"
-                      ? "bg-white text-indigo-600 shadow-sm"
-                      : "text-gray-500 hover:text-gray-700"
-                  }`}
-                  title="List View"
-                >
-                  <List size={18} />
-                </button>
-              </div>
+      {/* ── Table Card ── */}
+      <div style={{ background: "#fff", borderRadius: 16, boxShadow: "0 1px 4px rgba(0,0,0,0.07)", overflow: "hidden" }}>
 
-              {/* Filter Toggle Button */}
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
-                  showFilters
-                    ? "bg-indigo-50 border-indigo-200 text-indigo-600"
-                    : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
-                }`}
-              >
-                <SlidersHorizontal size={18} />
-                <span className="hidden sm:inline">Filters</span>
-                {(selectedCategory !== "all" ||
-                  Object.values(filters).some((v) => v !== "all")) && (
-                  <span className="w-2 h-2 bg-indigo-600 rounded-full"></span>
-                )}
+        {/* Toolbar */}
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10, padding: "16px 20px", borderBottom: "1px solid #f3f4f6" }}>
+          {/* Left: Filter + Add */}
+          <button onClick={() => setShowFilters(!showFilters)}
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", border: "1px solid #e5e7eb", borderRadius: 8, background: "#fff", color: "#374151", fontSize: 13, fontWeight: 500, cursor: "pointer" }}>
+            <SlidersHorizontal size={15} />
+            Filters
+            {(selectedCategory !== "all" || Object.values(filters).some(v => v !== "all")) && (
+              <span style={{ width: 7, height: 7, background: "#2563eb", borderRadius: "50%", display: "inline-block" }} />
+            )}
+          </button>
+
+          <button onClick={() => navigate("/add-course")}
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 8, background: "#2563eb", color: "#fff", fontSize: 13, fontWeight: 600, border: "none", cursor: "pointer" }}>
+            <Plus size={15} />
+            Add Course
+          </button>
+
+          {/* Spacer */}
+          <div style={{ flex: 1 }} />
+
+          {/* Search */}
+          <div style={{ position: "relative", minWidth: 200 }}>
+            <Search size={15} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#9ca3af" }} />
+            <input
+              type="text"
+              placeholder="Search"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{ paddingLeft: 32, paddingRight: searchTerm ? 32 : 12, paddingTop: 8, paddingBottom: 8, border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, color: "#374151", background: "#f9fafb", outline: "none", width: "100%" }}
+            />
+            {searchTerm && (
+              <button onClick={() => setSearchTerm("")}
+                style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: 0 }}>
+                <X size={14} />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Advanced Filters */}
+        {showFilters && (
+          <div style={{ padding: "14px 20px", borderBottom: "1px solid #f3f4f6", background: "#f9fafb" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "flex-end" }}>
+              {[
+                { label: "Category", value: selectedCategory, onChange: (v) => setSelectedCategory(v), options: [{ value: "all", label: "All Categories" }, ...categories.map(c => ({ value: c.id, label: c.name }))] },
+                { label: "Level", value: filters.level, onChange: (v) => setFilters({ ...filters, level: v }), options: [{ value: "all", label: "All Levels" }, { value: "beginner", label: "Beginner" }, { value: "intermediate", label: "Intermediate" }, { value: "hard", label: "Advanced" }] },
+                { label: "Language", value: filters.language, onChange: (v) => setFilters({ ...filters, language: v }), options: [{ value: "all", label: "All Languages" }, ...languages.map(l => ({ value: l, label: l }))] },
+                { label: "Certificate", value: filters.certificate, onChange: (v) => setFilters({ ...filters, certificate: v }), options: [{ value: "all", label: "All" }, { value: "yes", label: "With Certificate" }, { value: "no", label: "Without" }] },
+                { label: "Sort By", value: sortBy, onChange: (v) => setSortBy(v), options: [{ value: "default", label: "Newest First" }, { value: "name-asc", label: "Name A-Z" }, { value: "name-desc", label: "Name Z-A" }, { value: "students", label: "Most Popular" }] },
+              ].map((f, i) => (
+                <div key={i}>
+                  <p style={{ fontSize: 11, fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>{f.label}</p>
+                  <select className="filter-sel" value={f.value} onChange={(e) => f.onChange(e.target.value)}>
+                    {f.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                </div>
+              ))}
+              <button onClick={resetFilters}
+                style={{ padding: "8px 14px", border: "none", background: "none", color: "#2563eb", fontSize: 13, fontWeight: 500, cursor: "pointer" }}>
+                Reset
               </button>
             </div>
           </div>
+        )}
 
-          {/* Advanced Filters Panel */}
-          {showFilters && (
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                {/* Category Filter */}
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">
-                    Category
-                  </label>
-                  <select
-                    value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  >
-                    <option value="all">All Categories</option>
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name} (
-                        {
-                          courses.filter(
-                            (c) => c.category_details.id === cat.id,
-                          ).length
-                        }
-                        )
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Level Filter */}
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">
-                    Level
-                  </label>
-                  <select
-                    value={filters.level}
-                    onChange={(e) =>
-                      setFilters({ ...filters, level: e.target.value })
-                    }
-                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  >
-                    <option value="all">All Levels</option>
-                    <option value="beginner">Beginner</option>
-                    <option value="intermediate">Intermediate</option>
-                    <option value="hard">Advanced/Hard</option>
-                  </select>
-                </div>
-
-                {/* Language Filter */}
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">
-                    Language
-                  </label>
-                  <select
-                    value={filters.language}
-                    onChange={(e) =>
-                      setFilters({ ...filters, language: e.target.value })
-                    }
-                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  >
-                    <option value="all">All Languages</option>
-                    {languages.map((lang) => (
-                      <option key={lang} value={lang}>
-                        {lang}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Certificate Filter */}
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">
-                    Certificate
-                  </label>
-                  <select
-                    value={filters.certificate}
-                    onChange={(e) =>
-                      setFilters({ ...filters, certificate: e.target.value })
-                    }
-                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  >
-                    <option value="all">All</option>
-                    <option value="yes">With Certificate</option>
-                    <option value="no">Without Certificate</option>
-                  </select>
-                </div>
-
-                {/* Sort By */}
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1">
-                    Sort By
-                  </label>
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  >
-                    <option value="default">Newest First</option>
-                    <option value="name-asc">Name (A-Z)</option>
-                    <option value="name-desc">Name (Z-A)</option>
-                    <option value="duration-asc">Duration (Shortest)</option>
-                    <option value="duration-desc">Duration (Longest)</option>
-                    <option value="students">Most Popular</option>
-                  </select>
-                </div>
+        {/* Table */}
+        <div className="table-wrap">
+          {filteredCourses.length === 0 ? (
+            <div style={{ padding: "60px 20px", textAlign: "center" }}>
+              <div style={{ background: "#f3f4f6", borderRadius: "50%", width: 64, height: 64, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+                <BookOpen size={28} color="#9ca3af" />
               </div>
-
-              {/* Active Filters & Reset */}
-              <div className="mt-4 flex items-center justify-between">
-                <div className="flex flex-wrap gap-2">
-                  {selectedCategory !== "all" && (
-                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-xs">
-                      Category:{" "}
-                      {
-                        categories.find(
-                          (c) => c.id === parseInt(selectedCategory),
-                        )?.name
-                      }
-                      <button onClick={() => setSelectedCategory("all")}>
-                        <X size={12} />
-                      </button>
-                    </span>
-                  )}
-                  {filters.level !== "all" && (
-                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-xs">
-                      Level: {filters.level}
-                      <button
-                        onClick={() => setFilters({ ...filters, level: "all" })}
-                      >
-                        <X size={12} />
-                      </button>
-                    </span>
-                  )}
-                  {filters.language !== "all" && (
-                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-xs">
-                      Language: {filters.language}
-                      <button
-                        onClick={() =>
-                          setFilters({ ...filters, language: "all" })
-                        }
-                      >
-                        <X size={12} />
-                      </button>
-                    </span>
-                  )}
-                </div>
-                <button
-                  onClick={resetFilters}
-                  className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
-                >
-                  Reset all filters
-                </button>
-              </div>
+              <h3 style={{ fontSize: 16, fontWeight: 600, color: "#111827", marginBottom: 6 }}>No courses found</h3>
+              <p style={{ color: "#6b7280", marginBottom: 16, fontSize: 14 }}>Try adjusting your search or filter criteria</p>
+              <button onClick={resetFilters}
+                style={{ padding: "8px 20px", background: "#2563eb", color: "#fff", borderRadius: 8, border: "none", cursor: "pointer", fontWeight: 500 }}>
+                Clear filters
+              </button>
             </div>
-          )}
-        </div>
-      </div>
+          ) : (
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+              <thead>
+                <tr style={{ borderBottom: "1px solid #f3f4f6" }}>
+                  {[
+                    { label: "Course", width: "auto" },
+                    { label: "Category", width: 120 },
+                    { label: "Level", width: 110 },
+                    { label: "Duration", width: 110 },
+                    { label: "Students", width: 100 },
+                    { label: "Language", width: 100 },
+                    { label: "Certificate", width: 110 },
+                    { label: "", width: 80 },
+                  ].map((col, i) => (
+                    <th key={i}
+                      style={{ padding: "12px 14px", textAlign: "left", fontSize: 12, fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap", width: col.width }}
+                      className={i > 0 && i < 7 ? "hide-mobile" : ""}
+                    >
+                      <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                        {col.label}
+                        {col.label && <ChevronDown size={12} />}
+                      </span>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedCourses.map((course) => {
+                  const lvl = getLevelBadge(course.level);
+                  return (
+                    <tr key={course.id} className="course-row"
+                      style={{ borderBottom: "1px solid #f9fafb", cursor: "pointer" }}
+                      onClick={() => openCourseModal(course)}>
 
-      {/* Results Count */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-500">
-          Showing{" "}
-          <span className="font-medium text-gray-900">
-            {filteredCourses.length}
-          </span>{" "}
-          results
-        </p>
-      </div>
+                      {/* Course name + image */}
+                      <td style={{ padding: "14px 14px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                          <img
+                            src={`https://codingcloud.pythonanywhere.com${course.image}`}
+                            alt={course.name}
+                            onError={(e) => { e.target.src = "https://via.placeholder.com/40x40?text=C"; }}
+                            style={{ width: 40, height: 40, borderRadius: 10, objectFit: "cover", flexShrink: 0, background: "#f3f4f6" }}
+                          />
+                          <div>
+                            <p style={{ fontWeight: 600, color: "#111827", margin: 0, fontSize: 13, whiteSpace: "nowrap", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis" }}>
+                              {course.name}
+                            </p>
+                            <p style={{ color: "#9ca3af", margin: "2px 0 0", fontSize: 12, whiteSpace: "nowrap", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis" }}>
+                              {course.text ? course.text.slice(0, 50) + (course.text.length > 50 ? "…" : "") : "No description"}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
 
-      {/* Course Grid/List View */}
-      {filteredCourses.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-          <div className="bg-gray-100 rounded-full p-4 w-20 h-20 mx-auto mb-4 flex items-center justify-center">
-            <BookOpen size={32} className="text-gray-400" />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            No courses found
-          </h3>
-          <p className="text-gray-500 mb-4">
-            Try adjusting your search or filter criteria
-          </p>
-          <button
-            onClick={resetFilters}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-          >
-            Clear all filters
-          </button>
-        </div>
-      ) : (
-        <>
-          {/* Grid View */}
-          {viewMode === "grid" && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredCourses.map((course) => (
-                <div
-                  key={course.id}
-                  className="group bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-xl transition-all duration-300"
-                >
-                  {/* Course Image */}
-                  <div className="relative h-48 overflow-hidden bg-gray-100">
-                    <img
-                      src={`https://codingcloud.pythonanywhere.com${course.image}`}
-                      alt={course.name}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                      onError={(e) => {
-                        e.target.src =
-                          "https://via.placeholder.com/400x200?text=Course+Image";
-                      }}
-                    />
-                    {course.category_details && (
-                      <div className="absolute top-3 left-3">
-                        <span className="px-2.5 py-1 bg-white/90 backdrop-blur-sm rounded-lg text-xs font-medium text-gray-700 shadow-sm">
+                      {/* Category */}
+                      <td style={{ padding: "14px 14px" }} className="hide-mobile">
+                        <span style={{ fontSize: 12, color: "#4b5563", fontWeight: 500 }}>
                           {course.category_details.name}
                         </span>
-                      </div>
-                    )}
-                    {course.certificate === "Yes" && (
-                      <div className="absolute top-3 right-3">
-                        <span className="px-2.5 py-1 bg-yellow-100 text-yellow-700 rounded-lg text-xs font-medium flex items-center gap-1">
-                          <Award size={12} />
-                          Cert
-                        </span>
-                      </div>
-                    )}
-                    
-                    {/* Action Buttons Overlay */}
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-3">
-                      <button
-                        onClick={() => openCourseModal(course)}
-                        className="w-10 h-10 bg-white rounded-full flex items-center justify-center hover:bg-indigo-600 hover:text-white transition-colors"
-                        title="View Details"
-                      >
-                        <Eye size={18} />
-                      </button>
-                      <button
-                        onClick={(e) => handleEdit(e, course.id)}
-                        className="w-10 h-10 bg-white rounded-full flex items-center justify-center hover:bg-indigo-600 hover:text-white transition-colors"
-                        title="Edit Course"
-                      >
-                        <Edit size={18} />
-                      </button>
-                      <button
-                        onClick={(e) => handleDeleteClick(e, course)}
-                        className="w-10 h-10 bg-white rounded-full flex items-center justify-center hover:bg-red-600 hover:text-white transition-colors"
-                        title="Delete Course"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  </div>
+                      </td>
 
-                  {/* Course Content */}
-                  <div className="p-5">
-                    <h3 className="font-semibold text-gray-900 text-lg mb-2 line-clamp-1">
-                      {course.name}
-                    </h3>
-
-                    <p className="text-gray-500 text-sm mb-4 line-clamp-2">
-                      {course.text || "No description available"}
-                    </p>
-
-                    {/* Course Stats */}
-                    <div className="grid grid-cols-2 gap-2 mb-4">
-                      {course.duration && (
-                        <div className="flex items-center gap-1.5 text-xs text-gray-600">
-                          <Clock size={14} className="text-gray-400" />
-                          <span className="truncate">{course.duration}</span>
-                        </div>
-                      )}
-                      {course.lecture && (
-                        <div className="flex items-center gap-1.5 text-xs text-gray-600">
-                          <BookOpen size={14} className="text-gray-400" />
-                          <span className="truncate">{course.lecture}</span>
-                        </div>
-                      )}
-                      {course.students && (
-                        <div className="flex items-center gap-1.5 text-xs text-gray-600">
-                          <Users size={14} className="text-gray-400" />
-                          <span className="truncate">{course.students}</span>
-                        </div>
-                      )}
-                      {course.level && (
-                        <div className="flex items-center gap-1.5 text-xs text-gray-600">
-                          <Signal size={14} className="text-gray-400" />
-                          <span
-                            className={`px-2 py-0.5 rounded-full text-xs font-medium ${getLevelBadge(course.level)}`}
-                          >
+                      {/* Level */}
+                      <td style={{ padding: "14px 14px" }} className="hide-mobile">
+                        {course.level ? (
+                          <span style={{ padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: lvl.bg, color: lvl.color }}>
                             {course.level}
                           </span>
-                        </div>
-                      )}
-                    </div>
+                        ) : <span style={{ color: "#d1d5db" }}>—</span>}
+                      </td>
 
-                    {/* Quick Action Buttons */}
-                    <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                      <button
-                        onClick={() => openCourseModal(course)}
-                        className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1"
-                      >
-                        <Eye size={14} />
-                        View
-                      </button>
-                      <button
-                        onClick={(e) => handleEdit(e, course.id)}
-                        className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
-                      >
-                        <Edit size={14} />
-                        Edit
-                      </button>
-                      <button
-                        onClick={(e) => handleDeleteClick(e, course)}
-                        className="text-xs text-red-600 hover:text-red-700 font-medium flex items-center gap-1"
-                      >
-                        <Trash2 size={14} />
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+                      {/* Duration */}
+                      <td style={{ padding: "14px 14px", color: "#4b5563" }} className="hide-mobile">
+                        {course.duration || <span style={{ color: "#d1d5db" }}>—</span>}
+                      </td>
 
-          {/* List View */}
-          {viewMode === "list" && (
-            <div className="space-y-4">
-              {filteredCourses.map((course) => (
-                <div
-                  key={course.id}
-                  className="group bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-xl transition-all duration-300"
-                >
-                  <div className="flex flex-col md:flex-row">
-                    {/* Course Image */}
-                    <div className="md:w-64 h-48 md:h-auto relative overflow-hidden bg-gray-100">
-                      <img
-                        src={`https://codingcloud.pythonanywhere.com${course.image}`}
-                        alt={course.name}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                        onError={(e) => {
-                          e.target.src =
-                            "https://via.placeholder.com/400x300?text=Course+Image";
-                        }}
-                      />
-                      {course.certificate === "Yes" && (
-                        <div className="absolute top-3 right-3">
-                          <span className="px-2.5 py-1 bg-yellow-100 text-yellow-700 rounded-lg text-xs font-medium flex items-center gap-1">
-                            <Award size={12} />
-                            Certificate
+                      {/* Students */}
+                      <td style={{ padding: "14px 14px", color: "#4b5563" }} className="hide-mobile">
+                        {course.students || <span style={{ color: "#d1d5db" }}>—</span>}
+                      </td>
+
+                      {/* Language */}
+                      <td style={{ padding: "14px 14px", color: "#4b5563" }} className="hide-mobile">
+                        {course.language || <span style={{ color: "#d1d5db" }}>—</span>}
+                      </td>
+
+                      {/* Certificate */}
+                      <td style={{ padding: "14px 14px" }} className="hide-mobile">
+                        {course.certificate === "Yes" ? (
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 600, color: "#ca8a04", background: "#fef9c3", padding: "3px 10px", borderRadius: 20 }}>
+                            <Award size={11} />
+                            Yes
                           </span>
-                        </div>
-                      )}
-                    </div>
+                        ) : <span style={{ color: "#d1d5db", fontSize: 12 }}>No</span>}
+                      </td>
 
-                    {/* Course Content */}
-                    <div className="flex-1 p-6">
-                      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-                        <div className="flex-1">
-                          {/* Category & Level */}
-                          <div className="flex flex-wrap items-center gap-2 mb-2">
-                            <span className="px-2.5 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-medium">
-                              {course.category_details.name}
-                            </span>
-                            {course.level && (
-                              <span
-                                className={`px-2.5 py-1 rounded-lg text-xs font-medium ${getLevelBadge(course.level)}`}
-                              >
-                                {course.level}
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Title */}
-                          <h3 className="font-semibold text-gray-900 text-xl mb-2 group-hover:text-indigo-600 transition-colors">
-                            {course.name}
-                          </h3>
-
-                          {/* Description */}
-                          <p className="text-gray-500 text-sm mb-4 line-clamp-2">
-                            {course.text || "No description available"}
-                          </p>
-
-                          {/* Stats Grid */}
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
-                            {course.duration && (
-                              <div className="flex items-center gap-2">
-                                <Clock size={16} className="text-gray-400" />
-                                <div>
-                                  <p className="text-xs text-gray-500">
-                                    Duration
-                                  </p>
-                                  <p className="text-sm font-medium text-gray-900">
-                                    {course.duration}
-                                  </p>
-                                </div>
-                              </div>
-                            )}
-                            {course.lecture && (
-                              <div className="flex items-center gap-2">
-                                <BookOpen size={16} className="text-gray-400" />
-                                <div>
-                                  <p className="text-xs text-gray-500">
-                                    Lectures
-                                  </p>
-                                  <p className="text-sm font-medium text-gray-900">
-                                    {course.lecture}
-                                  </p>
-                                </div>
-                              </div>
-                            )}
-                            {course.students && (
-                              <div className="flex items-center gap-2">
-                                <Users size={16} className="text-gray-400" />
-                                <div>
-                                  <p className="text-xs text-gray-500">
-                                    Students
-                                  </p>
-                                  <p className="text-sm font-medium text-gray-900">
-                                    {course.students}
-                                  </p>
-                                </div>
-                              </div>
-                            )}
-                            {course.language && (
-                              <div className="flex items-center gap-2">
-                                <Globe size={16} className="text-gray-400" />
-                                <div>
-                                  <p className="text-xs text-gray-500">
-                                    Language
-                                  </p>
-                                  <p className="text-sm font-medium text-gray-900">
-                                    {course.language}
-                                  </p>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div className="lg:w-40 flex flex-row lg:flex-col items-center justify-end gap-2">
-                          <button
-                            onClick={() => openCourseModal(course)}
-                            className="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium flex items-center justify-center gap-2"
-                          >
-                            <Eye size={16} />
-                            <span>View</span>
+                      {/* Actions */}
+                      <td style={{ padding: "14px 14px" }} onClick={(e) => e.stopPropagation()}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                          <button onClick={(e) => handleDeleteClick(e, course)} className="action-btn"
+                            style={{ width: 32, height: 32, borderRadius: 6, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af" }}>
+                            <Trash2 size={15} />
                           </button>
-                          <button
-                            onClick={(e) => handleEdit(e, course.id)}
-                            className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium flex items-center justify-center gap-2"
-                          >
-                            <Edit size={16} />
-                            <span>Edit</span>
+                          <button onClick={(e) => handleEdit(e, course.id)} className="action-btn"
+                            style={{ width: 32, height: 32, borderRadius: 6, border: "none", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af" }}>
+                            <Edit size={15} />
                           </button>
-                          <button
-                            onClick={(e) => handleDeleteClick(e, course)}
-                            className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium flex items-center justify-center gap-2"
-                          >
-                            <Trash2 size={16} />
-                            <span>Delete</span>
-                          </button>
-                          {course.pdf_file && (
-                            <a
-                              href={`https://codingcloud.pythonanywhere.com${course.pdf_file}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium flex items-center justify-center gap-1"
-                            >
-                              <FileText size={14} />
-                              Syllabus
-                            </a>
-                          )}
                         </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           )}
-        </>
-      )}
+        </div>
 
-      {/* Course Details Modal */}
+        {/* Pagination */}
+        {filteredCourses.length > 0 && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", borderTop: "1px solid #f3f4f6" }}>
+            <button className="page-btn" onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1}>
+              Previous
+            </button>
+            <span style={{ fontSize: 13, color: "#6b7280" }}>
+              Page <strong style={{ color: "#111827" }}>{currentPage}</strong> of {totalPages}
+            </span>
+            <button className="page-btn" onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>
+              Next
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* ── Course Detail Modal ── */}
       {showModal && selectedCourse && (
-        <div
-          className="fixed inset-0 z-50 overflow-y-auto"
-          aria-labelledby="modal-title"
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="flex items-end sm:items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-            {/* Background overlay */}
-            <div
-              className="fixed inset-0 bg-gray-900/75 backdrop-blur-sm transition-opacity"
-              onClick={closeCourseModal}
-              aria-hidden="true"
-            />
+        <div style={{ position: "fixed", inset: 0, zIndex: 50, overflowY: "auto", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+          <div style={{ position: "fixed", inset: 0, background: "rgba(17,24,39,0.7)", backdropFilter: "blur(4px)" }} onClick={closeCourseModal} />
+          <div style={{ position: "relative", background: "#fff", borderRadius: 20, width: "100%", maxWidth: 800, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 25px 60px rgba(0,0,0,0.2)" }}>
+            <button onClick={closeCourseModal}
+              style={{ position: "absolute", top: 16, right: 16, zIndex: 10, width: 36, height: 36, background: "rgba(255,255,255,0.9)", border: "none", borderRadius: "50%", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.15)" }}>
+              <X size={18} color="#374151" />
+            </button>
 
-            {/* Modal panel */}
-            <div className="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl w-full">
-              {/* Close button */}
-              <button
-                onClick={closeCourseModal}
-                className="absolute top-4 right-4 z-10 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors shadow-lg"
-              >
-                <X size={20} className="text-gray-600" />
-              </button>
+            {/* Banner */}
+            <div style={{ position: "relative", height: 260, background: "#111827", borderRadius: "20px 20px 0 0", overflow: "hidden" }}>
+              <img
+                src={`https://codingcloud.pythonanywhere.com${selectedCourse.banner_img || selectedCourse.image}`}
+                alt={selectedCourse.name}
+                onError={(e) => { e.target.src = "https://via.placeholder.com/800x260?text=Course"; }}
+                style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.75 }}
+              />
+              <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 60%)" }} />
+              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "24px 28px" }}>
+                <h2 style={{ color: "#fff", fontWeight: 700, fontSize: 26, margin: "0 0 8px" }}>{selectedCourse.name}</h2>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  <span style={{ padding: "4px 12px", background: "rgba(255,255,255,0.2)", backdropFilter: "blur(4px)", borderRadius: 20, fontSize: 12, color: "#fff" }}>
+                    {selectedCourse.category_details.name}
+                  </span>
+                  {selectedCourse.level && (() => { const lvl = getLevelBadge(selectedCourse.level); return (
+                    <span style={{ padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600, background: lvl.bg, color: lvl.color }}>
+                      {selectedCourse.level}
+                    </span>
+                  ); })()}
+                </div>
+              </div>
+            </div>
 
-              {/* Modal Content */}
-              <div className="max-h-[90vh] overflow-y-auto">
-                {/* Banner Image */}
-                <div className="relative h-64 sm:h-80 bg-gray-900">
-                  <img
-                    src={`https://codingcloud.pythonanywhere.com${selectedCourse.banner_img || selectedCourse.image}`}
-                    alt={selectedCourse.name}
-                    className="w-full h-full object-cover opacity-80"
-                    onError={(e) => {
-                      e.target.src =
-                        "https://via.placeholder.com/1200x400?text=Course+Banner";
-                    }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+            <div style={{ padding: "28px" }}>
+              {/* Stats */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 12, marginBottom: 24 }}>
+                {[
+                  { icon: Clock, label: "Duration", val: selectedCourse.duration },
+                  { icon: BookOpen, label: "Lectures", val: selectedCourse.lecture },
+                  { icon: Users, label: "Students", val: selectedCourse.students },
+                  { icon: Globe, label: "Language", val: selectedCourse.language },
+                ].filter(s => s.val).map((s, i) => (
+                  <div key={i} style={{ background: "#f9fafb", borderRadius: 10, padding: "14px", textAlign: "center" }}>
+                    <s.icon size={18} style={{ color: "#2563eb", margin: "0 auto 6px" }} />
+                    <p style={{ fontSize: 11, color: "#9ca3af", margin: "0 0 2px" }}>{s.label}</p>
+                    <p style={{ fontSize: 14, fontWeight: 600, color: "#111827", margin: 0 }}>{s.val}</p>
+                  </div>
+                ))}
+              </div>
 
-                  {/* Title overlay */}
-                  <div className="absolute bottom-0 left-0 right-0 p-8">
-                    <h2 className="text-3xl sm:text-4xl font-bold text-white mb-2">
-                      {selectedCourse.name}
-                    </h2>
-                    <div className="flex flex-wrap gap-2">
-                      <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-sm text-white">
-                        {selectedCourse.category_details.name}
-                      </span>
-                      {selectedCourse.level && (
-                        <span
-                          className={`px-3 py-1 rounded-full text-sm font-medium ${getLevelBadge(selectedCourse.level)}`}
-                        >
-                          {selectedCourse.level}
-                        </span>
-                      )}
-                    </div>
+              {/* Description */}
+              <div style={{ marginBottom: 24 }}>
+                <h3 style={{ fontSize: 16, fontWeight: 600, color: "#111827", marginBottom: 10 }}>About this course</h3>
+                <p style={{ color: "#4b5563", lineHeight: 1.7, fontSize: 14, whiteSpace: "pre-line" }}>
+                  {selectedCourse.text || "No description available."}
+                </p>
+              </div>
+
+              {/* Keywords */}
+              {selectedCourse.keywords && (
+                <div style={{ marginBottom: 24 }}>
+                  <h4 style={{ fontSize: 13, fontWeight: 600, color: "#6b7280", marginBottom: 8 }}>Keywords</h4>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {selectedCourse.keywords.split(",").map((k, i) => (
+                      <span key={i} style={{ padding: "4px 12px", background: "#f3f4f6", borderRadius: 20, fontSize: 12, color: "#4b5563" }}>{k.trim()}</span>
+                    ))}
                   </div>
                 </div>
+              )}
 
-                {/* Course Details */}
-                <div className="p-8">
-                  {/* Stats Grid */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-                    {selectedCourse.duration && (
-                      <div className="bg-gray-50 rounded-lg p-4 text-center">
-                        <Clock
-                          size={20}
-                          className="mx-auto mb-2 text-indigo-600"
-                        />
-                        <p className="text-xs text-gray-500">Duration</p>
-                        <p className="font-semibold text-gray-900">
-                          {selectedCourse.duration}
-                        </p>
-                      </div>
-                    )}
-                    {selectedCourse.lecture && (
-                      <div className="bg-gray-50 rounded-lg p-4 text-center">
-                        <BookOpen
-                          size={20}
-                          className="mx-auto mb-2 text-indigo-600"
-                        />
-                        <p className="text-xs text-gray-500">Lectures</p>
-                        <p className="font-semibold text-gray-900">
-                          {selectedCourse.lecture}
-                        </p>
-                      </div>
-                    )}
-                    {selectedCourse.students && (
-                      <div className="bg-gray-50 rounded-lg p-4 text-center">
-                        <Users
-                          size={20}
-                          className="mx-auto mb-2 text-indigo-600"
-                        />
-                        <p className="text-xs text-gray-500">Students</p>
-                        <p className="font-semibold text-gray-900">
-                          {selectedCourse.students}
-                        </p>
-                      </div>
-                    )}
-                    {selectedCourse.language && (
-                      <div className="bg-gray-50 rounded-lg p-4 text-center">
-                        <Globe
-                          size={20}
-                          className="mx-auto mb-2 text-indigo-600"
-                        />
-                        <p className="text-xs text-gray-500">Language</p>
-                        <p className="font-semibold text-gray-900">
-                          {selectedCourse.language}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Description */}
-                  <div className="mb-8">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                      About this course
-                    </h3>
-                    <p className="text-gray-600 leading-relaxed whitespace-pre-line">
-                      {selectedCourse.text ||
-                        "No description available for this course."}
-                    </p>
-                  </div>
-
-                  {/* Additional Info */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
-                    {selectedCourse.meta_title && (
-                      <div>
-                        <h4 className="text-sm font-medium text-gray-500 mb-1">
-                          Meta Title
-                        </h4>
-                        <p className="text-gray-900">
-                          {selectedCourse.meta_title}
-                        </p>
-                      </div>
-                    )}
-                    {selectedCourse.meta_description && (
-                      <div>
-                        <h4 className="text-sm font-medium text-gray-500 mb-1">
-                          Meta Description
-                        </h4>
-                        <p className="text-gray-900">
-                          {selectedCourse.meta_description}
-                        </p>
-                      </div>
-                    )}
-                    {selectedCourse.keywords && (
-                      <div className="sm:col-span-2">
-                        <h4 className="text-sm font-medium text-gray-500 mb-2">
-                          Keywords
-                        </h4>
-                        <div className="flex flex-wrap gap-2">
-                          {selectedCourse.keywords
-                            .split(",")
-                            .map((keyword, index) => (
-                              <span
-                                key={index}
-                                className="px-3 py-1 bg-gray-100 rounded-full text-xs text-gray-600"
-                              >
-                                {keyword.trim()}
-                              </span>
-                            ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <button
-                      onClick={(e) => {
-                        closeCourseModal();
-                        handleEdit(e, selectedCourse.id);
-                      }}
-                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                      <Edit size={18} />
-                      Edit Course
-                    </button>
-                    {selectedCourse.pdf_file && (
-                      <a
-                        href={`https://codingcloud.pythonanywhere.com${selectedCourse.pdf_file}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-                      >
-                        <Download size={18} />
-                        Download Syllabus
-                      </a>
-                    )}
-                    <button
-                      onClick={closeCourseModal}
-                      className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                    >
-                      Close
-                    </button>
-                  </div>
-                </div>
+              {/* Actions */}
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                <button onClick={(e) => { closeCourseModal(); handleEdit(e, selectedCourse.id); }}
+                  style={{ flex: 1, minWidth: 120, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "11px", background: "#2563eb", color: "#fff", borderRadius: 10, border: "none", cursor: "pointer", fontWeight: 600, fontSize: 14 }}>
+                  <Edit size={16} />
+                  Edit Course
+                </button>
+                {selectedCourse.pdf_file && (
+                  <a href={`https://codingcloud.pythonanywhere.com${selectedCourse.pdf_file}`} target="_blank" rel="noopener noreferrer"
+                    style={{ flex: 1, minWidth: 120, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "11px", background: "#f3f4f6", color: "#374151", borderRadius: 10, border: "none", cursor: "pointer", fontWeight: 600, fontSize: 14, textDecoration: "none" }}>
+                    <Download size={16} />
+                    Syllabus
+                  </a>
+                )}
+                <button onClick={closeCourseModal}
+                  style={{ flex: 1, minWidth: 100, padding: "11px", border: "1px solid #e5e7eb", color: "#374151", borderRadius: 10, background: "#fff", cursor: "pointer", fontWeight: 600, fontSize: 14 }}>
+                  Close
+                </button>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
+      {/* ── Delete Modal ── */}
       {showDeleteModal && courseToDelete && (
-        <div
-          className="fixed inset-0 z-50 overflow-y-auto"
-          aria-labelledby="delete-modal-title"
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-            {/* Background overlay */}
-            <div
-              className="fixed inset-0 bg-gray-900/75 backdrop-blur-sm transition-opacity"
-              onClick={() => !deleteLoading && setShowDeleteModal(false)}
-              aria-hidden="true"
-            />
+        <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+          <div style={{ position: "fixed", inset: 0, background: "rgba(17,24,39,0.7)", backdropFilter: "blur(4px)" }}
+            onClick={() => setShowDeleteModal(false)} />
+          <div style={{ position: "relative", background: "#fff", borderRadius: 20, width: "100%", maxWidth: 440, padding: 32, boxShadow: "0 25px 60px rgba(0,0,0,0.2)" }}>
+            <div style={{ width: 60, height: 60, borderRadius: "50%", background: "#fee2e2", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+              <AlertCircle size={28} color="#dc2626" />
+            </div>
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: "#111827", textAlign: "center", marginBottom: 8 }}>Delete Course</h3>
+            <p style={{ fontSize: 14, color: "#6b7280", textAlign: "center", marginBottom: 24, lineHeight: 1.6 }}>
+              Are you sure you want to delete <strong style={{ color: "#111827" }}>"{courseToDelete.name}"</strong>? This cannot be undone.
+            </p>
 
-            {/* Modal panel */}
-            <div className="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full">
-              <div className="p-6">
-                {/* Icon */}
-                <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
-                  <AlertCircle size={32} className="text-red-600" />
-                </div>
-
-                {/* Title */}
-                <h3 className="text-lg font-semibold text-gray-900 text-center mb-2">
-                  Delete Course
-                </h3>
-
-                {/* Message */}
-                <p className="text-sm text-gray-500 text-center mb-6">
-                  Are you sure you want to delete <span className="font-semibold text-gray-900">"{courseToDelete.name}"</span>? 
-                  This action cannot be undone.
-                </p>
-
-                {/* Success/Error Messages */}
-                {deleteSuccess && (
-                  <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
-                    <CheckCircle size={16} className="text-green-600" />
-                    <p className="text-sm text-green-600">{deleteSuccess}</p>
-                  </div>
-                )}
-
-                {deleteError && (
-                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
-                    <X size={16} className="text-red-600" />
-                    <p className="text-sm text-red-600">{deleteError}</p>
-                  </div>
-                )}
-
-                {/* Buttons */}
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setShowDeleteModal(false)}
-                    disabled={deleteLoading}
-                    className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleDeleteConfirm}
-                    disabled={deleteLoading || deleteSuccess}
-                    className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  >
-                    {deleteLoading ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        Deleting...
-                      </>
-                    ) : (
-                      <>
-                        <Trash2 size={18} />
-                        Delete
-                      </>
-                    )}
-                  </button>
-                </div>
+            {deleteSuccess && (
+              <div style={{ marginBottom: 16, padding: "10px 14px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10, display: "flex", alignItems: "center", gap: 8 }}>
+                <CheckCircle size={16} color="#16a34a" />
+                <p style={{ fontSize: 13, color: "#16a34a", margin: 0 }}>{deleteSuccess}</p>
               </div>
+            )}
+
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={() => setShowDeleteModal(false)}
+                style={{ flex: 1, padding: "11px", border: "1px solid #e5e7eb", borderRadius: 10, background: "#fff", color: "#374151", fontWeight: 600, fontSize: 14, cursor: "pointer" }}>
+                Cancel
+              </button>
+              <button onClick={handleDeleteConfirm}
+                style={{ flex: 1, padding: "11px", border: "none", borderRadius: 10, background: "#dc2626", color: "#fff", fontWeight: 600, fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                <Trash2 size={16} /> Delete
+              </button>
             </div>
           </div>
         </div>

@@ -1,144 +1,79 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Search,
-  Plus,
-  Edit,
-  Trash2,
-  AlertCircle,
-  CheckCircle,
-  X,
-  Star,
-  User,
-  Calendar,
-  Filter,
-  ChevronDown,
-  ChevronUp,
-  MessageSquare,
+  Search, Plus, Edit, Trash2, AlertCircle, CheckCircle,
+  X, Star, User, Calendar, ChevronDown, MessageSquare,
+  ArrowUpRight, RefreshCw,
 } from "lucide-react";
+
+const ITEMS_PER_PAGE = 10;
 
 export default function Testimonials() {
   const navigate = useNavigate();
 
-  // State for data
   const [testimonials, setTestimonials] = useState([]);
   const [filteredTestimonials, setFilteredTestimonials] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // UI State
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRating, setSelectedRating] = useState("all");
   const [sortOrder, setSortOrder] = useState("newest");
-  const [expandedCards, setExpandedCards] = useState(new Set());
 
-  // Modal states
+  const [selectedRows, setSelectedRows] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [testimonialToDelete, setTestimonialToDelete] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteSuccess, setDeleteSuccess] = useState("");
   const [deleteError, setDeleteError] = useState("");
 
-  // Fetch testimonials
   const fetchTestimonials = async () => {
     try {
       setLoading(true);
-      const response = await fetch(
-        "https://codingcloud.pythonanywhere.com/testimonials/",
-      );
-
+      const response = await fetch("https://codingcloud.pythonanywhere.com/testimonials/");
       if (response.ok) {
         const data = await response.json();
-        const testimonialsList = data.data || [];
-        setTestimonials(testimonialsList);
-        setFilteredTestimonials(testimonialsList);
+        const list = data.data || [];
+        setTestimonials(list);
+        setFilteredTestimonials(list);
       } else {
         setError("Failed to fetch testimonials.");
       }
     } catch (err) {
       setError("Network error. Please try again.");
-      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchTestimonials();
-  }, []);
+  useEffect(() => { fetchTestimonials(); }, []);
 
-  // Filter and sort testimonials
   useEffect(() => {
     let filtered = [...testimonials];
-
-    // Apply search filter
     if (searchTerm) {
-      const lowerSearch = searchTerm.toLowerCase();
-      filtered = filtered.filter(
-        (t) =>
-          t.name.toLowerCase().includes(lowerSearch) ||
-          t.review.toLowerCase().includes(lowerSearch),
+      const lower = searchTerm.toLowerCase();
+      filtered = filtered.filter(t =>
+        t.name.toLowerCase().includes(lower) ||
+        t.review.toLowerCase().includes(lower)
       );
     }
-
-    // Apply rating filter
     if (selectedRating !== "all") {
-      filtered = filtered.filter((t) => t.rating === parseInt(selectedRating));
+      filtered = filtered.filter(t => t.rating === parseInt(selectedRating));
     }
-
-    // Apply sorting
     filtered.sort((a, b) => {
-      const dateA = new Date(a.created_at);
-      const dateB = new Date(b.created_at);
-      return sortOrder === "newest" ? dateB - dateA : dateA - dateB;
+      const dA = new Date(a.created_at), dB = new Date(b.created_at);
+      return sortOrder === "newest" ? dB - dA : dA - dB;
     });
-
     setFilteredTestimonials(filtered);
+    setCurrentPage(1);
+    setSelectedRows([]);
   }, [searchTerm, selectedRating, sortOrder, testimonials]);
 
-  // Toggle card expansion
-  const toggleCard = (id) => {
-    setExpandedCards((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(id)) {
-        newSet.delete(id);
-      } else {
-        newSet.add(id);
-      }
-      return newSet;
-    });
-  };
+  const formatDate = (dateString) =>
+    new Intl.DateTimeFormat("en-US", { year: "numeric", month: "short", day: "numeric" }).format(new Date(dateString));
 
-  // Format date
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    }).format(date);
-  };
-
-  // Render stars for rating
-  const renderStars = (rating) => {
-    return (
-      <div className="flex items-center gap-0.5">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <Star
-            key={star}
-            size={16}
-            className={`${
-              star <= rating
-                ? "text-yellow-400 fill-yellow-400"
-                : "text-gray-300"
-            } transition-colors`}
-          />
-        ))}
-      </div>
-    );
-  };
-
-  // Delete handlers
   const handleDeleteClick = (testimonial) => {
     setTestimonialToDelete(testimonial);
     setShowDeleteModal(true);
@@ -148,386 +83,376 @@ export default function Testimonials() {
 
   const handleDeleteConfirm = async () => {
     if (!testimonialToDelete) return;
-
     setDeleteLoading(true);
     setDeleteError("");
     setDeleteSuccess("");
-
     try {
       const response = await fetch(
         `https://codingcloud.pythonanywhere.com/testimonials/${testimonialToDelete.id}/`,
-        {
-          method: "DELETE",
-        },
+        { method: "DELETE" }
       );
-
       if (response.ok || response.status === 204) {
         setDeleteSuccess("Testimonial deleted successfully!");
-        fetchTestimonials(); // Refresh list
-        setTimeout(() => {
-          setShowDeleteModal(false);
-          setTestimonialToDelete(null);
-          setDeleteSuccess("");
-        }, 1500);
+        fetchTestimonials();
+        setTimeout(() => { setShowDeleteModal(false); setTestimonialToDelete(null); setDeleteSuccess(""); }, 1500);
       } else {
         try {
           const data = await response.json();
           setDeleteError(data.message || "Failed to delete testimonial.");
-        } catch {
-          setDeleteError(`HTTP Error: ${response.status}`);
-        }
+        } catch { setDeleteError(`HTTP Error: ${response.status}`); }
       }
     } catch (err) {
-      console.error("Error deleting testimonial:", err);
       setDeleteError("Network error. Please try again.");
     } finally {
       setDeleteLoading(false);
     }
   };
 
-  const handleEdit = (testimonial) => {
+  const handleEdit = (testimonial) =>
     navigate(`/edit-testimonial/${testimonial.id}`, { state: { testimonial } });
+
+  // Pagination
+  const totalPages = Math.ceil(filteredTestimonials.length / ITEMS_PER_PAGE);
+  const paginated = filteredTestimonials.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  // Checkboxes
+  const allOnPageSelected = paginated.length > 0 && paginated.every(t => selectedRows.includes(t.id));
+  const toggleSelectAll = () => {
+    if (allOnPageSelected) setSelectedRows(prev => prev.filter(id => !paginated.map(t => t.id).includes(id)));
+    else setSelectedRows(prev => [...prev, ...paginated.map(t => t.id).filter(id => !prev.includes(id))]);
+  };
+  const toggleRow = (id) => setSelectedRows(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+
+  const avatarColors = ["#2563eb", "#7c3aed", "#0891b2", "#059669", "#d97706", "#dc2626"];
+  const getColor = (id) => avatarColors[id % avatarColors.length];
+
+  // Stats
+  const avgRating = testimonials.length
+    ? (testimonials.reduce((a, t) => a + t.rating, 0) / testimonials.length).toFixed(1)
+    : 0;
+  const fiveStarCount = testimonials.filter(t => t.rating === 5).length;
+
+  const statCards = [
+    { label: "Total Reviews", value: testimonials.length, pct: 72 },
+    { label: "Avg Rating", value: `${avgRating}★`, pct: (parseFloat(avgRating) / 5) * 100 },
+    { label: "5-Star Reviews", value: fiveStarCount, pct: testimonials.length ? (fiveStarCount / testimonials.length) * 100 : 0 },
+    { label: "Filtered", value: filteredTestimonials.length, pct: 55 },
+  ];
+
+  const CircularProgress = ({ pct }) => {
+    const r = 20, circ = 2 * Math.PI * r;
+    const offset = circ - (Math.min(pct, 100) / 100) * circ;
+    return (
+      <svg width="52" height="52" viewBox="0 0 48 48">
+        <circle cx="24" cy="24" r={r} fill="none" stroke="#e5e7eb" strokeWidth="4" />
+        <circle cx="24" cy="24" r={r} fill="none" stroke="#2563eb" strokeWidth="4"
+          strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round" transform="rotate(-90 24 24)" />
+        <foreignObject x="8" y="8" width="32" height="32">
+          <div style={{ width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <ArrowUpRight size={14} color="#2563eb" />
+          </div>
+        </foreignObject>
+      </svg>
+    );
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="relative">
-          <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <MessageSquare
-              size={24}
-              className="text-indigo-600 animate-pulse"
-            />
-          </div>
-          <p className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-gray-500 text-sm whitespace-nowrap">
-            Loading testimonials...
-          </p>
-        </div>
-      </div>
-    );
-  }
+  const StarRating = ({ rating, size = 13 }) => (
+    <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+      {[1, 2, 3, 4, 5].map(s => (
+        <Star key={s} size={size}
+          style={{ color: s <= rating ? "#facc15" : "#e5e7eb", fill: s <= rating ? "#facc15" : "#e5e7eb" }} />
+      ))}
+    </div>
+  );
 
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center">
-          <div className="bg-red-50 rounded-full p-4 w-20 h-20 mx-auto mb-4 flex items-center justify-center">
-            <X size={32} className="text-red-500" />
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            Oops! Something went wrong
-          </h3>
-          <p className="text-gray-500 mb-4">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-          >
-            Try Again
-          </button>
-        </div>
+  if (loading) return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
+      <div style={{ textAlign: "center" }}>
+        <div style={{ width: 48, height: 48, border: "3px solid #e5e7eb", borderTopColor: "#2563eb", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 12px" }} />
+        <p style={{ color: "#6b7280", fontSize: 14, fontFamily: "'DM Sans', sans-serif" }}>Loading testimonials...</p>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
-    );
-  }
+    </div>
+  );
+
+  if (error) return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh", fontFamily: "'DM Sans', sans-serif" }}>
+      <div style={{ textAlign: "center" }}>
+        <div style={{ background: "#fee2e2", borderRadius: "50%", width: 64, height: 64, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+          <X size={28} color="#dc2626" />
+        </div>
+        <h3 style={{ fontSize: 18, fontWeight: 600, color: "#111827", marginBottom: 8 }}>Something went wrong</h3>
+        <p style={{ color: "#6b7280", marginBottom: 16 }}>{error}</p>
+        <button onClick={() => window.location.reload()}
+          style={{ padding: "8px 20px", background: "#2563eb", color: "#fff", borderRadius: 8, border: "none", cursor: "pointer", fontWeight: 500, fontFamily: "inherit" }}>
+          Try Again
+        </button>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl p-8 text-white">
-        <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-40 h-40 bg-purple-500/20 rounded-full blur-3xl"></div>
+    <div style={{ fontFamily: "'DM Sans', 'Segoe UI', sans-serif", background: "#f4f5f7", minHeight: "100vh", padding: "24px 20px" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+        .test-row:hover { background: #f9fafb; }
+        .action-btn-t2 { background: none; border: none; cursor: pointer; width: 30px; height: 30px; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #9ca3af; transition: background 0.15s, color 0.15s; }
+        .action-btn-t2:hover { background: #f3f4f6; color: #374151; }
+        .action-btn-t2.del:hover { background: #fef2f2; color: #f87171; }
+        .cb-t2 { width: 17px; height: 17px; border: 1.5px solid #d1d5db; border-radius: 4px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: border-color 0.15s, background 0.15s; }
+        .cb-t2.checked { background: #2563eb; border-color: #2563eb; }
+        .page-btn-t2 { border: 1px solid #e5e7eb; border-radius: 6px; padding: 6px 14px; font-size: 13px; font-weight: 500; background: #fff; color: #374151; cursor: pointer; font-family: inherit; transition: background 0.15s; }
+        .page-btn-t2:hover:not(:disabled) { background: #f3f4f6; }
+        .page-btn-t2:disabled { opacity: 0.4; cursor: not-allowed; }
+        @media (max-width: 640px) {
+          .stat-grid-t2 { grid-template-columns: 1fr 1fr !important; }
+          .table-wrap-t2 { overflow-x: auto; }
+          .hide-mob-t2 { display: none !important; }
+          .toolbar-t2 { flex-wrap: wrap; }
+        }
+        @media (max-width: 400px) { .stat-grid-t2 { grid-template-columns: 1fr !important; } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
 
-        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">Testimonials</h1>
-            <p className="text-indigo-100 text-sm">
-              Manage your customer reviews and feedback
-            </p>
+      {/* ── Stat Cards ── */}
+      <div className="stat-grid-t2" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16, marginBottom: 24 }}>
+        {statCards.map((s, i) => (
+          <div key={i} style={{ background: "#fff", borderRadius: 14, padding: "18px 20px", display: "flex", alignItems: "center", gap: 16, boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
+            <CircularProgress pct={s.pct} />
+            <div>
+              <p style={{ fontSize: 12, color: "#9ca3af", margin: 0, fontWeight: 500 }}>{s.label}</p>
+              <p style={{ fontSize: 22, fontWeight: 700, color: "#111827", margin: "2px 0 0" }}>{s.value}</p>
+            </div>
           </div>
+        ))}
+      </div>
 
-          <button
-            onClick={() => navigate("/add-testimonial")}
-            className="px-6 py-3 bg-white text-indigo-600 rounded-xl hover:bg-indigo-50 transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl active:scale-95 font-medium group"
-          >
-            <Plus
-              size={20}
-              className="group-hover:rotate-90 transition-transform duration-200"
-            />
-            <span>Add Testimonial</span>
+      {/* ── Table Card ── */}
+      <div style={{ background: "#fff", borderRadius: 16, boxShadow: "0 1px 4px rgba(0,0,0,0.07)", overflow: "hidden" }}>
+
+        {/* Toolbar */}
+        <div className="toolbar-t2" style={{ display: "flex", alignItems: "center", gap: 10, padding: "16px 20px", borderBottom: "1px solid #f3f4f6" }}>
+          <button onClick={() => navigate("/add-testimonial")}
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", borderRadius: 8, background: "#2563eb", color: "#fff", fontSize: 13, fontWeight: 600, border: "none", cursor: "pointer", fontFamily: "inherit" }}>
+            <Plus size={15} />
+            Add Testimonial
           </button>
-        </div>
-      </div>
 
-      {/* Search and Filters */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 space-y-4">
-        {/* Search */}
-        <div className="relative">
-          <Search
-            size={20}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-          />
-          <input
-            type="text"
-            placeholder="Search by name or review..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-          />
-          {searchTerm && (
-            <button
-              onClick={() => setSearchTerm("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1 rounded-full transition-colors"
-            >
-              <X size={16} />
-            </button>
+          <button onClick={fetchTestimonials}
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", border: "1px solid #e5e7eb", borderRadius: 8, background: "#fff", color: "#374151", fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: "inherit" }}>
+            <RefreshCw size={14} />
+            <span className="hide-mob-t2">Refresh</span>
+          </button>
+
+          {/* Rating filter */}
+          <select value={selectedRating} onChange={(e) => setSelectedRating(e.target.value)}
+            style={{ padding: "8px 12px", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, color: "#374151", background: "#fff", outline: "none", fontFamily: "inherit", cursor: "pointer" }}>
+            <option value="all">All Ratings</option>
+            {[5, 4, 3, 2, 1].map(r => <option key={r} value={r}>{r} Stars</option>)}
+          </select>
+
+          {/* Sort */}
+          <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}
+            style={{ padding: "8px 12px", border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, color: "#374151", background: "#fff", outline: "none", fontFamily: "inherit", cursor: "pointer" }}
+            className="hide-mob-t2">
+            <option value="newest">Newest First</option>
+            <option value="oldest">Oldest First</option>
+          </select>
+
+          {selectedRows.length > 0 && (
+            <span style={{ fontSize: 13, color: "#6b7280", fontWeight: 500 }}>{selectedRows.length} selected</span>
           )}
+
+          <div style={{ flex: 1 }} />
+
+          {/* Search */}
+          <div style={{ position: "relative", minWidth: 220 }}>
+            <Search size={15} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#9ca3af" }} />
+            <input type="text" placeholder="Search testimonials..." value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{ paddingLeft: 32, paddingRight: searchTerm ? 32 : 12, paddingTop: 8, paddingBottom: 8, border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, color: "#374151", background: "#f9fafb", outline: "none", width: "100%", fontFamily: "inherit" }} />
+            {searchTerm && (
+              <button onClick={() => setSearchTerm("")}
+                style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#9ca3af", padding: 0, display: "flex" }}>
+                <X size={14} />
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* Filter and Sort Controls */}
-        <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3 flex-wrap">
-            {/* Rating Filter */}
-            <div className="flex items-center gap-2">
-              <Filter size={18} className="text-gray-400" />
-              <select
-                value={selectedRating}
-                onChange={(e) => setSelectedRating(e.target.value)}
-                className="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              >
-                <option value="all">All Ratings</option>
-                <option value="5">5 Stars</option>
-                <option value="4">4 Stars</option>
-                <option value="3">3 Stars</option>
-                <option value="2">2 Stars</option>
-                <option value="1">1 Star</option>
-              </select>
+        {/* Table */}
+        <div className="table-wrap-t2">
+          {filteredTestimonials.length === 0 ? (
+            <div style={{ padding: "60px 20px", textAlign: "center" }}>
+              <div style={{ background: "#f3f4f6", borderRadius: "50%", width: 64, height: 64, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+                <MessageSquare size={28} color="#9ca3af" />
+              </div>
+              <h3 style={{ fontSize: 16, fontWeight: 600, color: "#111827", marginBottom: 6 }}>No testimonials found</h3>
+              <p style={{ color: "#6b7280", fontSize: 14, marginBottom: 16 }}>
+                {searchTerm || selectedRating !== "all"
+                  ? "Try adjusting your search or filters."
+                  : "Get started by adding your first testimonial."}
+              </p>
+              {(searchTerm || selectedRating !== "all") && (
+                <button onClick={() => { setSearchTerm(""); setSelectedRating("all"); }}
+                  style={{ padding: "8px 20px", background: "#2563eb", color: "#fff", borderRadius: 8, border: "none", cursor: "pointer", fontWeight: 500, fontFamily: "inherit" }}>
+                  Clear Filters
+                </button>
+              )}
             </div>
-
-            {/* Sort Order */}
-            <select
-              value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value)}
-              className="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-            >
-              <option value="newest">Newest First</option>
-              <option value="oldest">Oldest First</option>
-            </select>
-          </div>
-
-          {/* Results Count */}
-          <span className="text-sm text-gray-500 bg-gray-100 px-3 py-2 rounded-xl">
-            {filteredTestimonials.length}{" "}
-            {filteredTestimonials.length === 1 ? "testimonial" : "testimonials"}
-          </span>
-        </div>
-      </div>
-
-      {/* Testimonials Grid */}
-      {filteredTestimonials.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 p-16 text-center">
-          <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-full p-6 w-28 h-28 mx-auto mb-6 flex items-center justify-center">
-            <MessageSquare size={48} className="text-indigo-400" />
-          </div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">
-            No testimonials found
-          </h3>
-          <p className="text-gray-500 mb-6 max-w-md mx-auto">
-            {searchTerm || selectedRating !== "all"
-              ? "Try adjusting your search or filters to find what you're looking for."
-              : "Get started by adding your first testimonial."}
-          </p>
-          {(searchTerm || selectedRating !== "all") && (
-            <button
-              onClick={() => {
-                setSearchTerm("");
-                setSelectedRating("all");
-              }}
-              className="px-4 py-2 text-indigo-600 hover:text-indigo-700 font-medium"
-            >
-              Clear filters
-            </button>
-          )}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredTestimonials.map((testimonial) => (
-            <div
-              key={testimonial.id}
-              className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-all duration-200 group"
-            >
-              {/* Card Header */}
-              <div className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    {/* Avatar */}
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center overflow-hidden border-2 border-white shadow-sm">
-                      {testimonial.image &&
-                      !testimonial.image.includes("default.jpg") ? (
-                        <img
-                          src={testimonial.image}
-                          alt={testimonial.name}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = "https://via.placeholder.com/48";
-                          }}
-                        />
-                      ) : (
-                        <User size={24} className="text-indigo-600" />
-                      )}
+          ) : (
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+              <thead>
+                <tr style={{ borderBottom: "1px solid #f3f4f6" }}>
+                  <th style={{ padding: "12px 16px", width: 44 }}>
+                    <div className={`cb-t2${allOnPageSelected ? " checked" : ""}`} onClick={toggleSelectAll}>
+                      {allOnPageSelected && <svg width="10" height="10" viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2" fill="none" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>}
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900">
-                        {testimonial.name}
-                      </h3>
-                      <div className="flex items-center gap-2 mt-1">
-                        {renderStars(testimonial.rating)}
-                        <span className="text-xs text-gray-400">
-                          ({testimonial.rating}/5)
+                  </th>
+                  {["Reviewer", "Rating", "Review", "Date", ""].map((col, i) => (
+                    <th key={i} className={i >= 2 && i <= 3 ? "hide-mob-t2" : ""}
+                      style={{ padding: "12px 14px", textAlign: "left", fontSize: 12, fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap" }}>
+                      <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                        {col}{col && <ChevronDown size={12} />}
+                      </span>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {paginated.map((testimonial) => {
+                  const isSelected = selectedRows.includes(testimonial.id);
+                  const color = getColor(testimonial.id);
+                  const hasAvatar = testimonial.image && !testimonial.image.includes("default.jpg");
+                  return (
+                    <tr key={testimonial.id} className="test-row"
+                      style={{ borderBottom: "1px solid #f9fafb", background: isSelected ? "#eff6ff" : "transparent" }}>
+
+                      {/* Checkbox */}
+                      <td style={{ padding: "14px 16px" }}>
+                        <div className={`cb-t2${isSelected ? " checked" : ""}`} onClick={() => toggleRow(testimonial.id)}>
+                          {isSelected && <svg width="10" height="10" viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2" fill="none" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+                        </div>
+                      </td>
+
+                      {/* Reviewer */}
+                      <td style={{ padding: "14px 14px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <div style={{ width: 38, height: 38, borderRadius: 10, background: hasAvatar ? "#f3f4f6" : color, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
+                            {hasAvatar ? (
+                              <img src={testimonial.image} alt={testimonial.name}
+                                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                onError={(e) => { e.target.onerror = null; e.target.style.display = "none"; }} />
+                            ) : (
+                              <User size={16} color="#fff" />
+                            )}
+                          </div>
+                          <div>
+                            <p style={{ fontWeight: 600, color: "#111827", margin: 0, fontSize: 13 }}>{testimonial.name}</p>
+                            <p style={{ color: "#9ca3af", margin: "2px 0 0", fontSize: 11 }}>ID: {testimonial.id}</p>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Rating */}
+                      <td style={{ padding: "14px 14px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <StarRating rating={testimonial.rating} />
+                          <span style={{ fontSize: 12, color: "#6b7280", fontWeight: 500 }}>({testimonial.rating}/5)</span>
+                        </div>
+                      </td>
+
+                      {/* Review */}
+                      <td className="hide-mob-t2" style={{ padding: "14px 14px", maxWidth: 280 }}>
+                        <p style={{ margin: 0, color: "#4b5563", fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {testimonial.review}
+                        </p>
+                      </td>
+
+                      {/* Date */}
+                      <td className="hide-mob-t2" style={{ padding: "14px 14px" }}>
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, color: "#6b7280" }}>
+                          <Calendar size={12} color="#9ca3af" />
+                          {formatDate(testimonial.created_at)}
                         </span>
-                      </div>
-                    </div>
-                  </div>
-                  <span className="text-xs text-gray-400">
-                    ID: {testimonial.id}
-                  </span>
-                </div>
+                      </td>
 
-                {/* Review Content */}
-                <div className="mt-4">
-                  <div className="text-gray-700 text-sm leading-relaxed">
-                    {expandedCards.has(testimonial.id) ? (
-                      <p>{testimonial.review}</p>
-                    ) : (
-                      <p>
-                        {testimonial.review.length > 100
-                          ? `${testimonial.review.substring(0, 100)}...`
-                          : testimonial.review}
-                      </p>
-                    )}
-                  </div>
-
-                  {testimonial.review.length > 100 && (
-                    <button
-                      onClick={() => toggleCard(testimonial.id)}
-                      className="mt-2 text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1"
-                    >
-                      {expandedCards.has(testimonial.id) ? (
-                        <>
-                          Show Less <ChevronUp size={14} />
-                        </>
-                      ) : (
-                        <>
-                          Read More <ChevronDown size={14} />
-                        </>
-                      )}
-                    </button>
-                  )}
-                </div>
-
-                {/* Date */}
-                <div className="mt-4 flex items-center gap-1 text-xs text-gray-400">
-                  <Calendar size={14} />
-                  <span>{formatDate(testimonial.created_at)}</span>
-                </div>
-              </div>
-
-              {/* Card Footer with Actions */}
-              <div className="border-t border-gray-100 bg-gray-50/50 p-4 flex items-center justify-end gap-2">
-                <button
-                  onClick={() => handleEdit(testimonial)}
-                  className="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-indigo-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors flex items-center gap-2"
-                >
-                  <Edit size={16} />
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDeleteClick(testimonial)}
-                  className="px-3 py-2 bg-white border border-red-200 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors flex items-center gap-2"
-                >
-                  <Trash2 size={16} />
-                  Delete
-                </button>
-              </div>
-            </div>
-          ))}
+                      {/* Actions */}
+                      <td style={{ padding: "14px 14px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+                          <button className="action-btn-t2" onClick={() => handleEdit(testimonial)} title="Edit">
+                            <Edit size={14} />
+                          </button>
+                          <button className="action-btn-t2 del" onClick={() => handleDeleteClick(testimonial)} title="Delete">
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
         </div>
-      )}
 
-      {/* Delete Confirmation Modal */}
+        {/* Pagination */}
+        {filteredTestimonials.length > 0 && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", borderTop: "1px solid #f3f4f6" }}>
+            <button className="page-btn-t2" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>Previous</button>
+            <span style={{ fontSize: 13, color: "#6b7280" }}>
+              Page <strong style={{ color: "#111827" }}>{currentPage}</strong> of {totalPages}&nbsp;·&nbsp;{filteredTestimonials.length} testimonials
+            </span>
+            <button className="page-btn-t2" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>Next</button>
+          </div>
+        )}
+      </div>
+
+      {/* ── Delete Modal ── */}
       {showDeleteModal && testimonialToDelete && (
-        <div
-          className="fixed inset-0 z-50 overflow-y-auto"
-          aria-labelledby="delete-modal-title"
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-            <div
-              className="fixed inset-0 bg-gray-900/75 backdrop-blur-sm transition-opacity"
-              onClick={() => !deleteLoading && setShowDeleteModal(false)}
-              aria-hidden="true"
-            />
+        <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+          <div style={{ position: "fixed", inset: 0, background: "rgba(17,24,39,0.7)", backdropFilter: "blur(4px)" }}
+            onClick={() => !deleteLoading && setShowDeleteModal(false)} />
+          <div style={{ position: "relative", background: "#fff", borderRadius: 20, width: "100%", maxWidth: 440, padding: 32, boxShadow: "0 25px 60px rgba(0,0,0,0.2)" }}>
+            <div style={{ width: 56, height: 56, borderRadius: "50%", background: "#fee2e2", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+              <AlertCircle size={26} color="#dc2626" />
+            </div>
+            <h3 style={{ fontSize: 17, fontWeight: 700, color: "#111827", textAlign: "center", marginBottom: 8 }}>Delete Testimonial</h3>
+            <p style={{ fontSize: 13, color: "#6b7280", textAlign: "center", marginBottom: 20, lineHeight: 1.6 }}>
+              Are you sure you want to delete the testimonial from{" "}
+              <strong style={{ color: "#111827" }}>{testimonialToDelete.name}</strong>? This cannot be undone.
+            </p>
 
-            <div className="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full">
-              <div className="p-6">
-                <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
-                  <AlertCircle size={32} className="text-red-600" />
-                </div>
-
-                <h3 className="text-lg font-semibold text-gray-900 text-center mb-2">
-                  Delete Testimonial
-                </h3>
-
-                <p className="text-sm text-gray-500 text-center mb-6">
-                  Are you sure you want to delete the testimonial from{" "}
-                  <span className="font-semibold text-gray-900 border-b border-gray-300 pb-0.5">
-                    {testimonialToDelete.name}
-                  </span>
-                  ? This action cannot be undone.
-                </p>
-
-                {deleteSuccess && (
-                  <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
-                    <CheckCircle size={16} className="text-green-600" />
-                    <p className="text-sm text-green-600">{deleteSuccess}</p>
-                  </div>
-                )}
-
-                {deleteError && (
-                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
-                    <AlertCircle
-                      size={16}
-                      className="text-red-600 mt-0.5 shrink-0"
-                    />
-                    <p className="text-sm text-red-600">{deleteError}</p>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-2 gap-3 mt-2">
-                  <button
-                    onClick={() => setShowDeleteModal(false)}
-                    disabled={deleteLoading}
-                    className="w-full px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 font-medium"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleDeleteConfirm}
-                    disabled={deleteLoading}
-                    className="w-full px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 font-medium"
-                  >
-                    {deleteLoading ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        Deleting...
-                      </>
-                    ) : (
-                      "Delete"
-                    )}
-                  </button>
-                </div>
+            {deleteSuccess && (
+              <div style={{ marginBottom: 14, padding: "10px 14px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10, display: "flex", alignItems: "center", gap: 8 }}>
+                <CheckCircle size={15} color="#16a34a" />
+                <p style={{ fontSize: 13, color: "#16a34a", margin: 0 }}>{deleteSuccess}</p>
               </div>
+            )}
+            {deleteError && (
+              <div style={{ marginBottom: 14, padding: "10px 14px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 10, display: "flex", alignItems: "center", gap: 8 }}>
+                <X size={15} color="#dc2626" />
+                <p style={{ fontSize: 13, color: "#dc2626", margin: 0 }}>{deleteError}</p>
+              </div>
+            )}
+
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={() => setShowDeleteModal(false)} disabled={deleteLoading}
+                style={{ flex: 1, padding: 11, border: "1px solid #e5e7eb", borderRadius: 10, background: "#fff", color: "#374151", fontWeight: 600, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
+                Cancel
+              </button>
+              <button onClick={handleDeleteConfirm} disabled={deleteLoading || !!deleteSuccess}
+                style={{ flex: 1, padding: 11, border: "none", borderRadius: 10, background: "#dc2626", color: "#fff", fontWeight: 600, fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "inherit", opacity: (deleteLoading || !!deleteSuccess) ? 0.6 : 1 }}>
+                {deleteLoading ? (
+                  <>
+                    <div style={{ width: 15, height: 15, border: "2px solid rgba(255,255,255,0.4)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                    Deleting...
+                  </>
+                ) : <><Trash2 size={15} /> Delete</>}
+              </button>
             </div>
           </div>
         </div>
