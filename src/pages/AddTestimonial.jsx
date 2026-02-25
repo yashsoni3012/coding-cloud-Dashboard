@@ -347,7 +347,6 @@ export default function AddTestimonial() {
           </button>
           <div>
             <h1 style={{ fontSize: 20, fontWeight: 700, color: "#111827", margin: 0 }}>Add New Testimonial</h1>
-            <p style={{ fontSize: 12, color: "#9ca3af", margin: "2px 0 0" }}>Share your customer's experience and feedback</p>
           </div>
         </div>
 
@@ -409,13 +408,6 @@ export default function AddTestimonial() {
       <form onSubmit={handleSubmit}>
         {/* ── Testimonial Information ── */}
         <div style={sectionStyle}>
-          <div style={sectionHeaderStyle}>
-            <div style={sectionDotStyle("#2563eb")} />
-            <div>
-              <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: "#111827" }}>Testimonial Information</p>
-              <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>Required fields are marked with *</p>
-            </div>
-          </div>
           
           <div style={{ padding: 24 }}>
             {/* Name */}
@@ -507,14 +499,6 @@ export default function AddTestimonial() {
                       </svg>
                     </div>
                   </div>
-                  
-                  {/* Show selected course info */}
-                  {formData.course && (
-                    <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 5 }}>
-                      <p style={{ margin: 0 }}>Selected: {getCourseName(formData.course)}</p>
-                      <p style={{ margin: "2px 0 0" }}>Category: {getCategoryNameFromCourse(formData.course)}</p>
-                    </div>
-                  )}
                 </>
               )}
             </div>
@@ -602,60 +586,6 @@ export default function AddTestimonial() {
               </div>
             </div>
           </div>
-        </div>
-
-        {/* ── Help Section ── */}
-        <div style={sectionStyle}>
-          <div style={sectionHeaderStyle}>
-            <div style={sectionDotStyle("#10b981")} />
-            <div>
-              <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: "#111827" }}>Testimonial Tips</p>
-              <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>Guidelines for creating effective testimonials</p>
-            </div>
-          </div>
-          
-          <div style={{ padding: 24 }}>
-            <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-              <div style={{ 
-                width: 36, 
-                height: 36, 
-                borderRadius: 10, 
-                background: "#e6f7e6", 
-                display: "flex", 
-                alignItems: "center", 
-                justifyContent: "center",
-                flexShrink: 0
-              }}>
-                <HelpCircle size={16} color="#10b981" />
-              </div>
-              <ul style={{ margin: 0, paddingLeft: 20, fontSize: 12, color: "#4b5563", lineHeight: 1.8 }}>
-                <li>Use real customer names for authenticity</li>
-                <li>Include specific details about their experience</li>
-                <li>Ratings should reflect the overall satisfaction</li>
-                <li>Profile images help build trust with potential customers</li>
-                <li>Select the appropriate course that the testimonial is about</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-
-        {/* ── Footer Actions ── */}
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, paddingTop: 4 }}>
-          <button type="button" onClick={() => navigate(-1)}
-            style={{ display: "flex", alignItems: "center", gap: 6, padding: "11px 22px", border: "1px solid #e5e7eb", borderRadius: 10, background: "#fff", color: "#374151", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
-            <X size={15} /> Cancel
-          </button>
-          <button onClick={handleSubmit} disabled={loading || coursesLoading || !formData.course}
-            style={{ display: "flex", alignItems: "center", gap: 6, padding: "11px 24px", border: "none", borderRadius: 10, background: (loading || coursesLoading || !formData.course) ? "#93c5fd" : "#2563eb", color: "#fff", fontSize: 13, fontWeight: 600, cursor: (loading || coursesLoading || !formData.course) ? "not-allowed" : "pointer", minWidth: 160, justifyContent: "center" }}>
-            {loading ? (
-              <>
-                <div style={{ width: 14, height: 14, border: "2px solid rgba(255,255,255,0.4)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-                Saving...
-              </>
-            ) : (
-              <><Save size={15} /> Save Testimonial</>
-            )}
-          </button>
         </div>
       </form>
     </div>

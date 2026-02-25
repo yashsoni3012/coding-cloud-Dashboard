@@ -260,8 +260,6 @@ export default function Topics() {
         .topic-row:hover { background: #f9fafb; }
         .action-btn-t { background: none; border: none; cursor: pointer; width: 30px; height: 30px; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #9ca3af; transition: background 0.15s, color 0.15s; }
         .action-btn-t:hover { background: #f3f4f6; color: #374151; }
-        .cb-t { width: 17px; height: 17px; border: 1.5px solid #d1d5db; border-radius: 4px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: border-color 0.15s, background 0.15s; }
-        .cb-t.checked { background: #2563eb; border-color: #2563eb; }
         .page-btn-t { border: 1px solid #e5e7eb; border-radius: 6px; padding: 6px 14px; font-size: 13px; font-weight: 500; background: #fff; color: #374151; cursor: pointer; font-family: inherit; transition: background 0.15s; }
         .page-btn-t:hover:not(:disabled) { background: #f3f4f6; }
         .page-btn-t:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -390,9 +388,7 @@ export default function Topics() {
               <thead>
                 <tr style={{ borderBottom: "1px solid #f3f4f6" }}>
                   <th style={{ padding: "12px 16px", width: 44 }}>
-                    <div className={`cb-t${allOnPageSelected ? " checked" : ""}`} onClick={toggleSelectAll}>
-                      {allOnPageSelected && <svg width="10" height="10" viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2" fill="none" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>}
-                    </div>
+                    
                   </th>
                   {["Topic", "Module", "Topic ID", "Module ID", ""].map((col, i) => (
                     <th key={i} className={i >= 2 && i <= 3 ? "hide-mob" : ""}
@@ -411,13 +407,6 @@ export default function Topics() {
                     <tr key={topic.id} className="topic-row"
                       style={{ borderBottom: "1px solid #f9fafb", cursor: "pointer", background: isSelected ? "#eff6ff" : "transparent" }}
                       onClick={() => openTopicModal(topic, topic.module_name, topic.module_id)}>
-
-                      {/* Checkbox */}
-                      <td style={{ padding: "14px 16px" }} onClick={(e) => e.stopPropagation()}>
-                        <div className={`cb-t${isSelected ? " checked" : ""}`} onClick={() => toggleRow(topic.id)}>
-                          {isSelected && <svg width="10" height="10" viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2" fill="none" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>}
-                        </div>
-                      </td>
 
                       {/* Topic name */}
                       <td style={{ padding: "14px 14px" }}>

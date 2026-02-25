@@ -487,14 +487,6 @@ export default function AddCourse() {
     </div>
   );
 
-  // Navigation tabs for sections
-  const sections = [
-    { id: "basic", label: "Basic Info", color: "#2563eb" },
-    { id: "details", label: "Course Details", color: "#8b5cf6" },
-    { id: "media", label: "Media", color: "#f59e0b" },
-    { id: "seo", label: "SEO", color: "#10b981" },
-  ];
-
   return (
     <div
       style={{
@@ -584,9 +576,7 @@ export default function AddCourse() {
             >
               Create New Course
             </h1>
-            <p style={{ fontSize: "16px", color: "#64748b", margin: "6px 0 0" }}>
-              Fill in the details below to create your course
-            </p>
+           
           </div>
         </div>
 
@@ -769,29 +759,7 @@ export default function AddCourse() {
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
-      {/* Section Navigation */}
-      <div className="section-tabs" style={{ display: "flex", gap: 12, marginBottom: 28, flexWrap: "wrap" }}>
-        {sections.map((section) => (
-          <button
-            key={section.id}
-            onClick={() => setActiveSection(section.id)}
-            style={{
-              padding: "12px 24px",
-              borderRadius: 40,
-              border: activeSection === section.id ? "none" : "1.5px solid #e2e8f0",
-              background: activeSection === section.id ? section.color : "#ffffff",
-              color: activeSection === section.id ? "#ffffff" : "#475569",
-              fontSize: "16px",
-              fontWeight: 600,
-              cursor: "pointer",
-              transition: "all 0.2s ease",
-              boxShadow: activeSection === section.id ? `0 6px 14px ${section.color}40` : "none",
-            }}
-          >
-            {section.label}
-          </button>
-        ))}
-      </div>
+      
 
       <form onSubmit={handleSubmit}>
         {/* Basic Information */}
@@ -809,9 +777,7 @@ export default function AddCourse() {
               >
                 Basic Information
               </p>
-              <p style={{ margin: "6px 0 0", fontSize: "15px", color: "#64748b" }}>
-                Required fields are marked with <span style={{ color: "#ef4444", fontWeight: 600 }}>*</span>
-              </p>
+             
             </div>
           </div>
           <div style={{ padding: "28px" }}>

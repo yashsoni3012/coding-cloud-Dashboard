@@ -329,9 +329,7 @@ export default function EditModule() {
             >
               Edit Module
             </h1>
-            <p style={{ fontSize: 12, color: "#9ca3af", margin: "2px 0 0" }}>
-              Update module information • ID: {id}
-            </p>
+           
           </div>
         </div>
 
@@ -511,9 +509,7 @@ export default function EditModule() {
               >
                 Module Information
               </p>
-              <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>
-                Required fields are marked with *
-              </p>
+             
             </div>
           </div>
 
@@ -533,9 +529,7 @@ export default function EditModule() {
                 style={inputStyle}
                 required
               />
-              <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 5 }}>
-                Enter a descriptive name for the module
-              </p>
+             
             </div>
 
             {/* Course Selection Dropdown */}
@@ -593,80 +587,11 @@ export default function EditModule() {
                 </p>
               )}
 
-              <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 5 }}>
-                Select the course this module belongs to
-              </p>
             </div>
           </div>
         </div>
 
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "flex-end",
-            gap: 10,
-            paddingTop: 4,
-          }}
-        >
-          <button
-            type="button"
-            onClick={() => navigate("/modules")}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              padding: "11px 22px",
-              border: "1px solid #e5e7eb",
-              borderRadius: 10,
-              background: "#fff",
-              color: "#374151",
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            <X size={15} /> Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={saving}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              padding: "11px 24px",
-              border: "none",
-              borderRadius: 10,
-              background: saving ? "#93c5fd" : "#2563eb",
-              color: "#fff",
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: saving ? "not-allowed" : "pointer",
-              minWidth: 140,
-              justifyContent: "center",
-            }}
-          >
-            {saving ? (
-              <>
-                <div
-                  style={{
-                    width: 14,
-                    height: 14,
-                    border: "2px solid rgba(255,255,255,0.4)",
-                    borderTopColor: "#fff",
-                    borderRadius: "50%",
-                    animation: "spin 0.8s linear infinite",
-                  }}
-                />
-                Updating...
-              </>
-            ) : (
-              <>
-                <Save size={15} /> Update Module
-              </>
-            )}
-          </button>
-        </div>
+        
       </form>
     </div>
   );

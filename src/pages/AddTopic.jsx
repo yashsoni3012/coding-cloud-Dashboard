@@ -197,8 +197,7 @@ export default function AddTopic() {
     } catch (err) {
       console.error("Error creating topic:", err);
       setError(
-        err.message ||
-          "Failed to create topic. Please check the API endpoint.",
+        err.message || "Failed to create topic. Please check the API endpoint.",
       );
     } finally {
       setSaving(false);
@@ -219,37 +218,83 @@ export default function AddTopic() {
   };
 
   const inputStyle = {
-    width: "100%", padding: "10px 14px", border: "1px solid #e5e7eb",
-    borderRadius: 10, fontSize: 13, color: "#111827", background: "#f9fafb",
-    outline: "none", boxSizing: "border-box", fontFamily: "inherit",
+    width: "100%",
+    padding: "10px 14px",
+    border: "1px solid #e5e7eb",
+    borderRadius: 10,
+    fontSize: 13,
+    color: "#111827",
+    background: "#f9fafb",
+    outline: "none",
+    boxSizing: "border-box",
+    fontFamily: "inherit",
     transition: "border-color 0.15s, background 0.15s",
   };
 
-  const labelStyle = { display: "block", fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 6 };
+  const labelStyle = {
+    display: "block",
+    fontSize: 12,
+    fontWeight: 600,
+    color: "#374151",
+    marginBottom: 6,
+  };
 
   const sectionStyle = {
-    background: "#fff", borderRadius: 16, boxShadow: "0 1px 4px rgba(0,0,0,0.07)",
-    overflow: "hidden", marginBottom: 20,
+    background: "#fff",
+    borderRadius: 16,
+    boxShadow: "0 1px 4px rgba(0,0,0,0.07)",
+    overflow: "hidden",
+    marginBottom: 20,
   };
 
   const sectionHeaderStyle = {
-    padding: "16px 24px", borderBottom: "1px solid #f3f4f6", background: "#fafafa",
-    display: "flex", alignItems: "center", gap: 10,
+    padding: "16px 24px",
+    borderBottom: "1px solid #f3f4f6",
+    background: "#fafafa",
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
   };
 
   const sectionDotStyle = (color) => ({
-    width: 8, height: 8, borderRadius: "50%", background: color, flexShrink: 0,
+    width: 8,
+    height: 8,
+    borderRadius: "50%",
+    background: color,
+    flexShrink: 0,
   });
 
   if (loading) {
     return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "60vh",
+        }}
+      >
         <div style={{ textAlign: "center" }}>
-          <div style={{
-            width: 48, height: 48, border: "3px solid #e5e7eb", borderTopColor: "#2563eb",
-            borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 12px"
-          }} />
-          <p style={{ color: "#6b7280", fontSize: 14, fontFamily: "'DM Sans', sans-serif" }}>Loading modules and courses...</p>
+          <div
+            style={{
+              width: 48,
+              height: 48,
+              border: "3px solid #e5e7eb",
+              borderTopColor: "#2563eb",
+              borderRadius: "50%",
+              animation: "spin 0.8s linear infinite",
+              margin: "0 auto 12px",
+            }}
+          />
+          <p
+            style={{
+              color: "#6b7280",
+              fontSize: 14,
+              fontFamily: "'DM Sans', sans-serif",
+            }}
+          >
+            Loading modules and courses...
+          </p>
           <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
       </div>
@@ -257,7 +302,14 @@ export default function AddTopic() {
   }
 
   return (
-    <div style={{ fontFamily: "'DM Sans', 'Segoe UI', sans-serif", background: "#f4f5f7", minHeight: "100vh", padding: "24px 20px" }}>
+    <div
+      style={{
+        fontFamily: "'DM Sans', 'Segoe UI', sans-serif",
+        background: "#f4f5f7",
+        minHeight: "100vh",
+        padding: "24px 20px",
+      }}
+    >
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
         input:focus, select:focus { border-color: #2563eb !important; background: #fff !important; box-shadow: 0 0 0 3px rgba(37,99,235,0.08); }
@@ -269,32 +321,109 @@ export default function AddTopic() {
       `}</style>
 
       {/* ── Header ── */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 24 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: 12,
+          marginBottom: 24,
+        }}
+      >
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <button onClick={() => navigate("/topics")} type="button"
-            style={{ width: 38, height: 38, borderRadius: 10, border: "1px solid #e5e7eb", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
+          <button
+            onClick={() => navigate("/topics")}
+            type="button"
+            style={{
+              width: 38,
+              height: 38,
+              borderRadius: 10,
+              border: "1px solid #e5e7eb",
+              background: "#fff",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+            }}
+          >
             <ArrowLeft size={18} color="#374151" />
           </button>
           <div>
-            <h1 style={{ fontSize: 20, fontWeight: 700, color: "#111827", margin: 0 }}>Add New Topic</h1>
-            <p style={{ fontSize: 12, color: "#9ca3af", margin: "2px 0 0" }}>Create a new topic for a module</p>
+            <h1
+              style={{
+                fontSize: 20,
+                fontWeight: 700,
+                color: "#111827",
+                margin: 0,
+              }}
+            >
+              Add New Topic
+            </h1>
+            <p style={{ fontSize: 12, color: "#9ca3af", margin: "2px 0 0" }}>
+              Create a new topic for a module
+            </p>
           </div>
         </div>
 
         <div className="header-actions" style={{ display: "flex", gap: 10 }}>
-          <button type="button" onClick={() => navigate("/topics")}
-            style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 18px", border: "1px solid #e5e7eb", borderRadius: 10, background: "#fff", color: "#374151", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+          <button
+            type="button"
+            onClick={() => navigate("/topics")}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "9px 18px",
+              border: "1px solid #e5e7eb",
+              borderRadius: 10,
+              background: "#fff",
+              color: "#374151",
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
             <X size={15} /> Cancel
           </button>
-          <button onClick={handleSubmit} disabled={saving}
-            style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 20px", border: "none", borderRadius: 10, background: saving ? "#93c5fd" : "#2563eb", color: "#fff", fontSize: 13, fontWeight: 600, cursor: saving ? "not-allowed" : "pointer", minWidth: 130, justifyContent: "center" }}>
+          <button
+            onClick={handleSubmit}
+            disabled={saving}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "9px 20px",
+              border: "none",
+              borderRadius: 10,
+              background: saving ? "#93c5fd" : "#2563eb",
+              color: "#fff",
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: saving ? "not-allowed" : "pointer",
+              minWidth: 130,
+              justifyContent: "center",
+            }}
+          >
             {saving ? (
               <>
-                <div style={{ width: 14, height: 14, border: "2px solid rgba(255,255,255,0.4)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                <div
+                  style={{
+                    width: 14,
+                    height: 14,
+                    border: "2px solid rgba(255,255,255,0.4)",
+                    borderTopColor: "#fff",
+                    borderRadius: "50%",
+                    animation: "spin 0.8s linear infinite",
+                  }}
+                />
                 Saving...
               </>
             ) : (
-              <><Save size={15} /> Save Topic</>
+              <>
+                <Save size={15} /> Save Topic
+              </>
             )}
           </button>
         </div>
@@ -302,73 +431,177 @@ export default function AddTopic() {
 
       {/* ── Alerts ── */}
       {error && (
-        <div style={{ marginBottom: 16, padding: "12px 16px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 12, display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 30, height: 30, borderRadius: "50%", background: "#fee2e2", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <div
+          style={{
+            marginBottom: 16,
+            padding: "12px 16px",
+            background: "#fef2f2",
+            border: "1px solid #fecaca",
+            borderRadius: 12,
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+          }}
+        >
+          <div
+            style={{
+              width: 30,
+              height: 30,
+              borderRadius: "50%",
+              background: "#fee2e2",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
             <AlertCircle size={14} color="#dc2626" />
           </div>
           <div>
-            <p style={{ fontSize: 13, fontWeight: 600, color: "#dc2626", margin: 0 }}>Error</p>
-            <p style={{ fontSize: 12, color: "#ef4444", margin: "2px 0 0" }}>{error}</p>
+            <p
+              style={{
+                fontSize: 13,
+                fontWeight: 600,
+                color: "#dc2626",
+                margin: 0,
+              }}
+            >
+              Error
+            </p>
+            <p style={{ fontSize: 12, color: "#ef4444", margin: "2px 0 0" }}>
+              {error}
+            </p>
           </div>
-          <button onClick={() => setError("")} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "#9ca3af" }}><X size={14} /></button>
+          <button
+            onClick={() => setError("")}
+            style={{
+              marginLeft: "auto",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: "#9ca3af",
+            }}
+          >
+            <X size={14} />
+          </button>
         </div>
       )}
       {success && (
-        <div style={{ marginBottom: 16, padding: "12px 16px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 12, display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 30, height: 30, borderRadius: "50%", background: "#dcfce7", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <div
+          style={{
+            marginBottom: 16,
+            padding: "12px 16px",
+            background: "#f0fdf4",
+            border: "1px solid #bbf7d0",
+            borderRadius: 12,
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+          }}
+        >
+          <div
+            style={{
+              width: 30,
+              height: 30,
+              borderRadius: "50%",
+              background: "#dcfce7",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
             <CheckCircle size={14} color="#16a34a" />
           </div>
-          <p style={{ fontSize: 13, fontWeight: 600, color: "#16a34a", margin: 0 }}>✓ {success}</p>
+          <p
+            style={{
+              fontSize: 13,
+              fontWeight: 600,
+              color: "#16a34a",
+              margin: 0,
+            }}
+          >
+            ✓ {success}
+          </p>
         </div>
       )}
 
       <form onSubmit={handleSubmit}>
-
         {/* ── Topic Information ── */}
         <div style={sectionStyle}>
-          <div style={sectionHeaderStyle}>
-            <div style={sectionDotStyle("#2563eb")} />
-            <div>
-              <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: "#111827" }}>Topic Information</p>
-              <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>Required fields are marked with *</p>
-            </div>
-          </div>
           <div style={{ padding: 24 }}>
             {/* Topic Name */}
             <div style={{ marginBottom: 20 }}>
-              <label style={labelStyle}>Topic Name <span style={{ color: "#ef4444" }}>*</span></label>
-              <input className="form-input" type="text" name="name" value={formData.name} onChange={handleInputChange}
-                placeholder="e.g., Introduction to React, HTML Basics, JavaScript Fundamentals" style={inputStyle} required />
-              <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 5 }}>Enter a descriptive name for the topic</p>
+              <label style={labelStyle}>
+                Topic Name <span style={{ color: "#ef4444" }}>*</span>
+              </label>
+              <input
+                className="form-input"
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                placeholder="e.g., Introduction to React, HTML Basics, JavaScript Fundamentals"
+                style={inputStyle}
+                required
+              />
             </div>
 
             {/* Course Selection */}
             <div style={{ marginBottom: 20 }}>
               <label style={labelStyle}>
-                <Layers size={12} style={{ display: "inline", marginRight: 5, verticalAlign: "middle", color: "#6b7280" }} />
+                <Layers
+                  size={12}
+                  style={{
+                    display: "inline",
+                    marginRight: 5,
+                    verticalAlign: "middle",
+                    color: "#6b7280",
+                  }}
+                />
                 Select Course <span style={{ color: "#ef4444" }}>*</span>
               </label>
-              <select value={selectedCourse} onChange={handleCourseChange}
-                style={{ ...inputStyle, appearance: "none", cursor: "pointer" }}>
+              <select
+                value={selectedCourse}
+                onChange={handleCourseChange}
+                style={{ ...inputStyle, appearance: "none", cursor: "pointer" }}
+              >
                 <option value="">-- First select a course --</option>
                 {courses.map((course) => (
                   <option key={course.id} value={course.id}>
-                    {course.id}: {course.name} ({course.category_details?.name || "No Category"})
+                    {course.id}: {course.name} (
+                    {course.category_details?.name || "No Category"})
                   </option>
                 ))}
               </select>
-              <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 5 }}>Select a course to filter available modules</p>
             </div>
 
             {/* Module Selection */}
             <div style={{ marginBottom: 16 }}>
               <label style={labelStyle}>
-                <BookOpen size={12} style={{ display: "inline", marginRight: 5, verticalAlign: "middle", color: "#6b7280" }} />
+                <BookOpen
+                  size={12}
+                  style={{
+                    display: "inline",
+                    marginRight: 5,
+                    verticalAlign: "middle",
+                    color: "#6b7280",
+                  }}
+                />
                 Select Module <span style={{ color: "#ef4444" }}>*</span>
               </label>
-              <select name="module_id" value={formData.module_id} onChange={handleInputChange}
-                style={{ ...inputStyle, appearance: "none", cursor: selectedCourse ? "pointer" : "not-allowed", opacity: selectedCourse ? 1 : 0.6 }}
-                disabled={!selectedCourse}>
+              <select
+                name="module_id"
+                value={formData.module_id}
+                onChange={handleInputChange}
+                style={{
+                  ...inputStyle,
+                  appearance: "none",
+                  cursor: selectedCourse ? "pointer" : "not-allowed",
+                  opacity: selectedCourse ? 1 : 0.6,
+                }}
+                disabled={!selectedCourse}
+              >
                 <option value="">-- Select a module --</option>
                 {filteredModules.map((module) => (
                   <option key={module.id} value={module.id}>
@@ -377,26 +610,53 @@ export default function AddTopic() {
                 ))}
               </select>
               {!selectedCourse && (
-                <p style={{ fontSize: 11, color: "#d97706", marginTop: 5 }}>⚠️ Please select a course first to see available modules</p>
+                <p style={{ fontSize: 11, color: "#d97706", marginTop: 5 }}>
+                  ⚠️ Please select a course first to see available modules
+                </p>
               )}
               {selectedCourse && filteredModules.length === 0 && (
-                <p style={{ fontSize: 11, color: "#d97706", marginTop: 5 }}>⚠️ No modules found for this course</p>
+                <p style={{ fontSize: 11, color: "#d97706", marginTop: 5 }}>
+                  ⚠️ No modules found for this course
+                </p>
               )}
             </div>
 
             {/* Selected Information Preview */}
             {formData.module_id && (
-              <div style={{ background: "#eff6ff", borderRadius: 10, padding: 16, marginTop: 8, border: "1px solid #dbeafe" }}>
-                <p style={{ fontSize: 12, fontWeight: 600, color: "#1e40af", margin: "0 0 8px" }}>Selected Information:</p>
-                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <div
+                style={{
+                  background: "#eff6ff",
+                  borderRadius: 10,
+                  padding: 16,
+                  marginTop: 8,
+                  border: "1px solid #dbeafe",
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: "#1e40af",
+                    margin: "0 0 8px",
+                  }}
+                >
+                  Selected Information:
+                </p>
+                <div
+                  style={{ display: "flex", flexDirection: "column", gap: 4 }}
+                >
                   <p style={{ fontSize: 12, color: "#2563eb", margin: 0 }}>
-                    <span style={{ fontWeight: 500 }}>Topic:</span> {formData.name || "Not specified"}
+                    <span style={{ fontWeight: 500 }}>Topic:</span>{" "}
+                    {formData.name || "Not specified"}
                   </p>
                   <p style={{ fontSize: 12, color: "#2563eb", margin: 0 }}>
-                    <span style={{ fontWeight: 500 }}>Module:</span> {getModuleDetails(formData.module_id)?.moduleName}
+                    <span style={{ fontWeight: 500 }}>Module:</span>{" "}
+                    {getModuleDetails(formData.module_id)?.moduleName}
                   </p>
                   <p style={{ fontSize: 12, color: "#2563eb", margin: 0 }}>
-                    <span style={{ fontWeight: 500 }}>Course:</span> {getModuleDetails(formData.module_id)?.courseName} (ID: {getModuleDetails(formData.module_id)?.courseId})
+                    <span style={{ fontWeight: 500 }}>Course:</span>{" "}
+                    {getModuleDetails(formData.module_id)?.courseName} (ID:{" "}
+                    {getModuleDetails(formData.module_id)?.courseId})
                   </p>
                 </div>
               </div>
@@ -404,41 +664,7 @@ export default function AddTopic() {
           </div>
         </div>
 
-        {/* ── Help Section ── */}
-        <div style={{ background: "#f9fafb", borderRadius: 12, padding: 16, marginBottom: 20, border: "1px solid #e5e7eb" }}>
-          <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-            <HelpCircle size={18} color="#6b7280" style={{ flexShrink: 0, marginTop: 2 }} />
-            <div>
-              <p style={{ fontSize: 13, fontWeight: 700, color: "#374151", margin: "0 0 4px" }}>Topic Creation Tips</p>
-              <ul style={{ fontSize: 12, color: "#6b7280", margin: 0, paddingLeft: 16 }}>
-                <li>First select a course to filter available modules</li>
-                <li>Then select the module this topic belongs to</li>
-                <li>Topic names should be specific and descriptive</li>
-                <li>Example: "Variables and Data Types", "React Hooks", "CSS Flexbox"</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-
-        {/* ── Footer Actions ── */}
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, paddingTop: 4 }}>
-          <button type="button" onClick={() => navigate("/topics")}
-            style={{ display: "flex", alignItems: "center", gap: 6, padding: "11px 22px", border: "1px solid #e5e7eb", borderRadius: 10, background: "#fff", color: "#374151", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
-            <X size={15} /> Cancel
-          </button>
-          <button onClick={handleSubmit} disabled={saving}
-            style={{ display: "flex", alignItems: "center", gap: 6, padding: "11px 24px", border: "none", borderRadius: 10, background: saving ? "#93c5fd" : "#2563eb", color: "#fff", fontSize: 13, fontWeight: 600, cursor: saving ? "not-allowed" : "pointer", minWidth: 140, justifyContent: "center" }}>
-            {saving ? (
-              <>
-                <div style={{ width: 14, height: 14, border: "2px solid rgba(255,255,255,0.4)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-                Saving...
-              </>
-            ) : (
-              <><Save size={15} /> Save Topic</>
-            )}
-          </button>
-        </div>
-
+      
       </form>
     </div>
   );

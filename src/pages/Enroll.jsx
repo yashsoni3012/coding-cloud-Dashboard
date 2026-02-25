@@ -116,8 +116,6 @@ const EnrollmentList = () => {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
         .enroll-row:hover { background: #f9fafb; }
-        .cb-e { width: 17px; height: 17px; border: 1.5px solid #d1d5db; border-radius: 4px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; transition: border-color 0.15s, background 0.15s; }
-        .cb-e.checked { background: #2563eb; border-color: #2563eb; }
         .page-btn-e { border: 1px solid #e5e7eb; border-radius: 6px; padding: 6px 14px; font-size: 13px; font-weight: 500; background: #fff; color: #374151; cursor: pointer; font-family: inherit; transition: background 0.15s; }
         .page-btn-e:hover:not(:disabled) { background: #f3f4f6; }
         .page-btn-e:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -194,11 +192,6 @@ const EnrollmentList = () => {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid #f3f4f6' }}>
-                  <th style={{ padding: '12px 16px', width: 44 }}>
-                    <div className={`cb-e${allOnPageSelected ? ' checked' : ''}`} onClick={toggleSelectAll}>
-                      {allOnPageSelected && <svg width="10" height="10" viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2" fill="none" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>}
-                    </div>
-                  </th>
                   {['Learner', 'Email', 'Phone', 'City', 'Course', ''].map((col, i) => (
                     <th key={i} className={i >= 2 && i <= 3 ? 'hide-mob-e' : ''}
                       style={{ padding: '12px 14px', textAlign: 'left', fontSize: 12, fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>
@@ -217,13 +210,6 @@ const EnrollmentList = () => {
                     <tr key={enrollment.id} className="enroll-row"
                       style={{ borderBottom: '1px solid #f9fafb', background: isSelected ? '#eff6ff' : 'transparent' }}>
 
-                      {/* Checkbox */}
-                      <td style={{ padding: '14px 16px' }}>
-                        <div className={`cb-e${isSelected ? ' checked' : ''}`} onClick={() => toggleRow(enrollment.id)}>
-                          {isSelected && <svg width="10" height="10" viewBox="0 0 10 10"><polyline points="1.5,5 4,7.5 8.5,2" fill="none" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>}
-                        </div>
-                      </td>
-
                       {/* Learner */}
                       <td style={{ padding: '14px 14px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -234,7 +220,6 @@ const EnrollmentList = () => {
                             <p style={{ fontWeight: 600, color: '#111827', margin: 0, fontSize: 13 }}>
                               {enrollment.first_name} {enrollment.last_name}
                             </p>
-                            <p style={{ color: '#9ca3af', margin: '2px 0 0', fontSize: 11 }}>ID: {enrollment.id}</p>
                           </div>
                         </div>
                       </td>
@@ -285,14 +270,7 @@ const EnrollmentList = () => {
                         )}
                       </td>
 
-                      {/* Actions */}
-                      <td style={{ padding: '14px 14px' }}>
-                        <a href={`mailto:${enrollment.email}`}
-                          style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 12px', background: '#f3f4f6', color: '#374151', borderRadius: 8, fontSize: 12, fontWeight: 500, textDecoration: 'none', transition: 'background 0.15s', whiteSpace: 'nowrap' }}>
-                          <Mail size={12} />
-                          <span className="hide-mob-e">Reply</span>
-                        </a>
-                      </td>
+                      
                     </tr>
                   );
                 })}
