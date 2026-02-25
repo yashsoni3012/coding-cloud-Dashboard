@@ -172,118 +172,159 @@ export default function EditFAQ() {
         }
     };
 
+    // Styles matching AddCourse component
+    const inputStyle = {
+        width: "100%", padding: "10px 14px", border: "1px solid #e5e7eb",
+        borderRadius: 10, fontSize: 13, color: "#111827", background: "#f9fafb",
+        outline: "none", boxSizing: "border-box", fontFamily: "inherit",
+        transition: "border-color 0.15s, background 0.15s",
+    };
+    
+    const labelStyle = { 
+        display: "block", fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 6 
+    };
+    
+    const sectionStyle = {
+        background: "#fff", borderRadius: 16, boxShadow: "0 1px 4px rgba(0,0,0,0.07)",
+        overflow: "hidden", marginBottom: 20,
+    };
+    
+    const sectionHeaderStyle = {
+        padding: "16px 24px", borderBottom: "1px solid #f3f4f6", background: "#fafafa",
+        display: "flex", alignItems: "center", gap: 10,
+    };
+    
+    const sectionDotStyle = (color) => ({
+        width: 8, height: 8, borderRadius: "50%", background: color, flexShrink: 0,
+    });
+
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-[60vh]">
-                <div className="relative">
-                    <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
-                    <p className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-gray-500 text-sm whitespace-nowrap">
-                        Loading detail...
-                    </p>
+            <div style={{ 
+                fontFamily: "'DM Sans', 'Segoe UI', sans-serif", 
+                background: "#f4f5f7", 
+                minHeight: "100vh", 
+                padding: "24px 20px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center"
+            }}>
+                <style>{`
+                    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+                    @keyframes spin { to { transform: rotate(360deg); } }
+                `}</style>
+                <div style={{ textAlign: "center" }}>
+                    <div style={{ 
+                        width: 50, 
+                        height: 50, 
+                        border: "3px solid #e5e7eb", 
+                        borderTopColor: "#2563eb", 
+                        borderRadius: "50%", 
+                        animation: "spin 0.8s linear infinite",
+                        margin: "0 auto 16px"
+                    }} />
+                    <p style={{ fontSize: 13, color: "#6b7280" }}>Loading FAQ details...</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="space-y-6 pb-12">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sticky top-0 bg-gray-50 py-4 z-10 border-b border-gray-200">
-                <div className="flex items-center gap-4">
-                    <button
-                        onClick={() => navigate("/faqs")}
-                        className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
-                        type="button"
-                    >
-                        <ArrowLeft size={20} className="text-gray-600" />
+        <div style={{ fontFamily: "'DM Sans', 'Segoe UI', sans-serif", background: "#f4f5f7", minHeight: "100vh", padding: "24px 20px" }}>
+            <style>{`
+                @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+                input:focus, textarea:focus, select:focus { 
+                    border-color: #2563eb !important; 
+                    background: #fff !important; 
+                    box-shadow: 0 0 0 3px rgba(37,99,235,0.08); 
+                }
+                .form-input:hover { border-color: #c7d2fe; }
+                @keyframes spin { to { transform: rotate(360deg); } }
+            `}</style>
+
+            {/* ── Header ── */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 24 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <button onClick={() => navigate(-1)} type="button"
+                        style={{ width: 38, height: 38, borderRadius: 10, border: "1px solid #e5e7eb", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
+                        <ArrowLeft size={18} color="#374151" />
                     </button>
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Edit FAQ</h1>
-                        <p className="text-gray-500 text-sm mt-1">
-                            Update the frequently asked question
-                        </p>
+                        <h1 style={{ fontSize: 20, fontWeight: 700, color: "#111827", margin: 0 }}>Edit FAQ</h1>
+                        <p style={{ fontSize: 12, color: "#9ca3af", margin: "2px 0 0" }}>Update the frequently asked question</p>
                     </div>
                 </div>
 
-                <div className="flex gap-3">
-                    <button
-                        type="button"
-                        onClick={() => navigate("/faqs")}
-                        className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-2"
-                    >
-                        <X size={18} />
-                        Cancel
+                <div style={{ display: "flex", gap: 10 }}>
+                    <button type="button" onClick={() => navigate(-1)}
+                        style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 18px", border: "1px solid #e5e7eb", borderRadius: 10, background: "#fff", color: "#374151", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+                        <X size={15} /> Cancel
                     </button>
-                    <button
-                        onClick={handleSubmit}
-                        disabled={saving || !formData.course}
-                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed min-w-[120px] justify-center"
-                    >
+                    <button onClick={handleSubmit} disabled={saving || !formData.course}
+                        style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 20px", border: "none", borderRadius: 10, background: saving ? "#93c5fd" : "#2563eb", color: "#fff", fontSize: 13, fontWeight: 600, cursor: (saving || !formData.course) ? "not-allowed" : "pointer", minWidth: 140, justifyContent: "center" }}>
                         {saving ? (
                             <>
-                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                <div style={{ width: 14, height: 14, border: "2px solid rgba(255,255,255,0.4)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
                                 Updating...
                             </>
                         ) : (
-                            <>
-                                <Save size={18} />
-                                Update FAQ
-                            </>
+                            <><Save size={15} /> Update FAQ</>
                         )}
                     </button>
                 </div>
             </div>
 
-            {/* Messages */}
+            {/* ── Alerts ── */}
             {error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
-                    <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <AlertCircle size={16} className="text-red-600" />
+                <div style={{ marginBottom: 16, padding: "12px 16px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 12, display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ width: 30, height: 30, borderRadius: "50%", background: "#fee2e2", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <AlertCircle size={14} color="#dc2626" />
                     </div>
                     <div>
-                        <h4 className="font-medium text-red-800">Error</h4>
-                        <p className="text-red-600 text-sm mt-0.5">{error}</p>
+                        <p style={{ fontSize: 13, fontWeight: 600, color: "#dc2626", margin: 0 }}>Error</p>
+                        <p style={{ fontSize: 12, color: "#ef4444", margin: "2px 0 0" }}>{error}</p>
                     </div>
+                    <button onClick={() => setError("")} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "#9ca3af" }}><X size={14} /></button>
                 </div>
             )}
-
+            
             {success && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3 animate-pulse">
-                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <CheckCircle size={16} className="text-green-600" />
+                <div style={{ marginBottom: 16, padding: "12px 16px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 12, display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ width: 30, height: 30, borderRadius: "50%", background: "#dcfce7", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <CheckCircle size={14} color="#16a34a" />
                     </div>
-                    <div>
-                        <h4 className="font-medium text-green-800">Success!</h4>
-                        <p className="text-green-600 text-sm mt-0.5">{success}</p>
-                    </div>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: "#16a34a", margin: 0 }}>✓ {success}</p>
                 </div>
             )}
 
-            {/* Main Form */}
-            <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-                    <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-                        <div className="flex items-center gap-2">
-                            <FileText size={18} className="text-indigo-600" />
-                            <h2 className="font-semibold text-gray-900">FAQ Information</h2>
-                        </div>
-                        <p className="text-xs text-gray-500 mt-1">
-                            Required fields are marked with *
-                        </p>
-                    </div>
-
-                    <div className="p-6 space-y-6">
-                        {/* Associated Course */}
+            <form onSubmit={handleSubmit}>
+                {/* ── FAQ Information ── */}
+                <div style={sectionStyle}>
+                    <div style={sectionHeaderStyle}>
+                        <div style={sectionDotStyle("#2563eb")} />
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                                Related Course <span className="text-red-500">*</span>
+                            <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: "#111827" }}>FAQ Information</p>
+                            <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>Required fields are marked with *</p>
+                        </div>
+                    </div>
+                    
+                    <div style={{ padding: 24 }}>
+                        {/* Associated Course */}
+                        <div style={{ marginBottom: 20 }}>
+                            <label style={labelStyle}>
+                                Related Course <span style={{ color: "#ef4444" }}>*</span>
                             </label>
-                            <div className="relative">
+                            <div style={{ position: "relative" }}>
                                 <select
                                     name="course"
                                     value={formData.course}
                                     onChange={handleInputChange}
-                                    className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all appearance-none"
+                                    style={{ 
+                                        ...inputStyle, 
+                                        appearance: "none", 
+                                        cursor: "pointer",
+                                        paddingRight: 36
+                                    }}
                                     required
                                 >
                                     <option value="" disabled>Select a Course</option>
@@ -293,63 +334,126 @@ export default function EditFAQ() {
                                         </option>
                                     ))}
                                 </select>
-                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
-                                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                                <div style={{ 
+                                    position: "absolute", 
+                                    right: 12, 
+                                    top: "50%", 
+                                    transform: "translateY(-50%)",
+                                    pointerEvents: "none",
+                                    color: "#9ca3af"
+                                }}>
+                                    <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M6 9l6 6 6-6" />
                                     </svg>
                                 </div>
                             </div>
                         </div>
 
                         {/* Question */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                                Question <span className="text-red-500">*</span>
+                        <div style={{ marginBottom: 20 }}>
+                            <label style={labelStyle}>
+                                Question <span style={{ color: "#ef4444" }}>*</span>
                             </label>
                             <input
+                                className="form-input"
                                 type="text"
                                 name="question"
                                 value={formData.question}
                                 onChange={handleInputChange}
-                                className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                                placeholder="e.g., What is Python used for?"
+                                style={inputStyle}
                                 required
                             />
                         </div>
 
                         {/* Answer */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                                Answer <span className="text-red-500">*</span>
+                            <label style={labelStyle}>
+                                Answer <span style={{ color: "#ef4444" }}>*</span>
                             </label>
                             <textarea
                                 name="answer"
                                 value={formData.answer}
                                 onChange={handleInputChange}
                                 rows={5}
-                                className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all resize-none"
+                                placeholder="Enter the comprehensive answer here..."
+                                style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6, minHeight: 120 }}
                                 required
-                            ></textarea>
+                            />
+                        </div>
+
+                        {/* Preview Section */}
+                        {formData.question && formData.answer && (
+                            <div style={{ 
+                                marginTop: 24,
+                                background: "#f9fafb", 
+                                borderRadius: 12, 
+                                padding: 16,
+                                border: "1px solid #e5e7eb"
+                            }}>
+                                <p style={{ fontSize: 11, fontWeight: 600, color: "#6b7280", margin: "0 0 8px 0", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                                    Preview
+                                </p>
+                                <p style={{ fontSize: 13, fontWeight: 600, color: "#111827", margin: "0 0 6px 0" }}>
+                                    Q: {formData.question}
+                                </p>
+                                <p style={{ fontSize: 12, color: "#4b5563", margin: 0, lineHeight: 1.6 }}>
+                                    A: {formData.answer}
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* ── Help Section ── */}
+                <div style={sectionStyle}>
+                    <div style={sectionHeaderStyle}>
+                        <div style={sectionDotStyle("#10b981")} />
+                        <div>
+                            <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: "#111827" }}>Editing Tips</p>
+                            <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>Guidelines for updating FAQs</p>
+                        </div>
+                    </div>
+                    
+                    <div style={{ padding: 24 }}>
+                        <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                            <div style={{ 
+                                width: 36, 
+                                height: 36, 
+                                borderRadius: 10, 
+                                background: "#e6f7e6", 
+                                display: "flex", 
+                                alignItems: "center", 
+                                justifyContent: "center",
+                                flexShrink: 0
+                            }}>
+                                <HelpCircle size={16} color="#10b981" />
+                            </div>
+                            <ul style={{ margin: 0, paddingLeft: 20, fontSize: 12, color: "#4b5563", lineHeight: 1.8 }}>
+                                <li>Make the question concise and from the user's perspective.</li>
+                                <li>Provide a direct, clear, and comprehensive answer.</li>
+                                <li>Ensure the FAQ is assigned to the correct related course.</li>
+                                <li>Changes will be saved immediately after clicking Update.</li>
+                            </ul>
                         </div>
                     </div>
                 </div>
 
-                {/* Submit Button (Mobile) */}
-                <div className="block sm:hidden">
-                    <button
-                        type="submit"
-                        disabled={saving || !formData.course}
-                        className="w-full px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                    >
+                {/* ── Footer Actions ── */}
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, paddingTop: 4 }}>
+                    <button type="button" onClick={() => navigate(-1)}
+                        style={{ display: "flex", alignItems: "center", gap: 6, padding: "11px 22px", border: "1px solid #e5e7eb", borderRadius: 10, background: "#fff", color: "#374151", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+                        <X size={15} /> Cancel
+                    </button>
+                    <button onClick={handleSubmit} disabled={saving || !formData.course}
+                        style={{ display: "flex", alignItems: "center", gap: 6, padding: "11px 24px", border: "none", borderRadius: 10, background: (saving || !formData.course) ? "#93c5fd" : "#2563eb", color: "#fff", fontSize: 13, fontWeight: 600, cursor: (saving || !formData.course) ? "not-allowed" : "pointer", minWidth: 140, justifyContent: "center" }}>
                         {saving ? (
                             <>
-                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                <div style={{ width: 14, height: 14, border: "2px solid rgba(255,255,255,0.4)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
                                 Updating...
                             </>
                         ) : (
-                            <>
-                                <Save size={18} />
-                                Update FAQ
-                            </>
+                            <><Save size={15} /> Update FAQ</>
                         )}
                     </button>
                 </div>

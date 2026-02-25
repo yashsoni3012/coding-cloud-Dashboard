@@ -9,7 +9,8 @@ import {
     CheckCircle,
     Image as ImageIcon,
     Calendar,
-    Tag
+    Tag,
+    HelpCircle
 } from "lucide-react";
 
 export default function EditBlog() {
@@ -43,7 +44,33 @@ export default function EditBlog() {
     const [originalImage, setOriginalImage] = useState(null);
 
     // Status Options
-    const statusOptions = ["Drafts", "Published", "Archived"];
+    const statusOptions = ["Drafts", "Published", "Scheduled"];
+
+    // Styles matching AddCourse component
+    const inputStyle = {
+        width: "100%", padding: "10px 14px", border: "1px solid #e5e7eb",
+        borderRadius: 10, fontSize: 13, color: "#111827", background: "#f9fafb",
+        outline: "none", boxSizing: "border-box", fontFamily: "inherit",
+        transition: "border-color 0.15s, background 0.15s",
+    };
+    
+    const labelStyle = { 
+        display: "block", fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 6 
+    };
+    
+    const sectionStyle = {
+        background: "#fff", borderRadius: 16, boxShadow: "0 1px 4px rgba(0,0,0,0.07)",
+        overflow: "hidden", marginBottom: 20,
+    };
+    
+    const sectionHeaderStyle = {
+        padding: "16px 24px", borderBottom: "1px solid #f3f4f6", background: "#fafafa",
+        display: "flex", alignItems: "center", gap: 10,
+    };
+    
+    const sectionDotStyle = (color) => ({
+        width: 8, height: 8, borderRadius: "50%", background: color, flexShrink: 0,
+    });
 
     useEffect(() => {
         const fetchBlog = async () => {
@@ -247,145 +274,176 @@ export default function EditBlog() {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-[60vh]">
-                <div className="relative">
-                    <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
-                    <p className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-gray-500 text-sm whitespace-nowrap">
-                        Loading detail...
-                    </p>
+            <div style={{ 
+                fontFamily: "'DM Sans', 'Segoe UI', sans-serif", 
+                background: "#f4f5f7", 
+                minHeight: "100vh", 
+                padding: "24px 20px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center"
+            }}>
+                <style>{`
+                    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+                    @keyframes spin { to { transform: rotate(360deg); } }
+                `}</style>
+                <div style={{ textAlign: "center" }}>
+                    <div style={{ 
+                        width: 50, 
+                        height: 50, 
+                        border: "3px solid #e5e7eb", 
+                        borderTopColor: "#2563eb", 
+                        borderRadius: "50%", 
+                        animation: "spin 0.8s linear infinite",
+                        margin: "0 auto 16px"
+                    }} />
+                    <p style={{ fontSize: 13, color: "#6b7280" }}>Loading blog details...</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="space-y-6 pb-12">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sticky top-0 bg-gray-50 py-4 z-10 border-b border-gray-200">
-                <div className="flex items-center gap-4">
-                    <button
-                        onClick={() => navigate("/blogs")}
-                        className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
-                        type="button"
-                    >
-                        <ArrowLeft size={20} className="text-gray-600" />
+        <div style={{ fontFamily: "'DM Sans', 'Segoe UI', sans-serif", background: "#f4f5f7", minHeight: "100vh", padding: "24px 20px" }}>
+            <style>{`
+                @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+                input:focus, textarea:focus, select:focus { 
+                    border-color: #2563eb !important; 
+                    background: #fff !important; 
+                    box-shadow: 0 0 0 3px rgba(37,99,235,0.08); 
+                }
+                .form-input:hover { border-color: #c7d2fe; }
+                @keyframes spin { to { transform: rotate(360deg); } }
+                
+                @media (max-width: 1024px) {
+                    .blog-grid { grid-template-columns: 1fr !important; }
+                }
+            `}</style>
+
+            {/* ── Header ── */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 24 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <button onClick={() => navigate(-1)} type="button"
+                        style={{ width: 38, height: 38, borderRadius: 10, border: "1px solid #e5e7eb", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
+                        <ArrowLeft size={18} color="#374151" />
                     </button>
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Edit Blog</h1>
-                        <p className="text-gray-500 text-sm mt-1">
-                            Update existing blog post article
-                        </p>
+                        <h1 style={{ fontSize: 20, fontWeight: 700, color: "#111827", margin: 0 }}>Edit Blog</h1>
+                        <p style={{ fontSize: 12, color: "#9ca3af", margin: "2px 0 0" }}>Update existing blog post article</p>
                     </div>
                 </div>
 
-                <div className="flex gap-3">
-                    <button
-                        type="button"
-                        onClick={() => navigate("/blogs")}
-                        className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-2"
-                    >
-                        <X size={18} />
-                        Cancel
+                <div style={{ display: "flex", gap: 10 }}>
+                    <button type="button" onClick={() => navigate(-1)}
+                        style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 18px", border: "1px solid #e5e7eb", borderRadius: 10, background: "#fff", color: "#374151", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+                        <X size={15} /> Cancel
                     </button>
-                    <button
-                        onClick={handleSubmit}
-                        disabled={saving}
-                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed min-w-[120px] justify-center"
-                    >
+                    <button onClick={handleSubmit} disabled={saving}
+                        style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 20px", border: "none", borderRadius: 10, background: saving ? "#93c5fd" : "#2563eb", color: "#fff", fontSize: 13, fontWeight: 600, cursor: saving ? "not-allowed" : "pointer", minWidth: 140, justifyContent: "center" }}>
                         {saving ? (
                             <>
-                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                <div style={{ width: 14, height: 14, border: "2px solid rgba(255,255,255,0.4)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
                                 Updating...
                             </>
                         ) : (
-                            <>
-                                <Save size={18} />
-                                Update Blog
-                            </>
+                            <><Save size={15} /> Update Blog</>
                         )}
                     </button>
                 </div>
             </div>
 
-            {/* Messages */}
+            {/* ── Alerts ── */}
             {error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
-                    <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <AlertCircle size={16} className="text-red-600" />
+                <div style={{ marginBottom: 16, padding: "12px 16px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 12, display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ width: 30, height: 30, borderRadius: "50%", background: "#fee2e2", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <AlertCircle size={14} color="#dc2626" />
                     </div>
                     <div>
-                        <h4 className="font-medium text-red-800">Error</h4>
-                        <p className="text-red-600 text-sm mt-0.5">{error}</p>
+                        <p style={{ fontSize: 13, fontWeight: 600, color: "#dc2626", margin: 0 }}>Error</p>
+                        <p style={{ fontSize: 12, color: "#ef4444", margin: "2px 0 0" }}>{error}</p>
                     </div>
+                    <button onClick={() => setError("")} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "#9ca3af" }}><X size={14} /></button>
                 </div>
             )}
-
+            
             {success && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3 animate-pulse">
-                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <CheckCircle size={16} className="text-green-600" />
+                <div style={{ marginBottom: 16, padding: "12px 16px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 12, display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ width: 30, height: 30, borderRadius: "50%", background: "#dcfce7", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <CheckCircle size={14} color="#16a34a" />
                     </div>
-                    <div>
-                        <h4 className="font-medium text-green-800">Success!</h4>
-                        <p className="text-green-600 text-sm mt-0.5">{success}</p>
-                    </div>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: "#16a34a", margin: 0 }}>✓ {success}</p>
                 </div>
             )}
 
-            {/* Main Form Form */}
-            <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                    <div className="xl:col-span-2 space-y-6">
-
-                        {/* General Info */}
-                        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-                            <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-                                <div className="flex items-center gap-2">
-                                    <FileText size={18} className="text-indigo-600" />
-                                    <h2 className="font-semibold text-gray-900">General Information</h2>
+            <form onSubmit={handleSubmit}>
+                <div style={{ 
+                    display: "grid", 
+                    gridTemplateColumns: "2fr 1fr", 
+                    gap: 20,
+                }} className="blog-grid">
+                    
+                    {/* Left Column - Main Content */}
+                    <div>
+                        {/* ── General Information ── */}
+                        <div style={sectionStyle}>
+                            <div style={sectionHeaderStyle}>
+                                <div style={sectionDotStyle("#2563eb")} />
+                                <div>
+                                    <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: "#111827" }}>General Information</p>
+                                    <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>Required fields are marked with *</p>
                                 </div>
                             </div>
-
-                            <div className="p-6 space-y-6">
+                            
+                            <div style={{ padding: 24 }}>
                                 {/* Title */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                                        Blog Title <span className="text-red-500">*</span>
+                                <div style={{ marginBottom: 20 }}>
+                                    <label style={labelStyle}>
+                                        Blog Title <span style={{ color: "#ef4444" }}>*</span>
                                     </label>
                                     <input
+                                        className="form-input"
                                         type="text"
                                         name="title"
                                         value={formData.title}
                                         onChange={handleInputChange}
                                         placeholder="Enter the title of the blog post"
-                                        className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                                        style={inputStyle}
                                         required
                                     />
                                 </div>
 
                                 {/* Slug */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                                        Slug / URL Path <span className="text-red-500">*</span>
+                                <div style={{ marginBottom: 20 }}>
+                                    <label style={labelStyle}>
+                                        Slug / URL Path <span style={{ color: "#ef4444" }}>*</span>
                                     </label>
-                                    <input
-                                        type="text"
-                                        name="slug"
-                                        value={formData.slug}
-                                        onChange={(e) => {
-                                            // Enforce lowercase and hyphens
-                                            const val = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-');
-                                            setFormData(prev => ({ ...prev, slug: val }));
-                                        }}
-                                        placeholder="e.g., how-to-learn-react"
-                                        className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                                        required
-                                    />
+                                    <div style={{ display: "flex", alignItems: "center" }}>
+                                        <span style={{ padding: "10px 14px", background: "#f3f4f6", border: "1px solid #e5e7eb", borderRight: "none", borderRadius: "10px 0 0 10px", fontSize: 12, color: "#6b7280", whiteSpace: "nowrap", fontWeight: 500 }}>
+                                            /blog/
+                                        </span>
+                                        <input
+                                            className="form-input"
+                                            type="text"
+                                            name="slug"
+                                            value={formData.slug}
+                                            onChange={(e) => {
+                                                // Enforce lowercase and hyphens
+                                                const val = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+                                                setFormData(prev => ({ ...prev, slug: val }));
+                                            }}
+                                            placeholder="how-to-learn-react"
+                                            style={{ ...inputStyle, borderRadius: "0 10px 10px 0", flex: 1 }}
+                                            required
+                                        />
+                                    </div>
+                                    <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 5 }}>
+                                        URL-friendly version of the title. Use lowercase letters and hyphens.
+                                    </p>
                                 </div>
 
                                 {/* Short Description */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                                <div style={{ marginBottom: 20 }}>
+                                    <label style={labelStyle}>
                                         Short Description
                                     </label>
                                     <textarea
@@ -394,14 +452,14 @@ export default function EditBlog() {
                                         onChange={handleInputChange}
                                         rows={2}
                                         placeholder="A brief summary of the blog post"
-                                        className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all resize-none"
-                                    ></textarea>
+                                        style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }}
+                                    />
                                 </div>
 
                                 {/* Main Content */}
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                                        Content <span className="text-red-500">*</span>
+                                    <label style={labelStyle}>
+                                        Content <span style={{ color: "#ef4444" }}>*</span>
                                     </label>
                                     <textarea
                                         name="content"
@@ -409,253 +467,302 @@ export default function EditBlog() {
                                         onChange={handleInputChange}
                                         rows={10}
                                         placeholder="Write the full content of the blog post here..."
-                                        className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all resize-y"
+                                        style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6, minHeight: 200 }}
                                         required
-                                    ></textarea>
+                                    />
                                 </div>
                             </div>
                         </div>
 
-                        {/* Meta Information Section */}
-                        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-                            <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-                                <div className="flex items-center gap-2">
-                                    <Tag size={18} className="text-indigo-600" />
-                                    <h2 className="font-semibold text-gray-900">SEO & Meta Fields</h2>
+                        {/* ── SEO & Meta Fields ── */}
+                        <div style={sectionStyle}>
+                            <div style={sectionHeaderStyle}>
+                                <div style={sectionDotStyle("#8b5cf6")} />
+                                <div>
+                                    <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: "#111827" }}>SEO & Meta Fields</p>
+                                    <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>For search engine optimization (optional)</p>
                                 </div>
                             </div>
-                            <div className="p-6 space-y-6">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                                        Meta Title
-                                    </label>
+                            
+                            <div style={{ padding: 24 }}>
+                                {/* Meta Title */}
+                                <div style={{ marginBottom: 16 }}>
+                                    <label style={labelStyle}>Meta Title</label>
                                     <input
+                                        className="form-input"
                                         type="text"
                                         name="meta_title"
                                         value={formData.meta_title}
                                         onChange={handleInputChange}
-                                        className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                                        placeholder="SEO title for the blog"
+                                        style={inputStyle}
                                     />
                                 </div>
 
-                                {/* meta_descrtiption intentionally misspelled to match backend API format */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                                        Meta Description
-                                    </label>
-                                    <input
-                                        type="text"
+                                {/* Meta Description (misspelled to match API) */}
+                                <div style={{ marginBottom: 16 }}>
+                                    <label style={labelStyle}>Meta Description</label>
+                                    <textarea
                                         name="meta_descrtiption"
                                         value={formData.meta_descrtiption}
                                         onChange={handleInputChange}
-                                        className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                                        rows={3}
+                                        placeholder="SEO description for search engines"
+                                        style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }}
                                     />
                                 </div>
 
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                                        Meta Keywords
-                                    </label>
+                                {/* Meta Keywords */}
+                                <div style={{ marginBottom: 16 }}>
+                                    <label style={labelStyle}>Meta Keywords</label>
                                     <input
+                                        className="form-input"
                                         type="text"
                                         name="meta_keyword"
                                         value={formData.meta_keyword}
                                         onChange={handleInputChange}
                                         placeholder="comma, separated, keywords"
-                                        className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                                        style={inputStyle}
                                     />
                                 </div>
 
+                                {/* Hashtags */}
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                                        Hashtags
-                                    </label>
+                                    <label style={labelStyle}>Hashtags</label>
                                     <input
+                                        className="form-input"
                                         type="text"
                                         name="hashtag"
                                         value={formData.hashtag}
                                         onChange={handleInputChange}
                                         placeholder="#coding #cloud"
-                                        className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                                        style={inputStyle}
                                     />
+                                    <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 5 }}>
+                                        Space-separated hashtags for social media
+                                    </p>
                                 </div>
                             </div>
                         </div>
-
                     </div>
 
-                    {/* Sidebar Column */}
-                    <div className="space-y-6">
-
-                        {/* Publishing Options */}
-                        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-                            <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-                                <div className="flex items-center gap-2">
-                                    <Calendar size={18} className="text-indigo-600" />
-                                    <h2 className="font-semibold text-gray-900">Publishing</h2>
+                    {/* Right Column - Sidebar */}
+                    <div>
+                        {/* ── Publishing ── */}
+                        <div style={sectionStyle}>
+                            <div style={sectionHeaderStyle}>
+                                <div style={sectionDotStyle("#f59e0b")} />
+                                <div>
+                                    <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: "#111827" }}>Publishing</p>
+                                    <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>Status and scheduling</p>
                                 </div>
                             </div>
-
-                            <div className="p-6 space-y-6">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                                        Status <span className="text-red-500">*</span>
+                            
+                            <div style={{ padding: 24 }}>
+                                {/* Status */}
+                                <div style={{ marginBottom: 20 }}>
+                                    <label style={labelStyle}>
+                                        Status <span style={{ color: "#ef4444" }}>*</span>
                                     </label>
-                                    <div className="relative">
+                                    <div style={{ position: "relative" }}>
                                         <select
                                             name="status"
                                             value={formData.status}
                                             onChange={handleInputChange}
-                                            className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all appearance-none"
+                                            style={{ 
+                                                ...inputStyle, 
+                                                appearance: "none", 
+                                                cursor: "pointer",
+                                                paddingRight: 36
+                                            }}
                                         >
                                             {statusOptions.map(status => (
                                                 <option key={status} value={status}>{status}</option>
                                             ))}
                                         </select>
-                                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
-                                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                                        <div style={{ 
+                                            position: "absolute", 
+                                            right: 12, 
+                                            top: "50%", 
+                                            transform: "translateY(-50%)",
+                                            pointerEvents: "none",
+                                            color: "#9ca3af"
+                                        }}>
+                                            <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                <path d="M6 9l6 6 6-6" />
                                             </svg>
                                         </div>
                                     </div>
                                 </div>
 
+                                {/* Publish Date */}
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                                        Publish Date <span className="text-red-500">*</span>
+                                    <label style={labelStyle}>
+                                        Publish Date <span style={{ color: "#ef4444" }}>*</span>
                                     </label>
                                     <input
                                         type="date"
                                         name="publish_date"
                                         value={formData.publish_date}
                                         onChange={handleInputChange}
-                                        className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                                        style={inputStyle}
                                         required
                                     />
                                 </div>
                             </div>
                         </div>
 
-                        {/* Featured Image */}
-                        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-                            <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-                                <div className="flex items-center gap-2">
-                                    <ImageIcon size={18} className="text-indigo-600" />
-                                    <h2 className="font-semibold text-gray-900">Featured Image</h2>
+                        {/* ── Featured Image ── */}
+                        <div style={sectionStyle}>
+                            <div style={sectionHeaderStyle}>
+                                <div style={sectionDotStyle("#10b981")} />
+                                <div>
+                                    <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: "#111827" }}>Featured Image</p>
+                                    <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>Upload or change image</p>
                                 </div>
                             </div>
-
-                            <div className="p-6">
-                                <div
-                                    className={`flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-lg transition-colors ${formData.featured_image ? 'border-indigo-300 bg-indigo-50/30' : 'border-gray-300 hover:border-indigo-400 bg-gray-50 hover:bg-gray-100/50'
-                                        }`}
+                            
+                            <div style={{ padding: 24 }}>
+                                <div>
+                                    <label style={labelStyle}>Blog Image</label>
+                                    <div style={{
+                                        border: imagePreview ? "1.5px solid #d1d5db" : "1.5px dashed #d1d5db",
+                                        borderRadius: 12,
+                                        padding: imagePreview ? "16px" : "24px 16px",
+                                        textAlign: "center",
+                                        background: imagePreview ? "#fff" : "#f9fafb",
+                                        position: "relative",
+                                        transition: "border-color 0.15s",
+                                        cursor: "pointer"
+                                    }}
+                                    onClick={triggerFileInput}
                                     onDragOver={(e) => e.preventDefault()}
                                     onDrop={(e) => {
                                         e.preventDefault();
                                         if (e.dataTransfer.files && e.dataTransfer.files[0]) {
                                             handleImageChange({ target: { files: e.dataTransfer.files } });
                                         }
-                                    }}
-                                >
-                                    <div className="space-y-1 text-center w-full">
+                                    }}>
                                         {imagePreview ? (
-                                            <div className="relative w-full">
-                                                <img
-                                                    src={imagePreview}
-                                                    alt="Preview"
-                                                    className="mx-auto h-40 w-full object-cover rounded-md shadow-sm border border-gray-200"
+                                            <div style={{ position: "relative", display: "inline-block", width: "100%" }}>
+                                                <img 
+                                                    src={imagePreview} 
+                                                    alt="Preview" 
+                                                    style={{ 
+                                                        width: "100%", 
+                                                        maxHeight: 200, 
+                                                        borderRadius: 10, 
+                                                        boxShadow: "0 2px 12px rgba(0,0,0,0.12)",
+                                                        objectFit: "cover"
+                                                    }} 
                                                     onError={(e) => {
                                                         e.target.onerror = null;
                                                         e.target.src = 'https://via.placeholder.com/400x300?text=Error';
                                                     }}
                                                 />
-                                                <div className="mt-3 flex justify-center gap-2">
-                                                    <label
-                                                        htmlFor="file-upload"
-                                                        className="cursor-pointer bg-white border border-gray-300 rounded-md font-medium text-indigo-600 hover:text-indigo-500 hover:bg-gray-50 px-3 py-1.5 text-xs transition-colors"
+                                                <div style={{ marginTop: 12, display: "flex", justifyContent: "center", gap: 8, flexWrap: "wrap" }}>
+                                                    <span 
+                                                        onClick={(e) => { e.stopPropagation(); triggerFileInput(); }}
+                                                        style={{ fontSize: 11, color: "#2563eb", cursor: "pointer", padding: "4px 8px", background: "#eff6ff", borderRadius: 6 }}
                                                     >
-                                                        <span onClick={triggerFileInput}>Change</span>
-                                                        <input
-                                                            id="file-upload"
-                                                            name="file-upload"
-                                                            type="file"
-                                                            className="sr-only"
-                                                            ref={fileInputRef}
-                                                            onChange={handleImageChange}
-                                                            accept="image/*"
-                                                        />
-                                                    </label>
+                                                        Change
+                                                    </span>
                                                     {formData.featured_image && originalImage && (
-                                                        <button
-                                                            type="button"
-                                                            onClick={restoreOriginalImage}
-                                                            className="bg-white border border-gray-300 rounded-md font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 px-3 py-1.5 text-xs transition-colors"
+                                                        <span 
+                                                            onClick={(e) => { e.stopPropagation(); restoreOriginalImage(); }}
+                                                            style={{ fontSize: 11, color: "#6b7280", cursor: "pointer", padding: "4px 8px", background: "#f3f4f6", borderRadius: 6 }}
                                                         >
                                                             Restore
-                                                        </button>
+                                                        </span>
                                                     )}
                                                     {!formData.featured_image && (
-                                                        <button
-                                                            type="button"
-                                                            onClick={removeImage}
-                                                            className="bg-white border border-gray-300 rounded-md font-medium text-red-600 hover:text-red-700 hover:bg-red-50 px-3 py-1.5 text-xs transition-colors"
+                                                        <span 
+                                                            onClick={(e) => { e.stopPropagation(); removeImage(); }}
+                                                            style={{ fontSize: 11, color: "#ef4444", cursor: "pointer", padding: "4px 8px", background: "#fee2e2", borderRadius: 6 }}
                                                         >
                                                             Remove
-                                                        </button>
+                                                        </span>
                                                     )}
                                                 </div>
                                             </div>
                                         ) : (
                                             <>
-                                                <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
-                                                <div className="flex text-sm text-gray-600 justify-center mt-4">
-                                                    <label
-                                                        htmlFor="file-upload"
-                                                        className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none px-2 py-0.5"
-                                                    >
-                                                        <span onClick={triggerFileInput}>Upload a file</span>
-                                                        <input
-                                                            id="file-upload"
-                                                            name="file-upload"
-                                                            type="file"
-                                                            className="sr-only"
-                                                            ref={fileInputRef}
-                                                            onChange={handleImageChange}
-                                                            accept="image/*"
-                                                        />
-                                                    </label>
-                                                    <p className="pl-1 flex items-center">or drag and drop</p>
+                                                <div style={{ width: 44, height: 44, borderRadius: 12, background: "#eff6ff", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 10px" }}>
+                                                    <ImageIcon size={20} color="#2563eb" />
                                                 </div>
-                                                <p className="text-xs text-gray-500 mt-2">
-                                                    PNG, JPG or WEBP up to 5MB
-                                                </p>
+                                                <p style={{ fontSize: 13, color: "#374151", margin: "0 0 4px", fontWeight: 500 }}>Click to upload</p>
+                                                <p style={{ fontSize: 11, color: "#9ca3af", margin: "0 0 12px" }}>PNG, JPG or WEBP up to 5MB</p>
+                                                <label htmlFor="image-upload"
+                                                    style={{ display: "inline-block", padding: "7px 18px", background: "#2563eb", color: "#fff", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                                                    Browse File
+                                                </label>
                                             </>
                                         )}
+                                        <input
+                                            ref={fileInputRef}
+                                            id="image-upload"
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handleImageChange}
+                                            style={{ display: "none" }}
+                                        />
                                     </div>
                                 </div>
                             </div>
                         </div>
 
+                        {/* ── Help Section ── */}
+                        <div style={sectionStyle}>
+                            <div style={sectionHeaderStyle}>
+                                <div style={sectionDotStyle("#6b7280")} />
+                                <div>
+                                    <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: "#111827" }}>Editing Tips</p>
+                                    <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>Guidelines for updating blog posts</p>
+                                </div>
+                            </div>
+                            
+                            <div style={{ padding: 24 }}>
+                                <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                                    <div style={{ 
+                                        width: 36, 
+                                        height: 36, 
+                                        borderRadius: 10, 
+                                        background: "#e6f7e6", 
+                                        display: "flex", 
+                                        alignItems: "center", 
+                                        justifyContent: "center",
+                                        flexShrink: 0
+                                    }}>
+                                        <HelpCircle size={16} color="#10b981" />
+                                    </div>
+                                    <ul style={{ margin: 0, paddingLeft: 20, fontSize: 12, color: "#4b5563", lineHeight: 1.8 }}>
+                                        <li>Use descriptive titles that capture attention</li>
+                                        <li>Slug should be URL-friendly (lowercase, hyphens)</li>
+                                        <li>Add meta descriptions for better SEO</li>
+                                        <li>You can change the featured image or keep existing</li>
+                                        <li>Use the Restore button to revert to original image</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                {/* Submit Button (Mobile) */}
-                <div className="block sm:hidden">
-                    <button
-                        type="submit"
-                        disabled={saving}
-                        className="w-full px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                    >
+                {/* ── Footer Actions ── */}
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, paddingTop: 20, marginTop: 10 }}>
+                    <button type="button" onClick={() => navigate(-1)}
+                        style={{ display: "flex", alignItems: "center", gap: 6, padding: "11px 22px", border: "1px solid #e5e7eb", borderRadius: 10, background: "#fff", color: "#374151", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+                        <X size={15} /> Cancel
+                    </button>
+                    <button onClick={handleSubmit} disabled={saving}
+                        style={{ display: "flex", alignItems: "center", gap: 6, padding: "11px 24px", border: "none", borderRadius: 10, background: saving ? "#93c5fd" : "#2563eb", color: "#fff", fontSize: 13, fontWeight: 600, cursor: saving ? "not-allowed" : "pointer", minWidth: 140, justifyContent: "center" }}>
                         {saving ? (
                             <>
-                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                <div style={{ width: 14, height: 14, border: "2px solid rgba(255,255,255,0.4)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
                                 Updating...
                             </>
                         ) : (
-                            <>
-                                <Save size={18} />
-                                Update Blog
-                            </>
+                            <><Save size={15} /> Update Blog</>
                         )}
                     </button>
                 </div>

@@ -6,7 +6,6 @@ import {
   X,
   BookOpen,
   HelpCircle,
-  Hash,
   CheckCircle,
   AlertCircle,
   Edit,
@@ -171,136 +170,174 @@ export default function EditModule() {
     return selected ? selected.name : 'Unknown Course';
   };
 
+  // Styles matching AddCourse component
+  const inputStyle = {
+    width: "100%", padding: "10px 14px", border: "1px solid #e5e7eb",
+    borderRadius: 10, fontSize: 13, color: "#111827", background: "#f9fafb",
+    outline: "none", boxSizing: "border-box", fontFamily: "inherit",
+    transition: "border-color 0.15s, background 0.15s",
+  };
+  
+  const labelStyle = { 
+    display: "block", fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 6 
+  };
+  
+  const sectionStyle = {
+    background: "#fff", borderRadius: 16, boxShadow: "0 1px 4px rgba(0,0,0,0.07)",
+    overflow: "hidden", marginBottom: 20,
+  };
+  
+  const sectionHeaderStyle = {
+    padding: "16px 24px", borderBottom: "1px solid #f3f4f6", background: "#fafafa",
+    display: "flex", alignItems: "center", gap: 10,
+  };
+  
+  const sectionDotStyle = (color) => ({
+    width: 8, height: 8, borderRadius: "50%", background: color, flexShrink: 0,
+  });
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="relative">
-          <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
-          <p className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-gray-500 text-sm whitespace-nowrap">
-            Loading module data...
-          </p>
+      <div style={{ 
+        fontFamily: "'DM Sans', 'Segoe UI', sans-serif", 
+        background: "#f4f5f7", 
+        minHeight: "100vh", 
+        padding: "24px 20px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center"
+      }}>
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+          @keyframes spin { to { transform: rotate(360deg); } }
+        `}</style>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ 
+            width: 50, 
+            height: 50, 
+            border: "3px solid #e5e7eb", 
+            borderTopColor: "#2563eb", 
+            borderRadius: "50%", 
+            animation: "spin 0.8s linear infinite",
+            margin: "0 auto 16px"
+          }} />
+          <p style={{ fontSize: 13, color: "#6b7280" }}>Loading module data...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 pb-12">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sticky top-0 bg-gray-50 py-4 z-10 border-b border-gray-200">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => navigate('/modules')}
-            className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
-            type="button"
-          >
-            <ArrowLeft size={20} className="text-gray-600" />
+    <div style={{ fontFamily: "'DM Sans', 'Segoe UI', sans-serif", background: "#f4f5f7", minHeight: "100vh", padding: "24px 20px" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+        input:focus, textarea:focus, select:focus { 
+          border-color: #2563eb !important; 
+          background: #fff !important; 
+          box-shadow: 0 0 0 3px rgba(37,99,235,0.08); 
+        }
+        .form-input:hover { border-color: #c7d2fe; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
+
+      {/* ── Header ── */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 24 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <button onClick={() => navigate("/modules")} type="button"
+            style={{ width: 38, height: 38, borderRadius: 10, border: "1px solid #e5e7eb", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
+            <ArrowLeft size={18} color="#374151" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Edit Module</h1>
-            <p className="text-gray-500 text-sm mt-1">
-              Update module information • ID: {id}
-            </p>
+            <h1 style={{ fontSize: 20, fontWeight: 700, color: "#111827", margin: 0 }}>Edit Module</h1>
+            <p style={{ fontSize: 12, color: "#9ca3af", margin: "2px 0 0" }}>Update module information • ID: {id}</p>
           </div>
         </div>
-        
-        <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={() => navigate('/modules')}
-            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-2"
-          >
-            <X size={18} />
-            Cancel
+
+        <div style={{ display: "flex", gap: 10 }}>
+          <button type="button" onClick={() => navigate("/modules")}
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 18px", border: "1px solid #e5e7eb", borderRadius: 10, background: "#fff", color: "#374151", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+            <X size={15} /> Cancel
           </button>
-          <button
-            onClick={handleSubmit}
-            disabled={saving}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed min-w-[120px] justify-center"
-          >
+          <button onClick={handleSubmit} disabled={saving}
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 20px", border: "none", borderRadius: 10, background: saving ? "#93c5fd" : "#2563eb", color: "#fff", fontSize: 13, fontWeight: 600, cursor: saving ? "not-allowed" : "pointer", minWidth: 140, justifyContent: "center" }}>
             {saving ? (
               <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <div style={{ width: 14, height: 14, border: "2px solid rgba(255,255,255,0.4)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
                 Updating...
               </>
             ) : (
-              <>
-                <Save size={18} />
-                Update Module
-              </>
+              <><Save size={15} /> Update Module</>
             )}
           </button>
         </div>
       </div>
 
-      {/* Messages */}
+      {/* ── Alerts ── */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
-          <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
-            <AlertCircle size={16} className="text-red-600" />
+        <div style={{ marginBottom: 16, padding: "12px 16px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 12, display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ width: 30, height: 30, borderRadius: "50%", background: "#fee2e2", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <X size={14} color="#dc2626" />
           </div>
           <div>
-            <h4 className="font-medium text-red-800">Error</h4>
-            <p className="text-red-600 text-sm mt-0.5">{error}</p>
+            <p style={{ fontSize: 13, fontWeight: 600, color: "#dc2626", margin: 0 }}>Error</p>
+            <p style={{ fontSize: 12, color: "#ef4444", margin: "2px 0 0" }}>{error}</p>
           </div>
+          <button onClick={() => setError("")} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "#9ca3af" }}><X size={14} /></button>
         </div>
       )}
-
+      
       {success && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3 animate-pulse">
-          <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-            <CheckCircle size={16} className="text-green-600" />
+        <div style={{ marginBottom: 16, padding: "12px 16px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 12, display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ width: 30, height: 30, borderRadius: "50%", background: "#dcfce7", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <CheckCircle size={14} color="#16a34a" />
           </div>
-          <div>
-            <h4 className="font-medium text-green-800">Success!</h4>
-            <p className="text-green-600 text-sm mt-0.5">{success}</p>
-          </div>
+          <p style={{ fontSize: 13, fontWeight: 600, color: "#16a34a", margin: 0 }}>✓ {success}</p>
         </div>
       )}
 
-      {/* Main Form */}
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Module Information Card */}
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-          <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-            <div className="flex items-center gap-2">
-              <Edit size={18} className="text-indigo-600" />
-              <h2 className="font-semibold text-gray-900">Edit Module Information</h2>
+      <form onSubmit={handleSubmit}>
+        {/* ── Module Information ── */}
+        <div style={sectionStyle}>
+          <div style={sectionHeaderStyle}>
+            <div style={sectionDotStyle("#2563eb")} />
+            <div>
+              <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: "#111827" }}>Module Information</p>
+              <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>Required fields are marked with *</p>
             </div>
-            <p className="text-xs text-gray-500 mt-1">Required fields are marked with *</p>
           </div>
           
-          <div className="p-6 space-y-6">
+          <div style={{ padding: 24 }}>
             {/* Module Name */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Module Name <span className="text-red-500">*</span>
+            <div style={{ marginBottom: 20 }}>
+              <label style={labelStyle}>
+                Module Name <span style={{ color: "#ef4444" }}>*</span>
               </label>
               <input
+                className="form-input"
                 type="text"
                 name="name"
                 value={formData.name}
                 onChange={handleInputChange}
                 placeholder="e.g., Introduction to Python, Module 1 - Basics"
-                className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                style={inputStyle}
                 required
               />
-              <p className="text-xs text-gray-500 mt-1.5">
+              <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 5 }}>
                 Enter a descriptive name for the module
               </p>
             </div>
 
             {/* Course Selection Dropdown */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                <Layers size={14} className="inline mr-1 text-gray-400" />
-                Select Course <span className="text-red-500">*</span>
+            <div style={{ marginBottom: 16 }}>
+              <label style={labelStyle}>
+                <Layers size={12} style={{ display: "inline", marginRight: 5, verticalAlign: "middle", color: "#6b7280" }} />
+                Select Course <span style={{ color: "#ef4444" }}>*</span>
               </label>
               <select
                 name="course_data"
                 value={formData.course_data}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                style={{ ...inputStyle, appearance: "none", cursor: "pointer" }}
                 required
                 disabled={loadingCategories}
               >
@@ -311,58 +348,111 @@ export default function EditModule() {
                   </option>
                 ))}
               </select>
+              
               {loadingCategories && (
-                <p className="text-xs text-gray-500 mt-1.5 flex items-center gap-1">
-                  <div className="w-3 h-3 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+                <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 8, display: "flex", alignItems: "center", gap: 5 }}>
+                  <div style={{ width: 12, height: 12, border: "2px solid #e5e7eb", borderTopColor: "#2563eb", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
                   Loading courses...
                 </p>
               )}
-              <p className="text-xs text-gray-500 mt-1.5">
+              
+              <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 5 }}>
                 Select the course this module belongs to
               </p>
             </div>
 
             {/* Selected Course Info */}
             {formData.course_data && !loadingCategories && (
-              <div className="bg-indigo-50 rounded-lg p-3">
-                <p className="text-xs text-indigo-700">
-                  <span className="font-medium">Selected Course:</span> {getSelectedCourseName()} (ID: {formData.course_data})
+              <div style={{ 
+                background: "#eff6ff", 
+                borderRadius: 10, 
+                padding: "12px 16px",
+                marginTop: 8,
+                border: "1px solid #dbeafe"
+              }}>
+                <p style={{ fontSize: 12, color: "#1e40af", margin: 0 }}>
+                  <span style={{ fontWeight: 600 }}>Selected Course:</span> {getSelectedCourseName()} (ID: {formData.course_data})
                 </p>
               </div>
             )}
           </div>
         </div>
 
-        {/* Current Values Preview */}
-        <div className="bg-indigo-50 rounded-xl p-5 border border-indigo-100">
-          <div className="flex items-start gap-3">
-            <BookOpen size={20} className="text-indigo-600 shrink-0 mt-0.5" />
+        {/* ── Current Values Preview ── */}
+        <div style={sectionStyle}>
+          <div style={sectionHeaderStyle}>
+            <div style={sectionDotStyle("#8b5cf6")} />
             <div>
-              <h4 className="text-sm font-semibold text-indigo-900 mb-1">Current Module Data</h4>
-              <div className="bg-white rounded-lg p-4 shadow-sm">
-                <div className="space-y-2">
-                  <p className="text-sm text-gray-600">
-                    <span className="font-medium text-gray-900">Module:</span>{' '}
-                    {formData.name || 'Not specified'}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    <span className="font-medium text-gray-900">Course:</span>{' '}
-                    {formData.course_data ? getSelectedCourseName() : 'Not selected'} 
-                    {formData.course_data && ` (ID: ${formData.course_data})`}
-                  </p>
+              <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: "#111827" }}>Current Values</p>
+              <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>Preview of existing data</p>
+            </div>
+          </div>
+          
+          <div style={{ padding: 24 }}>
+            <div style={{ 
+              background: "#f9fafb", 
+              borderRadius: 12, 
+              padding: 16,
+              border: "1px solid #e5e7eb"
+            }}>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                <div style={{ 
+                  width: 36, 
+                  height: 36, 
+                  borderRadius: 10, 
+                  background: "#ede9fe", 
+                  display: "flex", 
+                  alignItems: "center", 
+                  justifyContent: "center",
+                  flexShrink: 0
+                }}>
+                  <BookOpen size={16} color="#8b5cf6" />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ marginBottom: 10 }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "#6b7280", display: "block", marginBottom: 2 }}>MODULE NAME</span>
+                    <span style={{ fontSize: 13, color: "#111827", fontWeight: 500 }}>
+                      {formData.name || 'Not specified'}
+                    </span>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "#6b7280", display: "block", marginBottom: 2 }}>COURSE</span>
+                    <span style={{ fontSize: 13, color: "#111827", fontWeight: 500 }}>
+                      {formData.course_data ? getSelectedCourseName() : 'Not selected'} 
+                      {formData.course_data && ` (ID: ${formData.course_data})`}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Help Section */}
-        <div className="bg-gray-50 rounded-xl p-5 border border-gray-200">
-          <div className="flex items-start gap-3">
-            <HelpCircle size={20} className="text-gray-600 shrink-0 mt-0.5" />
+        {/* ── Help Section ── */}
+        <div style={sectionStyle}>
+          <div style={sectionHeaderStyle}>
+            <div style={sectionDotStyle("#10b981")} />
             <div>
-              <h4 className="text-sm font-semibold text-gray-900 mb-1">Editing Tips</h4>
-              <ul className="text-xs text-gray-600 space-y-1 list-disc list-inside">
+              <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: "#111827" }}>Editing Tips</p>
+              <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>Guidelines for updating modules</p>
+            </div>
+          </div>
+          
+          <div style={{ padding: 24 }}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+              <div style={{ 
+                width: 36, 
+                height: 36, 
+                borderRadius: 10, 
+                background: "#e6f7e6", 
+                display: "flex", 
+                alignItems: "center", 
+                justifyContent: "center",
+                flexShrink: 0
+              }}>
+                <HelpCircle size={16} color="#10b981" />
+              </div>
+              <ul style={{ margin: 0, paddingLeft: 20, fontSize: 12, color: "#4b5563", lineHeight: 1.8 }}>
                 <li>Changes will be saved immediately after clicking Update</li>
                 <li>Select a course from the dropdown menu</li>
                 <li>Module name should be descriptive and unique</li>
@@ -372,23 +462,21 @@ export default function EditModule() {
           </div>
         </div>
 
-        {/* Submit Button (Mobile) */}
-        <div className="block sm:hidden">
-          <button
-            type="submit"
-            disabled={saving}
-            className="w-full px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-          >
+        {/* ── Footer Actions ── */}
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, paddingTop: 4 }}>
+          <button type="button" onClick={() => navigate("/modules")}
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "11px 22px", border: "1px solid #e5e7eb", borderRadius: 10, background: "#fff", color: "#374151", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+            <X size={15} /> Cancel
+          </button>
+          <button onClick={handleSubmit} disabled={saving}
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "11px 24px", border: "none", borderRadius: 10, background: saving ? "#93c5fd" : "#2563eb", color: "#fff", fontSize: 13, fontWeight: 600, cursor: saving ? "not-allowed" : "pointer", minWidth: 140, justifyContent: "center" }}>
             {saving ? (
               <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <div style={{ width: 14, height: 14, border: "2px solid rgba(255,255,255,0.4)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
                 Updating...
               </>
             ) : (
-              <>
-                <Save size={18} />
-                Update Module
-              </>
+              <><Save size={15} /> Update Module</>
             )}
           </button>
         </div>
