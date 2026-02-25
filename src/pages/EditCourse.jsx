@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { 
   ArrowLeft, Save, X, Upload, Image, FileText,
   Clock, BookOpen, Users, Signal, Globe, Award,
-  HelpCircle, Trash2, Eye
+  HelpCircle
 } from 'lucide-react'
 
 export default function EditCourse() {
@@ -98,7 +98,7 @@ export default function EditCourse() {
           setError('Failed to fetch course details')
         }
 
-        // Fetch categories (you might have a separate endpoint)
+        // Fetch categories
         setCategories([
           { id: 40, name: 'IT and Software' },
           { id: 43, name: 'Mobile Application' },
@@ -127,7 +127,7 @@ export default function EditCourse() {
     }))
 
     // Auto-generate slug from name
-    if (name === 'name') {
+    if (name === 'name' && !formData.slug) {
       const generatedSlug = value
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
@@ -260,26 +260,18 @@ export default function EditCourse() {
       if (formData.pdf_file) submitData.append('pdf_file', formData.pdf_file)
       if (formData.icon) submitData.append('icon', formData.icon)
 
-      // Log FormData contents for debugging
-      console.log('Updating course data:')
-      for (let pair of submitData.entries()) {
-        console.log(pair[0] + ': ' + (pair[1] instanceof File ? pair[1].name : pair[1]))
-      }
-
       // Make API request (PATCH request for update)
       const response = await fetch(`https://codingcloud.pythonanywhere.com/course/${id}/`, {
-        method: 'PATCH', // or 'PUT' depending on your API
+        method: 'PATCH',
         body: submitData
       })
 
       const data = await response.json()
-      console.log('API Response:', data)
 
       if (response.ok || response.status === 200) {
         setSuccess('Course updated successfully!')
-        // Redirect after 2 seconds
         setTimeout(() => {
-          navigate('/courses')
+          navigate('/course')
         }, 2000)
       } else {
         setError(data.message || data.detail || 'Failed to update course. Please try again.')
@@ -292,251 +284,314 @@ export default function EditCourse() {
     }
   }
 
+  const inputStyle = {
+    width: "100%", padding: "10px 14px", border: "1px solid #e5e7eb",
+    borderRadius: 10, fontSize: 13, color: "#111827", background: "#f9fafb",
+    outline: "none", boxSizing: "border-box", fontFamily: "inherit",
+    transition: "border-color 0.15s, background 0.15s",
+  }
+
+  const labelStyle = { display: "block", fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 6 }
+
+  const sectionStyle = {
+    background: "#fff", borderRadius: 16, boxShadow: "0 1px 4px rgba(0,0,0,0.07)",
+    overflow: "hidden", marginBottom: 20,
+  }
+
+  const sectionHeaderStyle = {
+    padding: "16px 24px", borderBottom: "1px solid #f3f4f6", background: "#fafafa",
+    display: "flex", alignItems: "center", gap: 10,
+  }
+
+  const sectionDotStyle = (color) => ({
+    width: 8, height: 8, borderRadius: "50%", background: color, flexShrink: 0,
+  })
+
+  const UploadBox = ({ preview, onRemove, inputId, inputName, accept, label, hint, isSmall, existingUrl }) => (
+    <div>
+      <label style={labelStyle}>{label}</label>
+      <div style={{
+        border: "1.5px dashed #d1d5db", borderRadius: 12, padding: isSmall ? "20px 16px" : "24px 16px",
+        textAlign: "center", background: "#f9fafb", position: "relative",
+        transition: "border-color 0.15s",
+      }}>
+        {(preview || existingUrl) ? (
+          <div style={{ position: "relative", display: "inline-block" }}>
+            <img 
+              src={preview || `https://codingcloud.pythonanywhere.com${existingUrl}`} 
+              alt="preview"
+              style={{ maxHeight: isSmall ? 80 : 140, borderRadius: 10, boxShadow: "0 2px 12px rgba(0,0,0,0.12)" }} 
+            />
+            <button 
+              type="button" 
+              onClick={onRemove}
+              style={{ 
+                position: "absolute", top: -8, right: -8, width: 26, height: 26, 
+                borderRadius: "50%", background: "#ef4444", border: "none", 
+                cursor: "pointer", display: "flex", alignItems: "center", 
+                justifyContent: "center", boxShadow: "0 2px 6px rgba(239,68,68,0.4)" 
+              }}
+            >
+              <X size={12} color="#fff" />
+            </button>
+          </div>
+        ) : (
+          <>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: "#eff6ff", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 10px" }}>
+              <Upload size={20} color="#2563eb" />
+            </div>
+            <p style={{ fontSize: 13, color: "#374151", margin: "0 0 4px", fontWeight: 500 }}>Click to upload</p>
+            <p style={{ fontSize: 11, color: "#9ca3af", margin: "0 0 12px" }}>{hint}</p>
+            <label htmlFor={inputId}
+              style={{ display: "inline-block", padding: "7px 18px", background: "#2563eb", color: "#fff", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+              Browse File
+            </label>
+          </>
+        )}
+        <input 
+          type="file" 
+          name={inputName} 
+          accept={accept} 
+          onChange={handleFileChange} 
+          className="hidden" 
+          id={inputId} 
+          style={{ display: "none" }} 
+        />
+      </div>
+    </div>
+  )
+
+  const PdfBox = () => (
+    <div>
+      <label style={labelStyle}>Syllabus PDF</label>
+      <div style={{
+        border: "1.5px dashed #d1d5db", borderRadius: 12, padding: "24px 16px",
+        textAlign: "center", background: "#f9fafb",
+      }}>
+        {(pdfName || formData.existing_pdf) ? (
+          <div style={{ position: "relative", display: "inline-block" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", background: "#fff", borderRadius: 10, boxShadow: "0 1px 6px rgba(0,0,0,0.08)" }}>
+              <div style={{ width: 36, height: 36, borderRadius: 8, background: "#fee2e2", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <FileText size={18} color="#ef4444" />
+              </div>
+              <span style={{ fontSize: 12, fontWeight: 500, color: "#374151", maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {pdfName || formData.existing_pdf?.split('/').pop()}
+              </span>
+            </div>
+            <button 
+              type="button" 
+              onClick={() => removeFile('pdf_file', !pdfName)}
+              style={{ 
+                position: "absolute", top: -8, right: -8, width: 26, height: 26, 
+                borderRadius: "50%", background: "#ef4444", border: "none", 
+                cursor: "pointer", display: "flex", alignItems: "center", 
+                justifyContent: "center" 
+              }}
+            >
+              <X size={12} color="#fff" />
+            </button>
+          </div>
+        ) : (
+          <>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: "#fef2f2", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 10px" }}>
+              <FileText size={20} color="#ef4444" />
+            </div>
+            <p style={{ fontSize: 13, color: "#374151", margin: "0 0 4px", fontWeight: 500 }}>Upload Syllabus</p>
+            <p style={{ fontSize: 11, color: "#9ca3af", margin: "0 0 12px" }}>PDF only, up to 10MB</p>
+            <label htmlFor="pdf-upload"
+              style={{ display: "inline-block", padding: "7px 18px", background: "#2563eb", color: "#fff", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+              Browse PDF
+            </label>
+          </>
+        )}
+        <input 
+          type="file" 
+          name="pdf_file" 
+          accept=".pdf" 
+          onChange={handleFileChange} 
+          id="pdf-upload" 
+          style={{ display: "none" }} 
+        />
+      </div>
+    </div>
+  )
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="relative">
-          <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
-          <p className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-gray-500 text-sm whitespace-nowrap">
-            Loading course data...
-          </p>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{
+            width: 48, height: 48, border: "3px solid #e5e7eb", borderTopColor: "#2563eb",
+            borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 12px"
+          }} />
+          <p style={{ color: "#6b7280", fontSize: 14, fontFamily: "'DM Sans', sans-serif" }}>Loading course data...</p>
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6 pb-12">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sticky top-0 bg-gray-50 py-4 z-10 border-b border-gray-200">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => navigate('/courses')}
-            className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
-            type="button"
-          >
-            <ArrowLeft size={20} className="text-gray-600" />
+    <div style={{ fontFamily: "'DM Sans', 'Segoe UI', sans-serif", background: "#f4f5f7", minHeight: "100vh", padding: "24px 20px" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+        input:focus, textarea:focus, select:focus { border-color: #2563eb !important; background: #fff !important; box-shadow: 0 0 0 3px rgba(37,99,235,0.08); }
+        .form-input:hover { border-color: #c7d2fe; }
+        @media (max-width: 640px) {
+          .details-grid { grid-template-columns: 1fr 1fr !important; }
+          .media-grid { grid-template-columns: 1fr !important; }
+          .header-actions { flex-direction: column !important; }
+        }
+        @media (max-width: 400px) {
+          .details-grid { grid-template-columns: 1fr !important; }
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
+
+      {/* ── Header ── */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12, marginBottom: 24 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <button onClick={() => navigate("/course")} type="button"
+            style={{ width: 38, height: 38, borderRadius: 10, border: "1px solid #e5e7eb", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
+            <ArrowLeft size={18} color="#374151" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Edit Course</h1>
-            <p className="text-gray-500 text-sm mt-1">
-              Update course information • ID: {id}
-            </p>
+            <h1 style={{ fontSize: 20, fontWeight: 700, color: "#111827", margin: 0 }}>Edit Course</h1>
+            <p style={{ fontSize: 12, color: "#9ca3af", margin: "2px 0 0" }}>Update course information • ID: {id}</p>
           </div>
         </div>
-        
-        <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={() => navigate('/courses')}
-            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-2"
-          >
-            <X size={18} />
-            Cancel
+
+        <div className="header-actions" style={{ display: "flex", gap: 10 }}>
+          <button type="button" onClick={() => navigate("/course")}
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 18px", border: "1px solid #e5e7eb", borderRadius: 10, background: "#fff", color: "#374151", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+            <X size={15} /> Cancel
           </button>
-          <button
-            onClick={handleSubmit}
-            disabled={saving}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed min-w-[120px] justify-center"
-          >
+          <button onClick={handleSubmit} disabled={saving}
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 20px", border: "none", borderRadius: 10, background: saving ? "#93c5fd" : "#2563eb", color: "#fff", fontSize: 13, fontWeight: 600, cursor: saving ? "not-allowed" : "pointer", minWidth: 130, justifyContent: "center" }}>
             {saving ? (
               <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <div style={{ width: 14, height: 14, border: "2px solid rgba(255,255,255,0.4)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
                 Saving...
               </>
             ) : (
-              <>
-                <Save size={18} />
-                Update Course
-              </>
+              <><Save size={15} /> Update Course</>
             )}
           </button>
         </div>
       </div>
 
-      {/* Messages */}
+      {/* ── Alerts ── */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
-          <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
-            <X size={16} className="text-red-600" />
+        <div style={{ marginBottom: 16, padding: "12px 16px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 12, display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ width: 30, height: 30, borderRadius: "50%", background: "#fee2e2", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <X size={14} color="#dc2626" />
           </div>
           <div>
-            <h4 className="font-medium text-red-800">Error</h4>
-            <p className="text-red-600 text-sm mt-0.5">{error}</p>
+            <p style={{ fontSize: 13, fontWeight: 600, color: "#dc2626", margin: 0 }}>Error</p>
+            <p style={{ fontSize: 12, color: "#ef4444", margin: "2px 0 0" }}>{error}</p>
           </div>
+          <button onClick={() => setError("")} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "#9ca3af" }}><X size={14} /></button>
         </div>
       )}
-
       {success && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3 animate-pulse">
-          <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-            <Save size={16} className="text-green-600" />
+        <div style={{ marginBottom: 16, padding: "12px 16px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 12, display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ width: 30, height: 30, borderRadius: "50%", background: "#dcfce7", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <Save size={14} color="#16a34a" />
           </div>
-          <div>
-            <h4 className="font-medium text-green-800">Success!</h4>
-            <p className="text-green-600 text-sm mt-0.5">{success}</p>
-          </div>
+          <p style={{ fontSize: 13, fontWeight: 600, color: "#16a34a", margin: 0 }}>✓ {success}</p>
         </div>
       )}
 
-      {/* Main Form */}
-      <form className="space-y-6">
-        {/* Basic Information Card */}
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-          <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-            <h2 className="font-semibold text-gray-900">Basic Information</h2>
-            <p className="text-xs text-gray-500 mt-0.5">Required fields are marked with *</p>
-          </div>
-          
-          <div className="p-6 space-y-5">
-            {/* Course Name */}
+      <form onSubmit={handleSubmit}>
+
+        {/* ── Basic Information ── */}
+        <div style={sectionStyle}>
+          <div style={sectionHeaderStyle}>
+            <div style={sectionDotStyle("#2563eb")} />
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Course Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                placeholder="e.g., Advanced React Development"
-                className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                required
-              />
+              <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: "#111827" }}>Basic Information</p>
+              <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>Required fields are marked with *</p>
+            </div>
+          </div>
+          <div style={{ padding: 24 }}>
+            {/* Name */}
+            <div style={{ marginBottom: 16 }}>
+              <label style={labelStyle}>Course Name <span style={{ color: "#ef4444" }}>*</span></label>
+              <input className="form-input" type="text" name="name" value={formData.name} onChange={handleInputChange}
+                placeholder="e.g., Advanced React Development" style={inputStyle} required />
             </div>
 
             {/* Slug */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Slug <span className="text-red-500">*</span>
-              </label>
-              <div className="flex items-center gap-2">
-                <span className="text-gray-500 text-sm bg-gray-100 px-3 py-2.5 rounded-l-lg border border-r-0 border-gray-300">
+            <div style={{ marginBottom: 16 }}>
+              <label style={labelStyle}>Slug <span style={{ color: "#ef4444" }}>*</span></label>
+              <div style={{ display: "flex", alignItems: "center" }}>
+                <span style={{ padding: "10px 14px", background: "#f3f4f6", border: "1px solid #e5e7eb", borderRight: "none", borderRadius: "10px 0 0 10px", fontSize: 12, color: "#6b7280", whiteSpace: "nowrap", fontWeight: 500 }}>
                   /course/
                 </span>
-                <input
-                  type="text"
-                  name="slug"
-                  value={formData.slug}
-                  onChange={handleInputChange}
+                <input className="form-input" type="text" name="slug" value={formData.slug} onChange={handleInputChange}
                   placeholder="advanced-react-development"
-                  className="flex-1 px-4 py-2.5 bg-white border border-gray-300 rounded-r-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  required
-                />
+                  style={{ ...inputStyle, borderRadius: "0 10px 10px 0", flex: 1 }} required />
               </div>
-              <p className="text-xs text-gray-500 mt-1.5">
-                URL-friendly version of the name. Auto-generated from course name.
-              </p>
+              <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 5 }}>URL-friendly version of the name. Auto-generated from course name.</p>
             </div>
 
             {/* Category */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Category <span className="text-red-500">*</span>
-              </label>
-              <select
-                name="category"
-                value={formData.category}
-                onChange={handleInputChange}
-                className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                required
-              >
+            <div style={{ marginBottom: 16 }}>
+              <label style={labelStyle}>Category <span style={{ color: "#ef4444" }}>*</span></label>
+              <select name="category" value={formData.category} onChange={handleInputChange}
+                style={{ ...inputStyle, appearance: "none", cursor: "pointer" }} required>
                 <option value="">Select a category</option>
-                {categories.map(cat => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name} (ID: {cat.id})
-                  </option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>{cat.name} (ID: {cat.id})</option>
                 ))}
               </select>
             </div>
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Description <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                name="text"
-                value={formData.text}
-                onChange={handleInputChange}
-                rows="4"
-                placeholder="Detailed description of the course..."
-                className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-y"
-                required
-              />
+              <label style={labelStyle}>Description <span style={{ color: "#ef4444" }}>*</span></label>
+              <textarea name="text" value={formData.text} onChange={handleInputChange}
+                rows={4} placeholder="Detailed description of the course..."
+                style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }} required />
             </div>
           </div>
         </div>
 
-        {/* Course Details Card */}
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-          <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-            <h2 className="font-semibold text-gray-900">Course Details</h2>
-            <p className="text-xs text-gray-500 mt-0.5">Additional information about the course (optional)</p>
+        {/* ── Course Details ── */}
+        <div style={sectionStyle}>
+          <div style={sectionHeaderStyle}>
+            <div style={sectionDotStyle("#8b5cf6")} />
+            <div>
+              <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: "#111827" }}>Course Details</p>
+              <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>Additional information about the course (optional)</p>
+            </div>
           </div>
-          
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {/* Duration */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  <Clock size={14} className="inline mr-1.5 text-gray-400" />
-                  Duration
-                </label>
-                <input
-                  type="text"
-                  name="duration"
-                  value={formData.duration}
-                  onChange={handleInputChange}
-                  placeholder="e.g., 40 hours"
-                  className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                />
-              </div>
-
-              {/* Lectures */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  <BookOpen size={14} className="inline mr-1.5 text-gray-400" />
-                  Lectures
-                </label>
-                <input
-                  type="text"
-                  name="lecture"
-                  value={formData.lecture}
-                  onChange={handleInputChange}
-                  placeholder="e.g., 98 lectures"
-                  className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                />
-              </div>
-
-              {/* Students */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  <Users size={14} className="inline mr-1.5 text-gray-400" />
-                  Students
-                </label>
-                <input
-                  type="text"
-                  name="students"
-                  value={formData.students}
-                  onChange={handleInputChange}
-                  placeholder="e.g., 1000"
-                  className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                />
-              </div>
+          <div style={{ padding: 24 }}>
+            <div className="details-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+              {[
+                { icon: Clock, label: "Duration", name: "duration", placeholder: "e.g., 40 hours", type: "input" },
+                { icon: BookOpen, label: "Lectures", name: "lecture", placeholder: "e.g., 98 lectures", type: "input" },
+                { icon: Users, label: "Students", name: "students", placeholder: "e.g., 1000", type: "input" },
+              ].map((field) => (
+                <div key={field.name}>
+                  <label style={labelStyle}>
+                    <field.icon size={12} style={{ display: "inline", marginRight: 5, verticalAlign: "middle", color: "#6b7280" }} />
+                    {field.label}
+                  </label>
+                  <input className="form-input" type="text" name={field.name}
+                    value={formData[field.name]} onChange={handleInputChange}
+                    placeholder={field.placeholder} style={inputStyle} />
+                </div>
+              ))}
 
               {/* Level */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  <Signal size={14} className="inline mr-1.5 text-gray-400" />
+                <label style={labelStyle}>
+                  <Signal size={12} style={{ display: "inline", marginRight: 5, verticalAlign: "middle", color: "#6b7280" }} />
                   Level
                 </label>
-                <select
-                  name="level"
-                  value={formData.level}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                >
+                <select name="level" value={formData.level} onChange={handleInputChange}
+                  style={{ ...inputStyle, appearance: "none", cursor: "pointer" }}>
                   <option value="">Select Level</option>
                   <option value="Beginner">Beginner</option>
                   <option value="Intermediate">Intermediate</option>
@@ -548,311 +603,119 @@ export default function EditCourse() {
 
               {/* Language */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  <Globe size={14} className="inline mr-1.5 text-gray-400" />
+                <label style={labelStyle}>
+                  <Globe size={12} style={{ display: "inline", marginRight: 5, verticalAlign: "middle", color: "#6b7280" }} />
                   Language
                 </label>
-                <input
-                  type="text"
-                  name="language"
-                  value={formData.language}
-                  onChange={handleInputChange}
-                  placeholder="e.g., English"
-                  className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                />
+                <input className="form-input" type="text" name="language" value={formData.language} onChange={handleInputChange}
+                  placeholder="e.g., English" style={inputStyle} />
               </div>
 
               {/* Certificate */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  <Award size={14} className="inline mr-1.5 text-gray-400" />
+                <label style={labelStyle}>
+                  <Award size={12} style={{ display: "inline", marginRight: 5, verticalAlign: "middle", color: "#6b7280" }} />
                   Certificate
                 </label>
-                <select
-                  name="certificate"
-                  value={formData.certificate}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                >
-                  <option value="No">No</option>
-                  <option value="Yes">Yes</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Media Files Card */}
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-          <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-            <h2 className="font-semibold text-gray-900">Media Files</h2>
-            <p className="text-xs text-gray-500 mt-0.5">Upload new files to replace existing ones</p>
-          </div>
-          
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Course Image */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Image size={14} className="inline mr-1.5" />
-                  Course Image
-                </label>
-                <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-indigo-500 transition-colors bg-gray-50">
-                  {imagePreview || formData.existing_image ? (
-                    <div className="relative">
-                      <img
-                        src={imagePreview || `https://codingcloud.pythonanywhere.com${formData.existing_image}`}
-                        alt="Preview"
-                        className="max-h-48 mx-auto rounded-lg shadow-md"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeFile('image', !imagePreview)}
-                        className="absolute -top-2 -right-2 w-8 h-8 bg-red-500 text-white rounded-full hover:bg-red-600 flex items-center justify-center shadow-lg transition-all hover:scale-110"
-                      >
-                        <X size={14} />
-                      </button>
-                    </div>
-                  ) : (
-                    <>
-                      <Upload size={36} className="mx-auto text-gray-400 mb-3" />
-                      <p className="text-sm text-gray-600 mb-1">Click to upload course image</p>
-                      <p className="text-xs text-gray-400">PNG, JPG, JPEG up to 5MB</p>
-                    </>
-                  )}
-                  <input
-                    type="file"
-                    name="image"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    className="hidden"
-                    id="image-upload"
-                  />
-                  {!imagePreview && !formData.existing_image && (
-                    <label
-                      htmlFor="image-upload"
-                      className="mt-4 inline-block px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 cursor-pointer transition-colors"
-                    >
-                      Select Image
+                <div style={{ display: "flex", gap: 10 }}>
+                  {["No", "Yes"].map((val) => (
+                    <label key={val} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "10px", border: `1.5px solid ${formData.certificate === val ? "#2563eb" : "#e5e7eb"}`, borderRadius: 10, cursor: "pointer", background: formData.certificate === val ? "#eff6ff" : "#f9fafb", fontSize: 13, fontWeight: 600, color: formData.certificate === val ? "#2563eb" : "#374151", transition: "all 0.15s" }}>
+                      <input type="radio" name="certificate" value={val} checked={formData.certificate === val} onChange={handleInputChange} style={{ display: "none" }} />
+                      {val === "Yes" ? <Award size={13} /> : <X size={13} />}
+                      {val}
                     </label>
-                  )}
-                </div>
-              </div>
-
-              {/* Banner Image */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Image size={14} className="inline mr-1.5" />
-                  Banner Image
-                </label>
-                <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-indigo-500 transition-colors bg-gray-50">
-                  {bannerPreview || formData.existing_banner ? (
-                    <div className="relative">
-                      <img
-                        src={bannerPreview || `https://codingcloud.pythonanywhere.com${formData.existing_banner}`}
-                        alt="Preview"
-                        className="max-h-48 mx-auto rounded-lg shadow-md"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeFile('banner_img', !bannerPreview)}
-                        className="absolute -top-2 -right-2 w-8 h-8 bg-red-500 text-white rounded-full hover:bg-red-600 flex items-center justify-center shadow-lg transition-all hover:scale-110"
-                      >
-                        <X size={14} />
-                      </button>
-                    </div>
-                  ) : (
-                    <>
-                      <Upload size={36} className="mx-auto text-gray-400 mb-3" />
-                      <p className="text-sm text-gray-600 mb-1">Click to upload banner image</p>
-                      <p className="text-xs text-gray-400">PNG, JPG, JPEG up to 5MB</p>
-                    </>
-                  )}
-                  <input
-                    type="file"
-                    name="banner_img"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    className="hidden"
-                    id="banner-upload"
-                  />
-                  {!bannerPreview && !formData.existing_banner && (
-                    <label
-                      htmlFor="banner-upload"
-                      className="mt-4 inline-block px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 cursor-pointer transition-colors"
-                    >
-                      Select Banner
-                    </label>
-                  )}
-                </div>
-              </div>
-
-              {/* Icon */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Image size={14} className="inline mr-1.5" />
-                  Course Icon
-                </label>
-                <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-indigo-500 transition-colors bg-gray-50">
-                  {iconPreview || formData.existing_icon ? (
-                    <div className="relative">
-                      <img
-                        src={iconPreview || `https://codingcloud.pythonanywhere.com${formData.existing_icon}`}
-                        alt="Preview"
-                        className="max-h-24 mx-auto rounded-lg shadow-md"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeFile('icon', !iconPreview)}
-                        className="absolute -top-2 -right-2 w-8 h-8 bg-red-500 text-white rounded-full hover:bg-red-600 flex items-center justify-center shadow-lg transition-all hover:scale-110"
-                      >
-                        <X size={14} />
-                      </button>
-                    </div>
-                  ) : (
-                    <>
-                      <Upload size={36} className="mx-auto text-gray-400 mb-3" />
-                      <p className="text-sm text-gray-600 mb-1">Click to upload icon</p>
-                      <p className="text-xs text-gray-400">PNG, JPG, JPEG up to 2MB</p>
-                    </>
-                  )}
-                  <input
-                    type="file"
-                    name="icon"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    className="hidden"
-                    id="icon-upload"
-                  />
-                  {!iconPreview && !formData.existing_icon && (
-                    <label
-                      htmlFor="icon-upload"
-                      className="mt-4 inline-block px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 cursor-pointer transition-colors"
-                    >
-                      Select Icon
-                    </label>
-                  )}
-                </div>
-              </div>
-
-              {/* PDF File */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <FileText size={14} className="inline mr-1.5" />
-                  Syllabus PDF
-                </label>
-                <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-indigo-500 transition-colors bg-gray-50">
-                  {(pdfName || formData.existing_pdf) ? (
-                    <div className="relative">
-                      <div className="flex items-center justify-center gap-3 p-4 bg-white rounded-lg shadow-sm">
-                        <FileText size={32} className="text-red-500" />
-                        <span className="text-sm font-medium text-gray-700 truncate max-w-[150px]">
-                          {pdfName || formData.existing_pdf.split('/').pop()}
-                        </span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => removeFile('pdf_file', !pdfName)}
-                        className="absolute -top-2 -right-2 w-8 h-8 bg-red-500 text-white rounded-full hover:bg-red-600 flex items-center justify-center shadow-lg transition-all hover:scale-110"
-                      >
-                        <X size={14} />
-                      </button>
-                    </div>
-                  ) : (
-                    <>
-                      <Upload size={36} className="mx-auto text-gray-400 mb-3" />
-                      <p className="text-sm text-gray-600 mb-1">Click to upload PDF</p>
-                      <p className="text-xs text-gray-400">PDF files only, up to 10MB</p>
-                    </>
-                  )}
-                  <input
-                    type="file"
-                    name="pdf_file"
-                    accept=".pdf"
-                    onChange={handleFileChange}
-                    className="hidden"
-                    id="pdf-upload"
-                  />
-                  {!pdfName && !formData.existing_pdf && (
-                    <label
-                      htmlFor="pdf-upload"
-                      className="mt-4 inline-block px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 cursor-pointer transition-colors"
-                    >
-                      Select PDF
-                    </label>
-                  )}
+                  ))}
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* SEO & Metadata Card */}
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-          <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-            <h2 className="font-semibold text-gray-900">SEO & Metadata</h2>
-            <p className="text-xs text-gray-500 mt-0.5">For search engine optimization (optional)</p>
+        {/* ── Media Files ── */}
+        <div style={sectionStyle}>
+          <div style={sectionHeaderStyle}>
+            <div style={sectionDotStyle("#f59e0b")} />
+            <div>
+              <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: "#111827" }}>Media Files</p>
+              <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>Upload new files to replace existing ones</p>
+            </div>
           </div>
-          
-          <div className="p-6 space-y-5">
-            {/* Meta Title */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Meta Title
-              </label>
-              <input
-                type="text"
-                name="meta_title"
-                value={formData.meta_title}
-                onChange={handleInputChange}
-                placeholder="SEO title for the course"
-                className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          <div style={{ padding: 24 }}>
+            <div className="media-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+              <UploadBox 
+                preview={imagePreview} 
+                existingUrl={formData.existing_image}
+                onRemove={() => removeFile('image', !imagePreview)} 
+                inputId="image-upload" 
+                inputName="image" 
+                accept="image/*" 
+                label="Course Image" 
+                hint="PNG, JPG up to 5MB" 
               />
-            </div>
-
-            {/* Meta Description */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Meta Description
-              </label>
-              <textarea
-                name="meta_description"
-                value={formData.meta_description}
-                onChange={handleInputChange}
-                rows="3"
-                placeholder="SEO description for search engines"
-                className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-y"
+              <UploadBox 
+                preview={bannerPreview} 
+                existingUrl={formData.existing_banner}
+                onRemove={() => removeFile('banner_img', !bannerPreview)} 
+                inputId="banner-upload" 
+                inputName="banner_img" 
+                accept="image/*" 
+                label="Banner Image" 
+                hint="PNG, JPG up to 5MB" 
               />
-            </div>
-
-            {/* Keywords */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Keywords
-              </label>
-              <input
-                type="text"
-                name="keywords"
-                value={formData.keywords}
-                onChange={handleInputChange}
-                placeholder="react, javascript, web development"
-                className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              <UploadBox 
+                preview={iconPreview} 
+                existingUrl={formData.existing_icon}
+                onRemove={() => removeFile('icon', !iconPreview)} 
+                inputId="icon-upload" 
+                inputName="icon" 
+                accept="image/*" 
+                label="Course Icon" 
+                hint="PNG, JPG up to 2MB" 
+                isSmall 
               />
-              <p className="text-xs text-gray-500 mt-1.5">
-                Comma-separated keywords for search
-              </p>
+              <PdfBox />
             </div>
           </div>
         </div>
 
-        {/* Help Section */}
-        <div className="bg-indigo-50 rounded-xl p-5 border border-indigo-100">
-          <div className="flex items-start gap-3">
-            <HelpCircle size={20} className="text-indigo-600 shrink-0 mt-0.5" />
+        {/* ── SEO ── */}
+        <div style={sectionStyle}>
+          <div style={sectionHeaderStyle}>
+            <div style={sectionDotStyle("#10b981")} />
             <div>
-              <h4 className="text-sm font-semibold text-indigo-900 mb-1">Editing Tips</h4>
-              <ul className="text-xs text-indigo-700 space-y-1 list-disc list-inside">
-                <li>Fields marked with <span className="text-red-500">*</span> are required</li>
+              <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: "#111827" }}>SEO & Metadata</p>
+              <p style={{ margin: 0, fontSize: 11, color: "#9ca3af" }}>For search engine optimization (optional)</p>
+            </div>
+          </div>
+          <div style={{ padding: 24 }}>
+            <div style={{ marginBottom: 16 }}>
+              <label style={labelStyle}>Meta Title</label>
+              <input className="form-input" type="text" name="meta_title" value={formData.meta_title} onChange={handleInputChange}
+                placeholder="SEO title for the course" style={inputStyle} />
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <label style={labelStyle}>Meta Description</label>
+              <textarea name="meta_description" value={formData.meta_description} onChange={handleInputChange}
+                rows={3} placeholder="SEO description for search engines"
+                style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }} />
+            </div>
+            <div>
+              <label style={labelStyle}>Keywords</label>
+              <input className="form-input" type="text" name="keywords" value={formData.keywords} onChange={handleInputChange}
+                placeholder="react, javascript, web development" style={inputStyle} />
+              <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 5 }}>Comma-separated keywords for search</p>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Help Section ── */}
+        <div style={{ background: "#eff6ff", borderRadius: 12, padding: 16, marginBottom: 20, border: "1px solid #dbeafe" }}>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+            <HelpCircle size={18} color="#2563eb" style={{ flexShrink: 0, marginTop: 2 }} />
+            <div>
+              <p style={{ fontSize: 13, fontWeight: 700, color: "#1e40af", margin: "0 0 4px" }}>Editing Tips</p>
+              <ul style={{ fontSize: 12, color: "#2563eb", margin: 0, paddingLeft: 16 }}>
+                <li>Fields marked with <span style={{ color: "#dc2626" }}>*</span> are required</li>
                 <li>Upload new files to replace existing ones</li>
                 <li>Changes will be saved using PATCH method (partial update)</li>
                 <li>Category ID must match existing categories</li>
@@ -860,7 +723,27 @@ export default function EditCourse() {
             </div>
           </div>
         </div>
+
+        {/* ── Footer Actions ── */}
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, paddingTop: 4 }}>
+          <button type="button" onClick={() => navigate("/course")}
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "11px 22px", border: "1px solid #e5e7eb", borderRadius: 10, background: "#fff", color: "#374151", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+            <X size={15} /> Cancel
+          </button>
+          <button onClick={handleSubmit} disabled={saving}
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "11px 24px", border: "none", borderRadius: 10, background: saving ? "#93c5fd" : "#2563eb", color: "#fff", fontSize: 13, fontWeight: 600, cursor: saving ? "not-allowed" : "pointer", minWidth: 140, justifyContent: "center" }}>
+            {saving ? (
+              <>
+                <div style={{ width: 14, height: 14, border: "2px solid rgba(255,255,255,0.4)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                Saving...
+              </>
+            ) : (
+              <><Save size={15} /> Update Course</>
+            )}
+          </button>
+        </div>
+
       </form>
     </div>
-  );
+  )
 }
