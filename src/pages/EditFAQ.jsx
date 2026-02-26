@@ -612,388 +612,363 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import {
-  ArrowLeft,
-  Save,
-  X,
-  HelpCircle,
-  ChevronDown,
-  Info,
+    ArrowLeft,
+    Save,
+    X,
+    ChevronDown,
+    Info,
+    CheckCircle2,
+    AlertCircle,
+    Layers,
+    HelpCircle,
+    MessageSquare,
 } from "lucide-react";
 
 export default function EditFAQ() {
-  const navigate = useNavigate();
-  const { id } = useParams();
-  const location = useLocation();
-  const locationState = location.state;
+    const navigate = useNavigate();
+    const { id } = useParams();
+    const location = useLocation();
+    const locationState = location.state;
 
-  // State for form data
-  const [formData, setFormData] = useState({
-    course: "", // string ID that we parsing to int later
-    question: "",
-    answer: "",
-  });
+    const [formData, setFormData] = useState({ course: "", question: "", answer: "" });
+    const [courses, setCourses] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState("");
+    const [success, setSuccess] = useState("");
 
-  // Data state
-  const [courses, setCourses] = useState([]);
-  const [loading, setLoading] = useState(true);
+    useEffect(() => {
+        const initializeData = async () => {
+            try {
+                setLoading(true);
+                setError("");
 
-  // UI States
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+                // Fetch courses
+                let fetchedCourses = [];
+                const coursesResponse = await fetch("https://codingcloud.pythonanywhere.com/course/");
+                if (coursesResponse.ok) {
+                    const coursesData = await coursesResponse.json();
+                    fetchedCourses = coursesData.data || coursesData;
+                    setCourses(fetchedCourses);
+                } else {
+                    setError("Failed to fetch available courses.");
+                }
 
-  useEffect(() => {
-    const initializeData = async () => {
-      try {
-        setLoading(true);
+                // Fetch FAQ data
+                let faqData = null;
+                if (locationState && locationState.faq) {
+                    faqData = locationState.faq;
+                } else {
+                    const faqsResponse = await fetch("https://codingcloud.pythonanywhere.com/faqs/");
+                    if (faqsResponse.ok) {
+                        const listDataRes = await faqsResponse.json();
+                        const listData = listDataRes.data || listDataRes;
+                        faqData = Array.isArray(listData)
+                            ? listData.find((f) => f.id === parseInt(id))
+                            : null;
+                    }
+                }
+
+                if (faqData) {
+                    setFormData({
+                        course: faqData.course?.toString() || "",
+                        question: faqData.question || "",
+                        answer: faqData.answer || "",
+                    });
+                } else {
+                    setError((prev) => (prev ? prev + " FAQ not found." : "FAQ not found."));
+                }
+            } catch (err) {
+                console.error("Error fetching data:", err);
+                setError("Failed to load details. Please try again.");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        initializeData();
+    }, [id, locationState]);
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData((prev) => ({ ...prev, [name]: value }));
         setError("");
-
-        // Fetch courses for the dropdown
-        let fetchedCourses = [];
-        const coursesResponse = await fetch(
-          "https://codingcloud.pythonanywhere.com/course/"
-        );
-        if (coursesResponse.ok) {
-          const coursesData = await coursesResponse.json();
-          fetchedCourses = coursesData.data || coursesData;
-          setCourses(fetchedCourses);
-        } else {
-          setError("Failed to fetch available courses.");
-        }
-
-        // Fetch FAQ data
-        let faqData = null;
-        if (locationState && locationState.faq) {
-          faqData = locationState.faq;
-        } else {
-          // Need to fetch individual or from list
-          const faqsResponse = await fetch(
-            "https://codingcloud.pythonanywhere.com/faqs/"
-          );
-          if (faqsResponse.ok) {
-            const listDataRes = await faqsResponse.json();
-            const listData = listDataRes.data || listDataRes;
-            faqData = Array.isArray(listData)
-              ? listData.find((f) => f.id === parseInt(id))
-              : null;
-          }
-        }
-
-        if (faqData) {
-          setFormData({
-            course: faqData.course?.toString() || "",
-            question: faqData.question || "",
-            answer: faqData.answer || "",
-          });
-        } else {
-          setError((prev) =>
-            prev ? prev + " FAQ not found." : "FAQ not found."
-          );
-        }
-      } catch (err) {
-        console.error("Error fetching data:", err);
-        setError("Failed to load details. Please try again.");
-      } finally {
-        setLoading(false);
-      }
     };
 
-    initializeData();
-  }, [id, locationState]);
+    const validateForm = () => {
+        if (!formData.course) return "Please select a course";
+        if (!formData.question.trim()) return "Question is required";
+        if (!formData.answer.trim()) return "Answer is required";
+        return "";
+    };
 
-  // Handle text input changes
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-    setError("");
-  };
-
-  // Validate form
-  const validateForm = () => {
-    if (!formData.course) {
-      return "Please select a course";
-    }
-    if (!formData.question.trim()) {
-      return "Question is required";
-    }
-    if (!formData.answer.trim()) {
-      return "Answer is required";
-    }
-    return "";
-  };
-
-  // Handle form submission
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    // Validate
-    const validationError = validateForm();
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
-
-    setSaving(true);
-    setError("");
-    setSuccess("");
-
-    try {
-      const payload = {
-        course: parseInt(formData.course),
-        question: formData.question.trim(),
-        answer: formData.answer.trim(),
-      };
-
-      const response = await fetch(
-        `https://codingcloud.pythonanywhere.com/faqs/${id}/`,
-        {
-          method: "PATCH", // Use PATCH for partial/full updates natively
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        }
-      );
-
-      // If the response is not ok, try to get the error details
-      if (!response.ok) {
-        const errorText = await response.text();
-        let errorMessage;
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        const validationError = validateForm();
+        if (validationError) { setError(validationError); return; }
+        setSaving(true);
+        setError("");
+        setSuccess("");
         try {
-          const errorData = JSON.parse(errorText);
-          errorMessage =
-            errorData.message || errorData.detail || JSON.stringify(errorData);
-        } catch {
-          errorMessage = errorText || `HTTP error ${response.status}`;
+            const payload = {
+                course: parseInt(formData.course),
+                question: formData.question.trim(),
+                answer: formData.answer.trim(),
+            };
+            const response = await fetch(`https://codingcloud.pythonanywhere.com/faqs/${id}/`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+            if (!response.ok) {
+                const errorText = await response.text();
+                let errorMessage;
+                try {
+                    const errorData = JSON.parse(errorText);
+                    errorMessage = errorData.message || errorData.detail || JSON.stringify(errorData);
+                } catch {
+                    errorMessage = errorText || `HTTP error ${response.status}`;
+                }
+                throw new Error(errorMessage);
+            }
+            setSuccess("FAQ updated successfully!");
+            setTimeout(() => navigate("/faqs"), 2000);
+        } catch (err) {
+            console.error("Error updating FAQ:", err);
+            setError(err.message || "Failed to update FAQ. Please check your connection.");
+        } finally {
+            setSaving(false);
         }
-        throw new Error(errorMessage);
-      }
+    };
 
-      setSuccess("FAQ updated successfully!");
+    const selectedCourse = courses.find((c) => c.id === parseInt(formData.course));
 
-      // Redirect after 2 seconds
-      setTimeout(() => {
-        navigate("/faqs");
-      }, 2000);
-    } catch (err) {
-      console.error("Error updating FAQ:", err);
-      setError(
-        err.message || "Failed to update FAQ. Please check your connection."
-      );
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // Get selected course name for display
-  const getSelectedCourseName = () => {
-    const selected = courses.find(
-      (c) => c.id === parseInt(formData.course)
-    );
-    return selected ? selected.name : "Unknown Course";
-  };
-
-  const Section = ({ title, description, icon, children }) => (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      <div className="p-5 border-b border-gray-100 bg-gray-50/50">
-        <div className="flex items-center gap-3">
-          <div className={`w-2 h-2 rounded-full ${icon} shadow-sm`} />
-          <div>
-            <h2 className="text-base font-semibold text-gray-900">{title}</h2>
-            <p className="text-xs text-gray-500 mt-0.5">{description}</p>
-          </div>
-        </div>
-      </div>
-      <div className="p-5">{children}</div>
-    </div>
-  );
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-3"></div>
-          <p className="text-sm text-gray-600">Loading FAQ details...</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-      `}</style>
-
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => navigate(-1)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <ArrowLeft size={18} className="text-gray-600" />
-              </button>
-              <div>
-                <h1 className="text-lg sm:text-xl font-semibold text-gray-900">
-                  Edit FAQ
-                </h1>
-                <p className="text-xs text-gray-500 hidden sm:block">
-                  ID: {id} • Update frequently asked question
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={handleSubmit}
-              disabled={saving || !formData.course}
-              className="px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2 disabled:opacity-50 text-sm"
-            >
-              {saving ? (
-                <>
-                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <span className="hidden sm:inline">Updating...</span>
-                </>
-              ) : (
-                <>
-                  <Save size={16} />
-                  <span className="hidden sm:inline">Update</span>
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5 sm:py-6">
-        {/* Messages */}
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
-            <div className="w-5 h-5 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
-              <X size={12} className="text-red-600" />
-            </div>
-            <p className="text-xs text-red-600 flex-1">{error}</p>
-            <button onClick={() => setError("")} className="text-gray-400 hover:text-gray-600">
-              <X size={14} />
-            </button>
-          </div>
-        )}
-
-        {success && (
-          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-start gap-2">
-            <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-              <Save size={12} className="text-green-600" />
-            </div>
-            <p className="text-xs text-green-600">✓ {success}</p>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {/* FAQ Information Section */}
-          <Section title="FAQ Information" description="Update the frequently asked question" icon="bg-blue-500">
-            <div className="space-y-5">
-              {/* Associated Course */}
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                  Related Course <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <select
-                    name="course"
-                    value={formData.course}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    required
-                  >
-                    <option value="" disabled>
-                      Select a Course
-                    </option>
-                    {courses.map((course) => (
-                      <option key={course.id} value={course.id}>
-                        {course.name} (ID: {course.id})
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+    // ── Loading State ──
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="w-14 h-14 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4" />
+                    <p className="text-sm text-gray-500 font-medium">Loading FAQ details…</p>
                 </div>
-                
-                {formData.course && (
-                  <div className="mt-2 p-2 bg-indigo-50 rounded-lg border border-indigo-100">
-                    <p className="text-xs text-indigo-700">
-                      <span className="font-semibold">Selected Course:</span> {getSelectedCourseName()}
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Question */}
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                  Question <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="question"
-                  value={formData.question}
-                  onChange={handleInputChange}
-                  placeholder="e.g., What is Python used for?"
-                  className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                  required
-                />
-              </div>
-
-              {/* Answer */}
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                  Answer <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  name="answer"
-                  value={formData.answer}
-                  onChange={handleInputChange}
-                  rows={5}
-                  placeholder="Enter the comprehensive answer here..."
-                  className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all resize-none"
-                  required
-                />
-                <p className="text-xs text-gray-500 mt-1.5 flex items-center gap-1">
-                  <Info size={12} className="text-gray-400" />
-                  Provide a clear and detailed answer to help students
-                </p>
-              </div>
             </div>
-          </Section>
+        );
+    }
 
-          
-          {/* Mobile Submit Button */}
-          <div className="block sm:hidden">
-            <button
-              type="submit"
-              disabled={saving || !formData.course}
-              className="w-full py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-sm"
-            >
-              {saving ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Updating...
-                </>
-              ) : (
-                <>
-                  <Save size={16} />
-                  Update FAQ
-                </>
-              )}
-            </button>
-          </div>
+    return (
+        <div className="min-h-screen bg-gray-50">
 
-         
-        </form>
-      </div>
-    </div>
-  );
+            {/* ── Header ── */}
+            <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => navigate(-1)}
+                            className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-all text-sm font-medium"
+                        >
+                            <ArrowLeft size={16} />
+                            <span className="hidden sm:inline">Back</span>
+                        </button>
+                        <div className="w-px h-6 bg-gray-200" />
+                        <div>
+                            <h1 className="text-base sm:text-lg font-bold text-gray-900 leading-tight">Edit FAQ</h1>
+                            <p className="text-xs text-gray-400 hidden sm:block">ID: {id} · Update frequently asked question</p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={handleSubmit}
+                        disabled={saving || !formData.course}
+                        className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-semibold rounded-xl shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {saving ? (
+                            <>
+                                <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                                Updating…
+                            </>
+                        ) : (
+                            <>
+                                <Save size={15} />
+                                Update FAQ
+                            </>
+                        )}
+                    </button>
+                </div>
+            </header>
+
+            {/* ── Main ── */}
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 pb-28 sm:pb-12">
+
+                {/* Error Alert */}
+                {error && (
+                    <div className="flex items-start gap-3 p-4 mb-6 bg-red-50 border border-red-200 rounded-2xl text-sm text-red-700">
+                        <AlertCircle size={18} className="mt-0.5 flex-shrink-0 text-red-500" />
+                        <span className="flex-1">{error}</span>
+                        <button onClick={() => setError("")} className="text-red-400 hover:text-red-600 transition-colors flex-shrink-0">
+                            <X size={16} />
+                        </button>
+                    </div>
+                )}
+
+                {/* Success Alert */}
+                {success && (
+                    <div className="flex items-start gap-3 p-4 mb-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-sm text-emerald-700">
+                        <CheckCircle2 size={18} className="mt-0.5 flex-shrink-0 text-emerald-500" />
+                        <span>{success}</span>
+                    </div>
+                )}
+
+                <form onSubmit={handleSubmit} className="space-y-5">
+
+                    {/* ── Course Selection Card ── */}
+                    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-9 h-9 bg-violet-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                                <Layers size={16} className="text-violet-600" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-800">
+                                    Related Course <span className="text-red-500">*</span>
+                                </label>
+                                <p className="text-xs text-gray-400 mt-0.5">Select the course this FAQ belongs to</p>
+                            </div>
+                        </div>
+
+                        <div className="relative">
+                            <select
+                                name="course"
+                                value={formData.course}
+                                onChange={handleInputChange}
+                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none cursor-pointer"
+                                required
+                            >
+                                <option value="" disabled>— Select a Course —</option>
+                                {courses.map((course) => (
+                                    <option key={course.id} value={course.id}>
+                                        {course.name} (ID: {course.id})
+                                    </option>
+                                ))}
+                            </select>
+                            <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                        </div>
+
+                        {/* Selected course confirmation badge */}
+                        {selectedCourse && (
+                            <div className="mt-3 flex items-center gap-2 p-3 bg-violet-50 border border-violet-100 rounded-xl">
+                                <div className="w-6 h-6 bg-violet-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <Layers size={12} className="text-violet-600" />
+                                </div>
+                                <p className="text-xs text-violet-700">
+                                    <span className="font-semibold">Selected:</span> {selectedCourse.name}
+                                    <span className="text-violet-400 ml-1">· ID: {selectedCourse.id}</span>
+                                </p>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* ── Question Card ── */}
+                    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-9 h-9 bg-indigo-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                                <HelpCircle size={16} className="text-indigo-600" />
+                            </div>
+                            <div>
+                                <label htmlFor="question" className="block text-sm font-semibold text-gray-800">
+                                    Question <span className="text-red-500">*</span>
+                                </label>
+                                <p className="text-xs text-gray-400 mt-0.5">Write a clear, concise question students might ask</p>
+                            </div>
+                        </div>
+                        <input
+                            id="question"
+                            type="text"
+                            name="question"
+                            value={formData.question}
+                            onChange={handleInputChange}
+                            placeholder="e.g., What is Python used for?"
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                            required
+                        />
+                    </div>
+
+                    {/* ── Answer Card ── */}
+                    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-9 h-9 bg-emerald-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                                <MessageSquare size={16} className="text-emerald-600" />
+                            </div>
+                            <div>
+                                <label htmlFor="answer" className="block text-sm font-semibold text-gray-800">
+                                    Answer <span className="text-red-500">*</span>
+                                </label>
+                                <p className="text-xs text-gray-400 mt-0.5">Provide a clear and detailed answer to help students</p>
+                            </div>
+                        </div>
+                        <textarea
+                            id="answer"
+                            name="answer"
+                            value={formData.answer}
+                            onChange={handleInputChange}
+                            rows={5}
+                            placeholder="Enter the comprehensive answer here…"
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-none"
+                            required
+                        />
+                        <p className="flex items-center gap-1.5 text-xs text-gray-400 mt-2">
+                            <Info size={11} />
+                            Provide a clear and detailed answer to help students · {formData.answer.length} characters
+                        </p>
+                    </div>
+
+                    {/* ── Live Preview Card ── */}
+                    {(formData.question || formData.answer || selectedCourse) && (
+                        <div className="bg-gradient-to-br from-indigo-50 to-violet-50 border border-indigo-100 rounded-2xl p-5">
+                            <p className="text-xs font-semibold text-indigo-500 uppercase tracking-wider mb-3">Preview</p>
+                            <div className="space-y-3">
+                                {selectedCourse && (
+                                    <p className="text-xs text-indigo-500 font-medium">
+                                        Course: {selectedCourse.name}
+                                    </p>
+                                )}
+                                <div className="flex items-start gap-2">
+                                    <div className="w-5 h-5 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <HelpCircle size={11} className="text-indigo-600" />
+                                    </div>
+                                    <p className="text-sm font-semibold text-gray-800">
+                                        {formData.question || <span className="text-gray-400 font-normal italic">No question entered…</span>}
+                                    </p>
+                                </div>
+                                {formData.answer && (
+                                    <div className="pl-7">
+                                        <p className="text-xs text-gray-600 leading-relaxed line-clamp-3">{formData.answer}</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ── Mobile Submit ── */}
+                    <div className="sm:hidden">
+                        <button
+                            type="submit"
+                            disabled={saving || !formData.course}
+                            className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        >
+                            {saving ? (
+                                <>
+                                    <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                                    Updating…
+                                </>
+                            ) : (
+                                <>
+                                    <Save size={16} />
+                                    Update FAQ
+                                </>
+                            )}
+                        </button>
+                    </div>
+
+                </form>
+            </main>
+        </div>
+    );
 }

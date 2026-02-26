@@ -674,307 +674,368 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  ArrowLeft,
-  Save,
-  X,
-  BookOpen,
-  AlertCircle,
-  Layers,
-  CheckCircle,
+    ArrowLeft,
+    Save,
+    X,
+    BookOpen,
+    AlertCircle,
+    Layers,
+    CheckCircle2,
+    Tag,
+    ChevronDown,
+    BookMarked,
 } from "lucide-react";
 
 export default function AddTopic() {
-  const navigate = useNavigate();
+    const navigate = useNavigate();
 
-  const [formData, setFormData] = useState({ module_id: "", name: "" });
-  const [modules, setModules] = useState([]);
-  const [courses, setCourses] = useState([]);
-  const [filteredModules, setFilteredModules] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [selectedCourse, setSelectedCourse] = useState("");
+    const [formData, setFormData] = useState({ module_id: "", name: "" });
+    const [modules, setModules] = useState([]);
+    const [courses, setCourses] = useState([]);
+    const [filteredModules, setFilteredModules] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState("");
+    const [success, setSuccess] = useState("");
+    const [selectedCourse, setSelectedCourse] = useState("");
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const modulesResponse = await fetch("https://codingcloud.pythonanywhere.com/modules/");
-        const modulesData = await modulesResponse.json();
-        const coursesResponse = await fetch("https://codingcloud.pythonanywhere.com/course/");
-        const coursesData = await coursesResponse.json();
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                setLoading(true);
+                const modulesResponse = await fetch("https://codingcloud.pythonanywhere.com/modules/");
+                const modulesData = await modulesResponse.json();
+                const coursesResponse = await fetch("https://codingcloud.pythonanywhere.com/course/");
+                const coursesData = await coursesResponse.json();
 
-        if (modulesData.success) {
-          setModules(modulesData.data);
-          setFilteredModules(modulesData.data);
+                if (modulesData.success) {
+                    setModules(modulesData.data);
+                    setFilteredModules(modulesData.data);
+                } else {
+                    setError("Failed to load modules");
+                }
+                if (coursesData.success) setCourses(coursesData.data);
+            } catch (err) {
+                setError("Failed to load modules or courses. Please try again.");
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
+    }, []);
+
+    useEffect(() => {
+        if (selectedCourse) {
+            const filtered = modules.filter((module) => module.course_data === parseInt(selectedCourse));
+            setFilteredModules(filtered);
+            if (formData.module_id) {
+                const selectedModule = modules.find((m) => m.id === parseInt(formData.module_id));
+                if (selectedModule && selectedModule.course_data !== parseInt(selectedCourse)) {
+                    setFormData((prev) => ({ ...prev, module_id: "" }));
+                }
+            }
         } else {
-          setError("Failed to load modules");
+            setFilteredModules(modules);
         }
-        if (coursesData.success) setCourses(coursesData.data);
-      } catch (err) {
-        setError("Failed to load modules or courses. Please try again.");
-      } finally {
-        setLoading(false);
-      }
+    }, [selectedCourse, modules, formData.module_id]);
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData((prev) => ({ ...prev, [name]: value }));
+        setError("");
     };
-    fetchData();
-  }, []);
 
-  useEffect(() => {
-    if (selectedCourse) {
-      const filtered = modules.filter((module) => module.course_data === parseInt(selectedCourse));
-      setFilteredModules(filtered);
-      if (formData.module_id) {
-        const selectedModule = modules.find((m) => m.id === parseInt(formData.module_id));
-        if (selectedModule && selectedModule.course_data !== parseInt(selectedCourse)) {
-          setFormData((prev) => ({ ...prev, module_id: "" }));
+    const handleCourseChange = (e) => setSelectedCourse(e.target.value);
+
+    const validateForm = () => {
+        if (!formData.name.trim()) return "Topic name is required";
+        if (!formData.module_id) return "Please select a module";
+        return "";
+    };
+
+    const getModuleDetails = (moduleId) => {
+        const module = modules.find((m) => m.id === parseInt(moduleId));
+        if (!module) return null;
+        const course = courses.find((c) => c.id === module.course_data);
+        return {
+            moduleName: module.name,
+            courseName: course?.name || "Unknown Course",
+            courseId: module.course_data,
+        };
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        const validationError = validateForm();
+        if (validationError) { setError(validationError); return; }
+        setSaving(true);
+        setError("");
+        setSuccess("");
+        try {
+            const response = await fetch("https://codingcloud.pythonanywhere.com/topics/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ module: parseInt(formData.module_id), name: formData.name.trim() }),
+            });
+            if (!response.ok) {
+                const errorText = await response.text();
+                let errorMessage;
+                try {
+                    const errorData = JSON.parse(errorText);
+                    errorMessage = errorData.message || errorData.detail || JSON.stringify(errorData);
+                } catch {
+                    errorMessage = errorText || `HTTP error ${response.status}`;
+                }
+                throw new Error(errorMessage);
+            }
+            setSuccess("Topic created successfully!");
+            setFormData({ module_id: "", name: "" });
+            setSelectedCourse("");
+            setTimeout(() => navigate("/topics"), 2000);
+        } catch (err) {
+            setError(err.message || "Failed to create topic. Please check the API endpoint.");
+        } finally {
+            setSaving(false);
         }
-      }
-    } else {
-      setFilteredModules(modules);
+    };
+
+    const moduleDetails = formData.module_id ? getModuleDetails(formData.module_id) : null;
+
+    // ── Loading State ──
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="w-14 h-14 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4" />
+                    <p className="text-sm text-gray-500 font-medium">Loading modules and courses…</p>
+                </div>
+            </div>
+        );
     }
-  }, [selectedCourse, modules, formData.module_id]);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    setError("");
-  };
-
-  const handleCourseChange = (e) => setSelectedCourse(e.target.value);
-
-  const validateForm = () => {
-    if (!formData.name.trim()) return "Topic name is required";
-    if (!formData.module_id) return "Please select a module";
-    return "";
-  };
-
-  const getModuleDetails = (moduleId) => {
-    const module = modules.find((m) => m.id === parseInt(moduleId));
-    if (!module) return null;
-    const course = courses.find((c) => c.id === module.course_data);
-    return { moduleName: module.name, courseName: course?.name || "Unknown Course", courseId: module.course_data };
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const validationError = validateForm();
-    if (validationError) { setError(validationError); return; }
-    setSaving(true);
-    setError("");
-    setSuccess("");
-    try {
-      const response = await fetch("https://codingcloud.pythonanywhere.com/topics/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ module: parseInt(formData.module_id), name: formData.name.trim() }),
-      });
-      if (!response.ok) {
-        const errorText = await response.text();
-        let errorMessage;
-        try { const errorData = JSON.parse(errorText); errorMessage = errorData.message || errorData.detail || JSON.stringify(errorData); }
-        catch { errorMessage = errorText || `HTTP error ${response.status}`; }
-        throw new Error(errorMessage);
-      }
-      setSuccess("Topic created successfully!");
-      setFormData({ module_id: "", name: "" });
-      setSelectedCourse("");
-      setTimeout(() => navigate("/topics"), 2000);
-    } catch (err) {
-      setError(err.message || "Failed to create topic. Please check the API endpoint.");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const inputClass = "w-full px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-sm";
-  const labelClass = "block text-sm font-semibold text-gray-800 mb-1.5";
-
-  if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-3"></div>
-          <p className="text-sm text-gray-600">Loading modules and courses...</p>
+        <div className="min-h-screen bg-gray-50">
+
+            {/* ── Header ── */}
+            <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => navigate("/topics")}
+                            className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-all text-sm font-medium"
+                        >
+                            <ArrowLeft size={16} />
+                            <span className="hidden sm:inline">Back</span>
+                        </button>
+                        <div className="w-px h-6 bg-gray-200" />
+                        <div>
+                            <h1 className="text-base sm:text-lg font-bold text-gray-900 leading-tight">Add New Topic</h1>
+                            <p className="text-xs text-gray-400 hidden sm:block">Create a new topic for a module</p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={handleSubmit}
+                        disabled={saving}
+                        className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-semibold rounded-xl shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {saving ? (
+                            <>
+                                <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                                Saving…
+                            </>
+                        ) : (
+                            <>
+                                <Save size={15} />
+                                Save Topic
+                            </>
+                        )}
+                    </button>
+                </div>
+            </header>
+
+            {/* ── Main ── */}
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 pb-28 sm:pb-12">
+
+                {/* Error Alert */}
+                {error && (
+                    <div className="flex items-start gap-3 p-4 mb-6 bg-red-50 border border-red-200 rounded-2xl text-sm text-red-700">
+                        <AlertCircle size={18} className="mt-0.5 flex-shrink-0 text-red-500" />
+                        <span className="flex-1">{error}</span>
+                        <button onClick={() => setError("")} className="text-red-400 hover:text-red-600 transition-colors flex-shrink-0">
+                            <X size={16} />
+                        </button>
+                    </div>
+                )}
+
+                {/* Success Alert */}
+                {success && (
+                    <div className="flex items-start gap-3 p-4 mb-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-sm text-emerald-700">
+                        <CheckCircle2 size={18} className="mt-0.5 flex-shrink-0 text-emerald-500" />
+                        <span>{success}</span>
+                    </div>
+                )}
+
+                <form onSubmit={handleSubmit} className="space-y-5">
+
+                    {/* ── Topic Name Card ── */}
+                    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-9 h-9 bg-indigo-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                                <Tag size={16} className="text-indigo-600" />
+                            </div>
+                            <div>
+                                <label htmlFor="name" className="block text-sm font-semibold text-gray-800">
+                                    Topic Name <span className="text-red-500">*</span>
+                                </label>
+                                <p className="text-xs text-gray-400 mt-0.5">Enter a clear and descriptive name for the topic</p>
+                            </div>
+                        </div>
+                        <input
+                            id="name"
+                            type="text"
+                            name="name"
+                            value={formData.name}
+                            onChange={handleInputChange}
+                            placeholder="e.g., Introduction to React, HTML Basics, JavaScript Fundamentals"
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                            required
+                        />
+                    </div>
+
+                    {/* ── Course Selection Card ── */}
+                    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-9 h-9 bg-violet-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                                <Layers size={16} className="text-violet-600" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-800">
+                                    Select Course <span className="text-red-500">*</span>
+                                </label>
+                                <p className="text-xs text-gray-400 mt-0.5">Filter modules by selecting a course first</p>
+                            </div>
+                        </div>
+                        <div className="relative">
+                            <select
+                                value={selectedCourse}
+                                onChange={handleCourseChange}
+                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none cursor-pointer"
+                            >
+                                <option value="">— First select a course —</option>
+                                {courses.map((course) => (
+                                    <option key={course.id} value={course.id}>
+                                        {course.name} ({course.category_details?.name || "No Category"})
+                                    </option>
+                                ))}
+                            </select>
+                            <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                        </div>
+                    </div>
+
+                    {/* ── Module Selection Card ── */}
+                    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-9 h-9 bg-pink-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                                <BookOpen size={16} className="text-pink-500" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-800">
+                                    Select Module <span className="text-red-500">*</span>
+                                </label>
+                                <p className="text-xs text-gray-400 mt-0.5">
+                                    {!selectedCourse
+                                        ? "Select a course above to see available modules"
+                                        : filteredModules.length === 0
+                                        ? "No modules found for this course"
+                                        : "Choose the module this topic belongs to"}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="relative">
+                            <select
+                                name="module_id"
+                                value={formData.module_id}
+                                onChange={handleInputChange}
+                                disabled={!selectedCourse}
+                                className={`w-full px-4 py-3 border border-gray-200 rounded-xl text-gray-900 text-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+                                    !selectedCourse ? "bg-gray-100" : "bg-gray-50 focus:bg-white"
+                                }`}
+                            >
+                                <option value="">— Select a module —</option>
+                                {filteredModules.map((module) => (
+                                    <option key={module.id} value={module.id}>{module.name}</option>
+                                ))}
+                            </select>
+                            <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                        </div>
+
+                        {/* Contextual hints */}
+                        {!selectedCourse && (
+                            <p className="flex items-center gap-1.5 text-xs text-amber-600 mt-2">
+                                <AlertCircle size={12} />
+                                Please select a course first to see available modules
+                            </p>
+                        )}
+                        {selectedCourse && filteredModules.length === 0 && (
+                            <p className="flex items-center gap-1.5 text-xs text-amber-600 mt-2">
+                                <AlertCircle size={12} />
+                                No modules found for this course
+                            </p>
+                        )}
+                    </div>
+
+                    {/* ── Live Preview Card ── */}
+                    {(formData.name || moduleDetails) && (
+                        <div className="bg-gradient-to-br from-indigo-50 to-violet-50 border border-indigo-100 rounded-2xl p-5">
+                            <p className="text-xs font-semibold text-indigo-500 uppercase tracking-wider mb-3">Preview</p>
+                            <div className="flex items-start gap-3">
+                                <div className="w-12 h-12 rounded-xl bg-indigo-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                    <BookMarked size={18} className="text-indigo-500" />
+                                </div>
+                                <div className="min-w-0 space-y-1">
+                                    <p className="text-sm font-bold text-gray-800 truncate">
+                                        {formData.name || <span className="text-gray-400 font-normal italic">Untitled Topic</span>}
+                                    </p>
+                                    {moduleDetails && (
+                                        <>
+                                            <p className="text-xs text-gray-500 truncate">
+                                                <span className="font-medium text-gray-600">Module:</span> {moduleDetails.moduleName}
+                                            </p>
+                                            <p className="text-xs text-gray-500 truncate">
+                                                <span className="font-medium text-gray-600">Course:</span> {moduleDetails.courseName}
+                                                <span className="text-gray-400 ml-1">(ID: {moduleDetails.courseId})</span>
+                                            </p>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ── Mobile Submit ── */}
+                    <div className="sm:hidden">
+                        <button
+                            type="submit"
+                            disabled={saving}
+                            className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        >
+                            {saving ? (
+                                <>
+                                    <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                                    Saving…
+                                </>
+                            ) : (
+                                <>
+                                    <Save size={16} />
+                                    Save Topic
+                                </>
+                            )}
+                        </button>
+                    </div>
+
+                </form>
+            </main>
         </div>
-      </div>
     );
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <button onClick={() => navigate("/topics")} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                <ArrowLeft size={18} className="text-gray-600" />
-              </button>
-              <div>
-                <h1 className="text-lg sm:text-xl font-semibold text-gray-900">Add New Topic</h1>
-                <p className="text-xs text-gray-500 hidden sm:block">Create a new topic for a module</p>
-              </div>
-            </div>
-            <button
-              onClick={handleSubmit}
-              disabled={saving}
-              className="px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2 disabled:opacity-50 text-sm"
-            >
-              {saving ? (
-                <>
-                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <span className="hidden sm:inline">Saving...</span>
-                </>
-              ) : (
-                <>
-                  <Save size={16} />
-                  <span className="hidden sm:inline">Save</span>
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5 sm:py-6">
-        {/* Messages */}
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
-            <div className="w-5 h-5 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
-              <X size={12} className="text-red-600" />
-            </div>
-            <p className="text-xs text-red-600 flex-1">{error}</p>
-            <button onClick={() => setError("")} className="text-gray-400 hover:text-gray-600"><X size={14} /></button>
-          </div>
-        )}
-        {success && (
-          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-start gap-2">
-            <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-              <Save size={12} className="text-green-600" />
-            </div>
-            <p className="text-xs text-green-600">✓ {success}</p>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-5">
-
-          {/* Topic Name */}
-          <div>
-            <label className={labelClass}>
-              Topic Name <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleInputChange}
-              placeholder="e.g., Introduction to React, HTML Basics, JavaScript Fundamentals"
-              className={inputClass}
-              required
-            />
-            <p className="text-xs text-gray-400 mt-1">Enter a clear and descriptive name for the topic</p>
-          </div>
-
-          {/* Course Selection */}
-          <div>
-            <label className={labelClass}>
-              <Layers size={13} className="inline mr-1 text-gray-500" />
-              Select Course <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <select
-                value={selectedCourse}
-                onChange={handleCourseChange}
-                className={inputClass + " appearance-none cursor-pointer"}
-              >
-                <option value="">-- First select a course --</option>
-                {courses.map((course) => (
-                  <option key={course.id} value={course.id}>
-                    {course.name} ({course.category_details?.name || "No Category"})
-                  </option>
-                ))}
-              </select>
-              <svg className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </div>
-          </div>
-
-          {/* Module Selection */}
-          <div>
-            <label className={labelClass}>
-              <BookOpen size={13} className="inline mr-1 text-gray-500" />
-              Select Module <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <select
-                name="module_id"
-                value={formData.module_id}
-                onChange={handleInputChange}
-                disabled={!selectedCourse}
-                className={inputClass + " appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" + (!selectedCourse ? " bg-gray-200" : "")}
-              >
-                <option value="">-- Select a module --</option>
-                {filteredModules.map((module) => (
-                  <option key={module.id} value={module.id}>{module.name}</option>
-                ))}
-              </select>
-              <svg className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </div>
-            {!selectedCourse && (
-              <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
-                <AlertCircle size={11} /> Please select a course first to see available modules
-              </p>
-            )}
-            {selectedCourse && filteredModules.length === 0 && (
-              <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
-                <AlertCircle size={11} /> No modules found for this course
-              </p>
-            )}
-          </div>
-
-          {/* Selected Info Preview */}
-          {formData.module_id && (
-            <div className="p-3 bg-indigo-50 rounded-lg border border-indigo-100">
-              <p className="text-xs font-semibold text-indigo-800 mb-2 flex items-center gap-1">
-                <CheckCircle size={12} /> Selected Information
-              </p>
-              <div className="space-y-1 text-xs text-gray-700">
-                <p><span className="text-indigo-600 font-medium">Topic:</span> {formData.name || "Not specified"}</p>
-                <p><span className="text-indigo-600 font-medium">Module:</span> {getModuleDetails(formData.module_id)?.moduleName}</p>
-                <p><span className="text-indigo-600 font-medium">Course:</span> {getModuleDetails(formData.module_id)?.courseName} (ID: {getModuleDetails(formData.module_id)?.courseId})</p>
-              </div>
-            </div>
-          )}
-
-          {/* Mobile Submit Button */}
-          <div className="block sm:hidden">
-            <button
-              type="submit"
-              disabled={saving}
-              className="w-full py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-sm"
-            >
-              {saving ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save size={16} />
-                  Save Topic
-                </>
-              )}
-            </button>
-          </div>
-
-        </form>
-      </div>
-    </div>
-  );
 }

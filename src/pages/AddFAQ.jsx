@@ -566,251 +566,326 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  ArrowLeft,
-  Save,
-  X,
-  ChevronDown,
-  Info,
+    ArrowLeft,
+    Save,
+    X,
+    ChevronDown,
+    Info,
+    CheckCircle2,
+    AlertCircle,
+    Layers,
+    HelpCircle,
+    MessageSquare,
 } from "lucide-react";
 
 export default function AddFAQ() {
-  const navigate = useNavigate();
+    const navigate = useNavigate();
 
-  const [formData, setFormData] = useState({
-    course: "",
-    question: "",
-    answer: "",
-  });
+    const [formData, setFormData] = useState({ course: "", question: "", answer: "" });
+    const [courses, setCourses] = useState([]);
+    const [loadingCourses, setLoadingCourses] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState("");
+    const [success, setSuccess] = useState("");
 
-  const [courses, setCourses] = useState([]);
-  const [loadingCourses, setLoadingCourses] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+    useEffect(() => {
+        const fetchCourses = async () => {
+            try {
+                const response = await fetch("https://codingcloud.pythonanywhere.com/course/");
+                if (response.ok) {
+                    const data = await response.json();
+                    setCourses(data.data || data);
+                } else {
+                    setError("Failed to fetch available courses.");
+                }
+            } catch (err) {
+                setError("Network error when loading courses.");
+            } finally {
+                setLoadingCourses(false);
+            }
+        };
+        fetchCourses();
+    }, []);
 
-  useEffect(() => {
-    const fetchCourses = async () => {
-      try {
-        const response = await fetch("https://codingcloud.pythonanywhere.com/course/");
-        if (response.ok) {
-          const data = await response.json();
-          setCourses(data.data || data);
-        } else {
-          setError("Failed to fetch available courses.");
-        }
-      } catch (err) {
-        setError("Network error when loading courses.");
-      } finally {
-        setLoadingCourses(false);
-      }
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData((prev) => ({ ...prev, [name]: value }));
+        setError("");
     };
-    fetchCourses();
-  }, []);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    setError("");
-  };
+    const validateForm = () => {
+        if (!formData.course) return "Please select a course";
+        if (!formData.question.trim()) return "Question is required";
+        if (!formData.answer.trim()) return "Answer is required";
+        return "";
+    };
 
-  const validateForm = () => {
-    if (!formData.course) return "Please select a course";
-    if (!formData.question.trim()) return "Question is required";
-    if (!formData.answer.trim()) return "Answer is required";
-    return "";
-  };
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        const validationError = validateForm();
+        if (validationError) { setError(validationError); return; }
+        setSaving(true);
+        setError("");
+        setSuccess("");
+        try {
+            const payload = {
+                course: parseInt(formData.course),
+                question: formData.question.trim(),
+                answer: formData.answer.trim(),
+            };
+            const response = await fetch("https://codingcloud.pythonanywhere.com/faqs/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+            if (!response.ok) {
+                const errorText = await response.text();
+                let errorMessage;
+                try {
+                    const errorData = JSON.parse(errorText);
+                    errorMessage = errorData.message || errorData.detail || JSON.stringify(errorData);
+                } catch {
+                    errorMessage = errorText || `HTTP error ${response.status}`;
+                }
+                throw new Error(errorMessage);
+            }
+            setSuccess("FAQ created successfully!");
+            setFormData({ course: "", question: "", answer: "" });
+            setTimeout(() => navigate("/faqs"), 2000);
+        } catch (err) {
+            setError(err.message || "Failed to create FAQ. Please check the API endpoint.");
+        } finally {
+            setSaving(false);
+        }
+    };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const validationError = validateForm();
-    if (validationError) { setError(validationError); return; }
-    setSaving(true);
-    setError("");
-    setSuccess("");
-    try {
-      const payload = {
-        course: parseInt(formData.course),
-        question: formData.question.trim(),
-        answer: formData.answer.trim(),
-      };
-      const response = await fetch("https://codingcloud.pythonanywhere.com/faqs/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!response.ok) {
-        const errorText = await response.text();
-        let errorMessage;
-        try { const errorData = JSON.parse(errorText); errorMessage = errorData.message || errorData.detail || JSON.stringify(errorData); }
-        catch { errorMessage = errorText || `HTTP error ${response.status}`; }
-        throw new Error(errorMessage);
-      }
-      setSuccess("FAQ created successfully!");
-      setFormData({ course: "", question: "", answer: "" });
-      setTimeout(() => navigate("/faqs"), 2000);
-    } catch (err) {
-      setError(err.message || "Failed to create FAQ. Please check the API endpoint.");
-    } finally {
-      setSaving(false);
-    }
-  };
+    const selectedCourse = courses.find((c) => String(c.id) === String(formData.course));
 
-  const inputClass = "w-full px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-sm";
-  const labelClass = "block text-sm font-semibold text-gray-800 mb-1.5";
+    return (
+        <div className="min-h-screen bg-gray-50">
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <button onClick={() => navigate(-1)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                <ArrowLeft size={18} className="text-gray-600" />
-              </button>
-              <div>
-                <h1 className="text-lg sm:text-xl font-semibold text-gray-900">Add New FAQ</h1>
-                <p className="text-xs text-gray-500 hidden sm:block">Create a frequently asked question for a course</p>
-              </div>
-            </div>
-            <button
-              onClick={handleSubmit}
-              disabled={saving || loadingCourses}
-              className="px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2 disabled:opacity-50 text-sm"
-            >
-              {saving ? (
-                <>
-                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <span className="hidden sm:inline">Saving...</span>
-                </>
-              ) : (
-                <>
-                  <Save size={16} />
-                  <span className="hidden sm:inline">Save</span>
-                </>
-              )}
-            </button>
-          </div>
+            {/* ── Header ── */}
+            <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => navigate(-1)}
+                            className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-all text-sm font-medium"
+                        >
+                            <ArrowLeft size={16} />
+                            <span className="hidden sm:inline">Back</span>
+                        </button>
+                        <div className="w-px h-6 bg-gray-200" />
+                        <div>
+                            <h1 className="text-base sm:text-lg font-bold text-gray-900 leading-tight">Add New FAQ</h1>
+                            <p className="text-xs text-gray-400 hidden sm:block">Create a frequently asked question for a course</p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={handleSubmit}
+                        disabled={saving || loadingCourses}
+                        className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-semibold rounded-xl shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {saving ? (
+                            <>
+                                <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                                Saving…
+                            </>
+                        ) : (
+                            <>
+                                <Save size={15} />
+                                Save FAQ
+                            </>
+                        )}
+                    </button>
+                </div>
+            </header>
+
+            {/* ── Main ── */}
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 pb-28 sm:pb-12">
+
+                {/* Error Alert */}
+                {error && (
+                    <div className="flex items-start gap-3 p-4 mb-6 bg-red-50 border border-red-200 rounded-2xl text-sm text-red-700">
+                        <AlertCircle size={18} className="mt-0.5 flex-shrink-0 text-red-500" />
+                        <span className="flex-1">{error}</span>
+                        <button onClick={() => setError("")} className="text-red-400 hover:text-red-600 transition-colors flex-shrink-0">
+                            <X size={16} />
+                        </button>
+                    </div>
+                )}
+
+                {/* Success Alert */}
+                {success && (
+                    <div className="flex items-start gap-3 p-4 mb-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-sm text-emerald-700">
+                        <CheckCircle2 size={18} className="mt-0.5 flex-shrink-0 text-emerald-500" />
+                        <span>{success}</span>
+                    </div>
+                )}
+
+                {/* Courses loading banner */}
+                {loadingCourses && (
+                    <div className="flex items-center gap-3 p-4 mb-6 bg-indigo-50 border border-indigo-100 rounded-2xl text-sm text-indigo-600">
+                        <div className="w-4 h-4 border-2 border-indigo-300 border-t-indigo-600 rounded-full animate-spin flex-shrink-0" />
+                        Loading courses…
+                    </div>
+                )}
+
+                <form onSubmit={handleSubmit} className="space-y-5">
+
+                    {/* ── Course Selection Card ── */}
+                    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-9 h-9 bg-violet-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                                <Layers size={16} className="text-violet-600" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-800">
+                                    Related Course <span className="text-red-500">*</span>
+                                </label>
+                                <p className="text-xs text-gray-400 mt-0.5">Select the course this FAQ belongs to</p>
+                            </div>
+                        </div>
+
+                        <div className="relative">
+                            <select
+                                name="course"
+                                value={formData.course}
+                                onChange={handleInputChange}
+                                disabled={loadingCourses}
+                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                required
+                            >
+                                <option value="" disabled>
+                                    {loadingCourses ? "Loading courses…" : "— Select a Course —"}
+                                </option>
+                                {courses.map((course) => (
+                                    <option key={course.id} value={course.id}>
+                                        {course.name} (ID: {course.id})
+                                    </option>
+                                ))}
+                            </select>
+                            <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                        </div>
+
+                        {/* Selected course confirmation badge */}
+                        {selectedCourse && (
+                            <div className="mt-3 flex items-center gap-2 p-3 bg-violet-50 border border-violet-100 rounded-xl">
+                                <div className="w-6 h-6 bg-violet-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <Layers size={12} className="text-violet-600" />
+                                </div>
+                                <p className="text-xs text-violet-700">
+                                    <span className="font-semibold">Selected:</span> {selectedCourse.name}
+                                    <span className="text-violet-400 ml-1">· ID: {selectedCourse.id}</span>
+                                </p>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* ── Question Card ── */}
+                    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-9 h-9 bg-indigo-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                                <HelpCircle size={16} className="text-indigo-600" />
+                            </div>
+                            <div>
+                                <label htmlFor="question" className="block text-sm font-semibold text-gray-800">
+                                    Question <span className="text-red-500">*</span>
+                                </label>
+                                <p className="text-xs text-gray-400 mt-0.5">Write a clear, concise question students might ask</p>
+                            </div>
+                        </div>
+                        <input
+                            id="question"
+                            type="text"
+                            name="question"
+                            value={formData.question}
+                            onChange={handleInputChange}
+                            placeholder="e.g., What is Python used for?"
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                            required
+                        />
+                    </div>
+
+                    {/* ── Answer Card ── */}
+                    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-9 h-9 bg-emerald-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                                <MessageSquare size={16} className="text-emerald-600" />
+                            </div>
+                            <div>
+                                <label htmlFor="answer" className="block text-sm font-semibold text-gray-800">
+                                    Answer <span className="text-red-500">*</span>
+                                </label>
+                                <p className="text-xs text-gray-400 mt-0.5">Provide a clear and detailed answer to help students</p>
+                            </div>
+                        </div>
+                        <textarea
+                            id="answer"
+                            name="answer"
+                            value={formData.answer}
+                            onChange={handleInputChange}
+                            rows={5}
+                            placeholder="Enter the comprehensive answer here…"
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-none"
+                            required
+                        />
+                        <p className="flex items-center gap-1.5 text-xs text-gray-400 mt-2">
+                            <Info size={11} />
+                            Provide a clear and detailed answer to help students · {formData.answer.length} characters
+                        </p>
+                    </div>
+
+                    {/* ── Live Preview Card ── */}
+                    {(formData.question || formData.answer || selectedCourse) && (
+                        <div className="bg-gradient-to-br from-indigo-50 to-violet-50 border border-indigo-100 rounded-2xl p-5">
+                            <p className="text-xs font-semibold text-indigo-500 uppercase tracking-wider mb-3">Preview</p>
+                            <div className="space-y-3">
+                                {selectedCourse && (
+                                    <p className="text-xs text-indigo-500 font-medium">
+                                        Course: {selectedCourse.name}
+                                    </p>
+                                )}
+                                <div className="flex items-start gap-2">
+                                    <div className="w-5 h-5 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <HelpCircle size={11} className="text-indigo-600" />
+                                    </div>
+                                    <p className="text-sm font-semibold text-gray-800">
+                                        {formData.question || <span className="text-gray-400 font-normal italic">No question entered…</span>}
+                                    </p>
+                                </div>
+                                {formData.answer && (
+                                    <div className="flex items-start gap-2 pl-7">
+                                        <p className="text-xs text-gray-600 leading-relaxed line-clamp-3">{formData.answer}</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ── Mobile Submit ── */}
+                    <div className="sm:hidden">
+                        <button
+                            type="submit"
+                            disabled={saving || loadingCourses}
+                            className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        >
+                            {saving ? (
+                                <>
+                                    <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                                    Creating…
+                                </>
+                            ) : (
+                                <>
+                                    <Save size={16} />
+                                    Create FAQ
+                                </>
+                            )}
+                        </button>
+                    </div>
+
+                </form>
+            </main>
         </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5 sm:py-6">
-        {/* Messages */}
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
-            <div className="w-5 h-5 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
-              <X size={12} className="text-red-600" />
-            </div>
-            <p className="text-xs text-red-600 flex-1">{error}</p>
-            <button onClick={() => setError("")} className="text-gray-400 hover:text-gray-600"><X size={14} /></button>
-          </div>
-        )}
-        {success && (
-          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-start gap-2">
-            <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-              <Save size={12} className="text-green-600" />
-            </div>
-            <p className="text-xs text-green-600">✓ {success}</p>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-5">
-
-          {/* Related Course */}
-          <div>
-            <label className={labelClass}>
-              Related Course <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <select
-                name="course"
-                value={formData.course}
-                onChange={handleInputChange}
-                disabled={loadingCourses}
-                className={inputClass + " appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"}
-                required
-              >
-                <option value="" disabled>
-                  {loadingCourses ? "Loading courses..." : "Select a Course"}
-                </option>
-                {courses.map((course) => (
-                  <option key={course.id} value={course.id}>
-                    {course.name} (ID: {course.id})
-                  </option>
-                ))}
-              </select>
-              <svg className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </div>
-            {loadingCourses && (
-              <div className="flex items-center gap-2 mt-1.5">
-                <div className="w-3 h-3 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
-                <p className="text-xs text-gray-500">Loading courses...</p>
-              </div>
-            )}
-          </div>
-
-          {/* Question */}
-          <div>
-            <label className={labelClass}>
-              Question <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              name="question"
-              value={formData.question}
-              onChange={handleInputChange}
-              placeholder="e.g., What is Python used for?"
-              className={inputClass}
-              required
-            />
-          </div>
-
-          {/* Answer */}
-          <div>
-            <label className={labelClass}>
-              Answer <span className="text-red-500">*</span>
-            </label>
-            <textarea
-              name="answer"
-              value={formData.answer}
-              onChange={handleInputChange}
-              rows={5}
-              placeholder="Enter the comprehensive answer here..."
-              className={inputClass + " resize-none"}
-              required
-            />
-            <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
-              <Info size={11} className="text-gray-400" />
-              Provide a clear and detailed answer to help students
-            </p>
-          </div>
-
-          {/* Mobile Submit Button */}
-          <div className="block sm:hidden">
-            <button
-              type="submit"
-              disabled={saving || loadingCourses}
-              className="w-full py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-sm"
-            >
-              {saving ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Creating...
-                </>
-              ) : (
-                <>
-                  <Save size={16} />
-                  Create FAQ
-                </>
-              )}
-            </button>
-          </div>
-
-        </form>
-      </div>
-    </div>
-  );
+    );
 }

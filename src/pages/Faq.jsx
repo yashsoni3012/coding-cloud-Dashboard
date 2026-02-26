@@ -1125,13 +1125,24 @@
 //   );
 // }
 
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Search, Plus, Edit, Trash2, AlertCircle, CheckCircle,
-  X, ChevronDown, BookOpen, MessageCircleQuestion,
-  RefreshCw, Filter, Eye, SortAsc, SortDesc,
+  Search,
+  Plus,
+  Edit,
+  Trash2,
+  AlertCircle,
+  CheckCircle,
+  X,
+  ChevronDown,
+  BookOpen,
+  MessageCircleQuestion,
+  RefreshCw,
+  Filter,
+  Eye,
+  SortAsc,
+  SortDesc,
 } from "lucide-react";
 
 export default function FAQs() {
@@ -1144,7 +1155,10 @@ export default function FAQs() {
   const [error, setError] = useState(null);
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortConfig, setSortConfig] = useState({ key: "display_id", direction: "desc" });
+  const [sortConfig, setSortConfig] = useState({
+    key: "display_id",
+    direction: "desc",
+  });
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({ course: "all" });
   const [expandedFaqs, setExpandedFaqs] = useState(new Set());
@@ -1175,7 +1189,9 @@ export default function FAQs() {
         const courseMap = {};
         const actualCourses = coursesDataRes.data || coursesDataRes;
         if (Array.isArray(actualCourses)) {
-          actualCourses.forEach((c) => { courseMap[c.id] = c.name; });
+          actualCourses.forEach((c) => {
+            courseMap[c.id] = c.name;
+          });
         }
         setCourses(courseMap);
 
@@ -1197,7 +1213,9 @@ export default function FAQs() {
     }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   useEffect(() => {
     let result = [...faqs];
@@ -1221,9 +1239,16 @@ export default function FAQs() {
 
     result.sort((a, b) => {
       let aVal, bVal;
-      if (sortConfig.key === "display_id") { aVal = a.display_id || 0; bVal = b.display_id || 0; }
-      else if (sortConfig.key === "question") { aVal = a.question?.toLowerCase() || ""; bVal = b.question?.toLowerCase() || ""; }
-      else if (sortConfig.key === "course") { aVal = courses[a.course]?.toLowerCase() || String(a.course); bVal = courses[b.course]?.toLowerCase() || String(b.course); }
+      if (sortConfig.key === "display_id") {
+        aVal = a.display_id || 0;
+        bVal = b.display_id || 0;
+      } else if (sortConfig.key === "question") {
+        aVal = a.question?.toLowerCase() || "";
+        bVal = b.question?.toLowerCase() || "";
+      } else if (sortConfig.key === "course") {
+        aVal = courses[a.course]?.toLowerCase() || String(a.course);
+        bVal = courses[b.course]?.toLowerCase() || String(b.course);
+      }
       if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
       if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
       return 0;
@@ -1235,20 +1260,20 @@ export default function FAQs() {
   }, [searchTerm, filters, sortConfig, faqs, courses]);
 
   const handleSort = (key) => {
-    setSortConfig((cur) => ({ key, direction: cur.key === key && cur.direction === "asc" ? "desc" : "asc" }));
+    setSortConfig((cur) => ({
+      key,
+      direction: cur.key === key && cur.direction === "asc" ? "desc" : "asc",
+    }));
   };
 
   const getSortIcon = (key) => {
-    if (sortConfig.key !== key) return <SortAsc size={13} className="text-slate-400" />;
-    return sortConfig.direction === "asc"
-      ? <SortAsc size={13} className="text-violet-500" />
-      : <SortDesc size={13} className="text-violet-500" />;
-  };
-
-  const resetFilters = () => {
-    setSearchTerm("");
-    setFilters({ course: "all" });
-    setSortConfig({ key: "display_id", direction: "desc" });
+    if (sortConfig.key !== key)
+      return <SortAsc size={13} className="text-slate-400" />;
+    return sortConfig.direction === "asc" ? (
+      <SortAsc size={13} className="text-violet-500" />
+    ) : (
+      <SortDesc size={13} className="text-violet-500" />
+    );
   };
 
   const toggleFaq = (faqId) => {
@@ -1280,23 +1305,35 @@ export default function FAQs() {
     try {
       const response = await fetch(
         `https://codingcloud.pythonanywhere.com/faqs/${faqToDelete.id}/`,
-        { method: "DELETE" }
+        { method: "DELETE" },
       );
       if (response.ok || response.status === 204) {
         setDeleteSuccess("FAQ deleted successfully!");
         fetchData();
-        setTimeout(() => { setShowDeleteModal(false); setFaqToDelete(null); setDeleteSuccess(""); }, 1500);
+        setTimeout(() => {
+          setShowDeleteModal(false);
+          setFaqToDelete(null);
+          setDeleteSuccess("");
+        }, 1500);
       } else {
         try {
           const data = await response.json();
           setDeleteError(data.message || "Failed to delete FAQ.");
-        } catch { setDeleteError(`HTTP Error: ${response.status}`); }
+        } catch {
+          setDeleteError(`HTTP Error: ${response.status}`);
+        }
       }
-    } catch { setDeleteError("Network error. Please try again."); }
-    finally { setDeleteLoading(false); }
+    } catch {
+      setDeleteError("Network error. Please try again.");
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
-  const uniqueCourses = Object.keys(courses).map((id) => ({ id: parseInt(id), name: courses[id] }));
+  const uniqueCourses = Object.keys(courses).map((id) => ({
+    id: parseInt(id),
+    name: courses[id],
+  }));
 
   const activeFiltersCount = [
     filters.course !== "all",
@@ -1308,7 +1345,9 @@ export default function FAQs() {
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-violet-200 border-t-violet-600 rounded-full animate-spin mx-auto" />
-          <p className="mt-4 text-slate-500 text-sm font-medium">Loading FAQs…</p>
+          <p className="mt-4 text-slate-500 text-sm font-medium">
+            Loading FAQs…
+          </p>
         </div>
       </div>
     );
@@ -1321,9 +1360,14 @@ export default function FAQs() {
           <div className="bg-red-50 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
             <X size={24} className="text-red-500" />
           </div>
-          <h3 className="text-lg font-semibold text-slate-900 mb-1">Something went wrong</h3>
+          <h3 className="text-lg font-semibold text-slate-900 mb-1">
+            Something went wrong
+          </h3>
           <p className="text-slate-500 text-sm mb-5">{error}</p>
-          <button onClick={fetchData} className="px-5 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors text-sm font-medium">
+          <button
+            onClick={fetchData}
+            className="px-5 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors text-sm font-medium"
+          >
             Try Again
           </button>
         </div>
@@ -1334,7 +1378,6 @@ export default function FAQs() {
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-
         {/* ── Header ── */}
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-1">
@@ -1344,16 +1387,20 @@ export default function FAQs() {
               {faqs.length}
             </span>
           </div>
-          <p className="text-slate-500 text-sm">Manage frequently asked questions across courses</p>
+          <p className="text-slate-500 text-sm">
+            Manage frequently asked questions across courses
+          </p>
         </div>
 
         {/* ── Toolbar (single line) ── */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 px-4 py-3 mb-5">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-
             {/* Search */}
             <div className="relative flex-1 min-w-0">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <Search
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+              />
               <input
                 type="text"
                 placeholder="Search by question, answer, course or ID…"
@@ -1362,7 +1409,10 @@ export default function FAQs() {
                 className="w-full pl-9 pr-8 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent bg-slate-50 placeholder:text-slate-400"
               />
               {searchTerm && (
-                <button onClick={() => setSearchTerm("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                <button
+                  onClick={() => setSearchTerm("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
                   <X size={14} />
                 </button>
               )}
@@ -1380,34 +1430,14 @@ export default function FAQs() {
               <Filter size={15} />
               Filters
               {activeFiltersCount > 0 && (
-                <span className="px-1.5 py-0.5 bg-violet-600 text-white text-xs rounded-full leading-none">{activeFiltersCount}</span>
+                <span className="px-1.5 py-0.5 bg-violet-600 text-white text-xs rounded-full leading-none">
+                  {activeFiltersCount}
+                </span>
               )}
-              <ChevronDown size={14} className={`transition-transform ${showFilters ? "rotate-180" : ""}`} />
-            </button>
-
-            {/* Reset */}
-            <button
-              onClick={resetFilters}
-              className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-slate-200 text-slate-500 text-sm hover:bg-slate-50 transition-colors"
-              title="Reset filters"
-            >
-              <RefreshCw size={15} />
-              <span className="hidden sm:inline">Reset</span>
-            </button>
-
-            {/* Expand / Collapse All */}
-            <button
-              onClick={() => {
-                const allIds = new Set(paginatedFaqs.map((f) => f.id));
-                const allExpanded = paginatedFaqs.every((f) => expandedFaqs.has(f.id));
-                setExpandedFaqs(allExpanded ? new Set() : allIds);
-              }}
-              className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-slate-200 text-slate-500 text-sm hover:bg-slate-50 transition-colors whitespace-nowrap"
-            >
-              <ChevronDown size={15} className={`transition-transform ${paginatedFaqs.every((f) => expandedFaqs.has(f.id)) ? "rotate-180" : ""}`} />
-              <span className="hidden sm:inline">
-                {paginatedFaqs.every((f) => expandedFaqs.has(f.id)) ? "Collapse All" : "Expand All"}
-              </span>
+              <ChevronDown
+                size={14}
+                className={`transition-transform ${showFilters ? "rotate-180" : ""}`}
+              />
             </button>
 
             {/* Add FAQ */}
@@ -1424,7 +1454,9 @@ export default function FAQs() {
           {showFilters && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 pt-4 border-t border-slate-100">
               <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Course</label>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
+                  Course
+                </label>
                 <select
                   value={filters.course}
                   onChange={(e) => setFilters({ course: e.target.value })}
@@ -1432,12 +1464,16 @@ export default function FAQs() {
                 >
                   <option value="all">All Courses</option>
                   {uniqueCourses.map((course) => (
-                    <option key={course.id} value={course.id}>{course.name}</option>
+                    <option key={course.id} value={course.id}>
+                      {course.name}
+                    </option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Items Per Page</label>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
+                  Items Per Page
+                </label>
                 <select
                   value={itemsPerPage}
                   onChange={(e) => setItemsPerPage(Number(e.target.value))}
@@ -1459,7 +1495,9 @@ export default function FAQs() {
             <div className="bg-slate-100 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
               <MessageCircleQuestion size={28} className="text-slate-400" />
             </div>
-            <h3 className="text-base font-semibold text-slate-800 mb-1">No FAQs found</h3>
+            <h3 className="text-base font-semibold text-slate-800 mb-1">
+              No FAQs found
+            </h3>
             <p className="text-slate-400 text-sm mb-5">
               {searchTerm || filters.course !== "all"
                 ? "Try adjusting your filters or search term."
@@ -1482,19 +1520,25 @@ export default function FAQs() {
                       className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide cursor-pointer select-none hover:text-slate-800 w-14"
                       onClick={() => handleSort("display_id")}
                     >
-                      <span className="flex items-center gap-1"># {getSortIcon("display_id")}</span>
+                      <span className="flex items-center gap-1">
+                        # {getSortIcon("display_id")}
+                      </span>
                     </th>
                     <th
                       className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide cursor-pointer select-none hover:text-slate-800"
                       onClick={() => handleSort("question")}
                     >
-                      <span className="flex items-center gap-1">Question {getSortIcon("question")}</span>
+                      <span className="flex items-center gap-1">
+                        Question {getSortIcon("question")}
+                      </span>
                     </th>
                     <th
                       className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide cursor-pointer select-none hover:text-slate-800 hidden md:table-cell"
                       onClick={() => handleSort("course")}
                     >
-                      <span className="flex items-center gap-1">Course {getSortIcon("course")}</span>
+                      <span className="flex items-center gap-1">
+                        Course {getSortIcon("course")}
+                      </span>
                     </th>
                     <th className="px-5 py-3.5 text-right text-xs font-semibold text-slate-500 uppercase tracking-wide">
                       Actions
@@ -1505,7 +1549,10 @@ export default function FAQs() {
                   {paginatedFaqs.map((faq, index) => {
                     const isExpanded = expandedFaqs.has(faq.id);
                     return (
-                      <tr key={faq.id} className="hover:bg-slate-50/70 transition-colors">
+                      <tr
+                        key={faq.id}
+                        className="hover:bg-slate-50/70 transition-colors"
+                      >
                         {/* # */}
                         <td className="px-5 py-4 text-sm font-semibold text-slate-400 align-top">
                           {indexOfFirstItem + index + 1}
@@ -1527,7 +1574,8 @@ export default function FAQs() {
                                 </span>
                                 {/* Show course on small screens */}
                                 <span className="text-xs text-slate-400 md:hidden mt-0.5 block">
-                                  {courses[faq.course] || `Course ${faq.course}`}
+                                  {courses[faq.course] ||
+                                    `Course ${faq.course}`}
                                 </span>
                               </div>
                               <ChevronDown
@@ -1559,14 +1607,23 @@ export default function FAQs() {
                         <td className="px-5 py-4 align-top">
                           <div className="flex items-center justify-end gap-1.5">
                             <button
-                              onClick={(e) => { e.stopPropagation(); setSelectedFaq(faq); setShowViewModal(true); }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedFaq(faq);
+                                setShowViewModal(true);
+                              }}
                               className="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all"
                               title="View"
                             >
                               <Eye size={15} />
                             </button>
                             <button
-                              onClick={(e) => { e.stopPropagation(); navigate(`/edit-faq/${faq.id}`, { state: { faq } }); }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/edit-faq/${faq.id}`, {
+                                  state: { faq },
+                                });
+                              }}
                               className="p-2 rounded-lg text-slate-400 hover:text-violet-600 hover:bg-violet-50 transition-all"
                               title="Edit"
                             >
@@ -1591,7 +1648,16 @@ export default function FAQs() {
             {/* Pagination */}
             <div className="px-5 py-3.5 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
               <span className="text-xs text-slate-400 font-medium">
-                Showing <span className="text-slate-700 font-semibold">{indexOfFirstItem + 1}–{Math.min(indexOfLastItem, filteredFaqs.length)}</span> of <span className="text-slate-700 font-semibold">{filteredFaqs.length}</span> FAQs
+                Showing{" "}
+                <span className="text-slate-700 font-semibold">
+                  {indexOfFirstItem + 1}–
+                  {Math.min(indexOfLastItem, filteredFaqs.length)}
+                </span>{" "}
+                of{" "}
+                <span className="text-slate-700 font-semibold">
+                  {filteredFaqs.length}
+                </span>{" "}
+                FAQs
               </span>
               <div className="flex items-center gap-2">
                 <button
@@ -1606,7 +1672,8 @@ export default function FAQs() {
                     let page = i + 1;
                     if (totalPages > 5) {
                       if (currentPage <= 3) page = i + 1;
-                      else if (currentPage >= totalPages - 2) page = totalPages - 4 + i;
+                      else if (currentPage >= totalPages - 2)
+                        page = totalPages - 4 + i;
                       else page = currentPage - 2 + i;
                     }
                     return (
@@ -1625,7 +1692,9 @@ export default function FAQs() {
                   })}
                 </div>
                 <button
-                  onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(p + 1, totalPages))
+                  }
                   disabled={currentPage === totalPages}
                   className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white transition-colors"
                 >
@@ -1640,9 +1709,11 @@ export default function FAQs() {
       {/* ── View FAQ Modal ── */}
       {showViewModal && selectedFaq && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => setShowViewModal(false)} />
+          <div
+            className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm"
+            onClick={() => setShowViewModal(false)}
+          />
           <div className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full z-10 overflow-hidden max-h-[90vh] flex flex-col">
-
             <button
               onClick={() => setShowViewModal(false)}
               className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors z-10"
@@ -1657,8 +1728,12 @@ export default function FAQs() {
                   <MessageCircleQuestion size={26} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h2 className="text-lg font-bold text-slate-900 leading-snug">{selectedFaq.question}</h2>
-                  <p className="text-sm text-slate-400 mt-0.5">FAQ #{selectedFaq.display_id}</p>
+                  <h2 className="text-lg font-bold text-slate-900 leading-snug">
+                    {selectedFaq.question}
+                  </h2>
+                  <p className="text-sm text-slate-400 mt-0.5">
+                    FAQ #{selectedFaq.display_id}
+                  </p>
                 </div>
               </div>
 
@@ -1668,13 +1743,16 @@ export default function FAQs() {
                   <BookOpen size={11} className="text-violet-500" /> Course
                 </p>
                 <p className="text-sm font-semibold text-slate-800">
-                  {courses[selectedFaq.course] || `Course ${selectedFaq.course}`}
+                  {courses[selectedFaq.course] ||
+                    `Course ${selectedFaq.course}`}
                 </p>
               </div>
 
               {/* Answer */}
               <div className="bg-slate-50 border border-slate-100 rounded-xl p-4">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Answer</p>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">
+                  Answer
+                </p>
                 <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">
                   {selectedFaq.answer}
                 </p>
@@ -1689,7 +1767,12 @@ export default function FAQs() {
                 Close
               </button>
               <button
-                onClick={() => { setShowViewModal(false); navigate(`/edit-faq/${selectedFaq.id}`, { state: { faq: selectedFaq } }); }}
+                onClick={() => {
+                  setShowViewModal(false);
+                  navigate(`/edit-faq/${selectedFaq.id}`, {
+                    state: { faq: selectedFaq },
+                  });
+                }}
                 className="px-5 py-2 bg-violet-600 text-white text-sm font-medium rounded-xl hover:bg-violet-700 transition-colors flex items-center gap-2 shadow-sm shadow-violet-200"
               >
                 <Edit size={14} /> Edit FAQ
@@ -1719,16 +1802,25 @@ export default function FAQs() {
                 <AlertCircle size={22} className="text-red-500" />
               </div>
               <div className="flex-1">
-                <h3 className="text-base font-semibold text-slate-900 mb-1">Delete FAQ</h3>
+                <h3 className="text-base font-semibold text-slate-900 mb-1">
+                  Delete FAQ
+                </h3>
                 <p className="text-sm text-slate-500">
-                  Are you sure you want to delete <span className="font-semibold text-slate-700">"{faqToDelete.question}"</span>? This action cannot be undone.
+                  Are you sure you want to delete{" "}
+                  <span className="font-semibold text-slate-700">
+                    "{faqToDelete.question}"
+                  </span>
+                  ? This action cannot be undone.
                 </p>
               </div>
             </div>
 
             {deleteSuccess && (
               <div className="mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2">
-                <CheckCircle size={15} className="text-emerald-600 flex-shrink-0" />
+                <CheckCircle
+                  size={15}
+                  className="text-emerald-600 flex-shrink-0"
+                />
                 <p className="text-sm text-emerald-700">{deleteSuccess}</p>
               </div>
             )}
@@ -1758,7 +1850,9 @@ export default function FAQs() {
                     Deleting…
                   </>
                 ) : (
-                  <><Trash2 size={14} /> Delete</>
+                  <>
+                    <Trash2 size={14} /> Delete
+                  </>
                 )}
               </button>
             </div>

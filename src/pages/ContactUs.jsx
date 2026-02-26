@@ -91,11 +91,7 @@ export default function Contact() {
       : <SortDesc size={13} className="text-violet-500" />;
   };
 
-  const resetFilters = () => {
-    setSearchTerm("");
-    setFilters({ hasPhone: "all", hasSubject: "all" });
-    setSortConfig({ key: "id", direction: "desc" });
-  };
+ 
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -201,24 +197,7 @@ export default function Contact() {
               <ChevronDown size={14} className={`transition-transform ${showFilters ? "rotate-180" : ""}`} />
             </button>
 
-            {/* Reset */}
-            <button
-              onClick={resetFilters}
-              className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-slate-200 text-slate-500 text-sm hover:bg-slate-50 transition-colors"
-              title="Reset filters"
-            >
-              <RefreshCw size={15} />
-              <span className="hidden sm:inline">Reset</span>
-            </button>
-
-            {/* Refresh */}
-            <button
-              onClick={fetchContacts}
-              className="flex items-center gap-2 px-4 py-2.5 bg-violet-600 text-white rounded-xl hover:bg-violet-700 transition-colors text-sm font-medium whitespace-nowrap shadow-sm shadow-violet-200"
-            >
-              <RefreshCw size={15} />
-              <span className="hidden sm:inline">Refresh</span>
-            </button>
+            
           </div>
 
           {/* Expandable filter panel */}

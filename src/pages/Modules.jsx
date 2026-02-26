@@ -142,7 +142,7 @@
 //     setCurrentPage(1);
 //   }, [searchTerm, selectedCourse, modules, sortConfig, coursesMap]);
 
-//   const resetFilters = () => {
+//   const resettopicFilters = () => {
 //     setSearchTerm("");
 //     setSelectedCourse("all");
 //   };
@@ -1468,11 +1468,7 @@ export default function Modules() {
       : <SortDesc size={13} className="text-violet-500" />;
   };
 
-  const resetFilters = () => {
-    setSearchTerm("");
-    setFilters({ course: "all" });
-    setSortConfig({ key: "name", direction: "asc" });
-  };
+  
 
   const indexOfFirstItem = (currentPage - 1) * itemsPerPage;
   const indexOfLastItem = indexOfFirstItem + itemsPerPage;
@@ -1599,25 +1595,9 @@ export default function Modules() {
               <ChevronDown size={14} className={`transition-transform ${showFilters ? "rotate-180" : ""}`} />
             </button>
 
-            {/* Reset */}
-            <button
-              onClick={resetFilters}
-              className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-slate-200 text-slate-500 text-sm hover:bg-slate-50 transition-colors"
-              title="Reset filters"
-            >
-              <RefreshCw size={15} />
-              <span className="hidden sm:inline">Reset</span>
-            </button>
+           
 
-            {/* Silent refresh */}
-            <button
-              onClick={() => fetchModules(true)}
-              disabled={refreshing}
-              className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-slate-200 text-slate-500 text-sm hover:bg-slate-50 transition-colors disabled:opacity-50"
-              title="Refresh"
-            >
-              <RefreshCw size={15} className={refreshing ? "animate-spin text-violet-500" : ""} />
-            </button>
+            
 
             {/* Add Module */}
             <button

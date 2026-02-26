@@ -142,12 +142,6 @@ export default function Testimonials() {
     );
   };
 
-  const resetFilters = () => {
-    setSearchTerm("");
-    setFilters({ rating: "all" });
-    setSortConfig({ key: "id", direction: "desc" });
-  };
-
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const paginatedTestimonials = filteredTestimonials.slice(
@@ -285,90 +279,7 @@ export default function Testimonials() {
           </p>
         </div>
 
-        {/* ── Stats Cards (similar to Blogs but with testimonials data) ── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
-          {/* Total Reviews */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">
-              Total Reviews
-            </p>
-            <p className="text-2xl font-bold text-slate-900">
-              {testimonials.length}
-            </p>
-            <div className="mt-2 h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-violet-600 rounded-full"
-                style={{ width: "100%" }}
-              />
-            </div>
-          </div>
-
-          {/* Average Rating */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">
-              Average Rating
-            </p>
-            <div className="flex items-center gap-2">
-              <p className="text-2xl font-bold text-slate-900">
-                {testimonials.length
-                  ? (
-                      testimonials.reduce((acc, t) => acc + t.rating, 0) /
-                      testimonials.length
-                    ).toFixed(1)
-                  : "0.0"}
-              </p>
-              <Star
-                rating={4}
-                size={16}
-                className="text-amber-400 fill-amber-400"
-              />
-            </div>
-            <div className="mt-2 h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-amber-500 rounded-full"
-                style={{
-                  width: `${(testimonials.reduce((acc, t) => acc + t.rating, 0) / (testimonials.length * 5)) * 100 || 0}%`,
-                }}
-              />
-            </div>
-          </div>
-
-          {/* 5-Star Reviews */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">
-              5-Star Reviews
-            </p>
-            <p className="text-2xl font-bold text-slate-900">
-              {testimonials.filter((t) => t.rating === 5).length}
-            </p>
-            <div className="mt-2 h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-emerald-500 rounded-full"
-                style={{
-                  width: `${(testimonials.filter((t) => t.rating === 5).length / testimonials.length) * 100 || 0}%`,
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Filtered Results */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">
-              Filtered Results
-            </p>
-            <p className="text-2xl font-bold text-slate-900">
-              {filteredTestimonials.length}
-            </p>
-            <div className="mt-2 h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-blue-500 rounded-full"
-                style={{
-                  width: `${(filteredTestimonials.length / testimonials.length) * 100 || 0}%`,
-                }}
-              />
-            </div>
-          </div>
-        </div>
+       
 
         {/* ── Toolbar (single line) ── */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 px-4 py-3 mb-5">
@@ -418,15 +329,7 @@ export default function Testimonials() {
               />
             </button>
 
-            {/* Reset */}
-            <button
-              onClick={resetFilters}
-              className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-slate-200 text-slate-500 text-sm hover:bg-slate-50 transition-colors"
-              title="Reset filters"
-            >
-              <RefreshCw size={15} />
-              <span className="hidden sm:inline">Reset</span>
-            </button>
+            
 
             {/* Add Testimonial */}
             <button

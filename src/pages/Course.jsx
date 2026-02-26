@@ -1771,12 +1771,7 @@ export default function Courses() {
       : <SortDesc size={13} className="text-violet-500" />;
   };
 
-  const resetFilters = () => {
-    setSearchTerm("");
-    setFilters({ category: "all", level: "all", language: "all", certificate: "all" });
-    setSortConfig({ key: "id", direction: "desc" });
-  };
-
+  
   // ── Delete (optimistic) ──
   const handleDeleteClick = (e, course) => {
     e.stopPropagation();
@@ -1839,12 +1834,7 @@ export default function Courses() {
   // ── Stat cards ──
   const totalStudents = courses.reduce((acc, c) => acc + (parseInt(c.students) || 0), 0);
   const certCount = courses.filter(hasCert).length;
-  const statCards = [
-    { label: "Total Courses", value: courses.length, pct: 72 },
-    { label: "Total Students", value: `${totalStudents}+`, pct: 58 },
-    { label: "Categories", value: categories.length, pct: 45 },
-    { label: "With Certificate", value: certCount, pct: 83 },
-  ];
+  
 
   // ── Loading ──
   if (loading) {
@@ -1900,24 +1890,7 @@ export default function Courses() {
           <p className="text-slate-500 text-sm">Manage your course catalogue</p>
         </div>
 
-        {/* ── Stat Cards ── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          {statCards.map((s, i) => (
-            <div key={i} className="bg-white rounded-2xl border border-slate-200 shadow-sm px-5 py-4 flex items-center gap-4">
-              <div className="relative flex-shrink-0">
-                <CircularProgress pct={s.pct} />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <ArrowUpRight size={13} className="text-violet-600" />
-                </div>
-              </div>
-              <div>
-                <p className="text-xs font-medium text-slate-400 leading-tight">{s.label}</p>
-                <p className="text-xl font-bold text-slate-900 mt-0.5">{s.value}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-
+        
         {/* ── Toolbar ── */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 px-4 py-3 mb-5">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
@@ -1956,15 +1929,7 @@ export default function Courses() {
               <ChevronDown size={14} className={`transition-transform ${showFilters ? "rotate-180" : ""}`} />
             </button>
 
-            {/* Reset */}
-            <button
-              onClick={resetFilters}
-              className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-slate-200 text-slate-500 text-sm hover:bg-slate-50 transition-colors"
-              title="Reset filters"
-            >
-              <RefreshCw size={15} />
-              <span className="hidden sm:inline">Reset</span>
-            </button>
+            
 
             {/* Add Course */}
             <button
@@ -2090,7 +2055,7 @@ export default function Courses() {
                       Language
                     </th>
                     <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide hidden lg:table-cell">
-                      Cert
+                      Certificate
                     </th>
                     <th className="px-5 py-3.5 text-right text-xs font-semibold text-slate-500 uppercase tracking-wide">
                       Actions
