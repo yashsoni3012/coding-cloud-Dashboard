@@ -27,6 +27,7 @@ import EditTestimonial from "./pages/EditTestimonial";
 import Category from "./pages/Categories";
 import AddCategory from "./pages/AddCategory";
 import EditCategory from "./pages/EditCategory";
+import Profile from "./pages/Profile";
 
 
 // import Users from './pages/Users'
@@ -88,6 +89,8 @@ export default function App() {
           <Route path="/category" element={<Category />} />
           <Route path="/add-category" element={<AddCategory />} />
           <Route path="/edit-category/:id" element={<EditCategory />} />
+
+          <Route path="/profile" element={<Profile />} />
 
           {/* <Route path="users" element={<Users />} />
           <Route path="analytics" element={<Analytics />} />

@@ -367,13 +367,18 @@
 
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Save, X, Upload, ImagePlus, CheckCircle2, AlertCircle, Tag, FileText } from "lucide-react";
+import { ArrowLeft, Save, X, Upload, ImagePlus, CheckCircle2, AlertCircle, Tag, FileText, Link2 } from "lucide-react";
 
 export default function AddCategory() {
     const navigate = useNavigate();
     const fileInputRef = useRef(null);
 
-    const [formData, setFormData] = useState({ name: "", text: "", image: null });
+    const [formData, setFormData] = useState({ 
+        name: "", 
+        text: "", 
+        image: null,
+        slug: "" 
+    });
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
@@ -383,6 +388,27 @@ export default function AddCategory() {
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
+        setError("");
+    };
+
+    // Auto-generate slug from name
+    const generateSlug = (name) => {
+        return name
+            .toLowerCase()
+            .trim()
+            .replace(/[^\w\s-]/g, '') // Remove special characters
+            .replace(/\s+/g, '-') // Replace spaces with hyphens
+            .replace(/--+/g, '-'); // Replace multiple hyphens with single hyphen
+    };
+
+    const handleNameChange = (e) => {
+        const { value } = e.target;
+        setFormData((prev) => ({ 
+            ...prev, 
+            name: value,
+            // Auto-generate slug only if slug field is empty or if it was previously auto-generated
+            slug: prev.slug === generateSlug(prev.name) || !prev.slug ? generateSlug(value) : prev.slug
+        }));
         setError("");
     };
 
@@ -426,12 +452,13 @@ export default function AddCategory() {
             payload.append("name", formData.name.trim());
             if (formData.text.trim()) payload.append("text", formData.text.trim());
             if (formData.image) payload.append("image", formData.image);
+            if (formData.slug.trim()) payload.append("slug", formData.slug.trim());
 
             const response = await fetch("https://codingcloud.pythonanywhere.com/category/", { method: "POST", body: payload });
             if (!response.ok) throw new Error("Failed to create category");
 
             setSuccess("Category created successfully!");
-            setTimeout(() => navigate("/categories"), 1500);
+            setTimeout(() => navigate("/category"),);
         } catch (err) {
             setError(err.message || "Failed to create category");
         } finally {
@@ -524,11 +551,41 @@ export default function AddCategory() {
                             type="text"
                             name="name"
                             value={formData.name}
-                            onChange={handleInputChange}
+                            onChange={handleNameChange}
                             placeholder="e.g., Web Development, Design, Marketing…"
                             className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
                             required
                         />
+                    </div>
+
+                    {/* ── Slug Card (New Field) ── */}
+                    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-9 h-9 bg-amber-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                                <Link2 size={16} className="text-amber-600" />
+                            </div>
+                            <div>
+                                <label htmlFor="slug" className="block text-sm font-semibold text-gray-800">
+                                    Slug
+                                </label>
+                                <p className="text-xs text-gray-400 mt-0.5">URL-friendly version of the name (auto-generated from name)</p>
+                            </div>
+                        </div>
+                        <div className="relative">
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">/</span>
+                            <input
+                                id="slug"
+                                type="text"
+                                name="slug"
+                                value={formData.slug}
+                                onChange={handleInputChange}
+                                placeholder="web-development"
+                                className="w-full pl-8 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                            />
+                        </div>
+                        <p className="text-xs text-gray-400 mt-2">
+                            Slug is used in URLs. Only lowercase letters, numbers, and hyphens allowed.
+                        </p>
                     </div>
 
                     {/* ── Description Card ── */}
@@ -639,29 +696,7 @@ export default function AddCategory() {
                         )}
                     </div>
 
-                    {/* ── Live Preview Summary ── */}
-                    {(formData.name || formData.text || imagePreview) && (
-                        <div className="bg-gradient-to-br from-indigo-50 to-violet-50 border border-indigo-100 rounded-2xl p-5">
-                            <p className="text-xs font-semibold text-indigo-500 uppercase tracking-wider mb-3">Preview</p>
-                            <div className="flex items-center gap-3">
-                                {imagePreview ? (
-                                    <img src={imagePreview} alt="" className="w-12 h-12 rounded-xl object-cover flex-shrink-0 border border-white shadow-sm" />
-                                ) : (
-                                    <div className="w-12 h-12 rounded-xl bg-indigo-100 flex items-center justify-center flex-shrink-0">
-                                        <Tag size={18} className="text-indigo-400" />
-                                    </div>
-                                )}
-                                <div className="min-w-0">
-                                    <p className="text-sm font-bold text-gray-800 truncate">
-                                        {formData.name || <span className="text-gray-400 font-normal italic">Untitled Category</span>}
-                                    </p>
-                                    {formData.text && (
-                                        <p className="text-xs text-gray-500 truncate mt-0.5">{formData.text}</p>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                    
 
                     {/* ── Mobile Submit Button ── */}
                     <div className="sm:hidden">

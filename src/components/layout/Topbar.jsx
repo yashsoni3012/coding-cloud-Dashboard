@@ -1,5 +1,5 @@
 import { Bell, Search, X } from "lucide-react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 
 const pageTitles = {
@@ -17,6 +17,7 @@ const pageTitles = {
 
 export default function Topbar() {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const [showSearch, setShowSearch] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -109,23 +110,18 @@ export default function Topbar() {
                     </p>
                   </div>
                   <div className="py-1">
-                    {["Profile", "Settings", "Help"].map((item) => (
+                    {["Profile"].map((item) => (
                       <button
                         key={item}
                         className="w-full px-4 py-2.5 text-[13px] text-slate-600 hover:bg-slate-50 hover:text-slate-800 text-left transition-colors font-medium"
-                        onClick={() => setShowProfileMenu(false)}
+                        onClick={() => {
+                          setShowProfileMenu(false);
+                          navigate("/profile");
+                        }}
                       >
                         {item}
                       </button>
                     ))}
-                  </div>
-                  <div className="border-t border-slate-100 py-1">
-                    <button
-                      className="w-full px-4 py-2.5 text-[13px] text-rose-500 hover:bg-rose-50 hover:text-rose-600 text-left transition-colors font-medium"
-                      onClick={() => setShowProfileMenu(false)}
-                    >
-                      Sign out
-                    </button>
                   </div>
                 </div>
               </>

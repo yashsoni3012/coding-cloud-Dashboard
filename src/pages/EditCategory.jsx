@@ -585,7 +585,7 @@ export default function EditCategory() {
             if (!response.ok) throw new Error("Failed to update category");
 
             setSuccess("Category updated successfully!");
-            setTimeout(() => navigate("/categories"), 1500);
+            setTimeout(() => navigate("/category"), 1500);
         } catch (err) {
             setError(err.message || "Failed to update category");
         } finally {

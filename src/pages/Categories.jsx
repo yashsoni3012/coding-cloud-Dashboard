@@ -478,6 +478,7 @@ import {
   SortAsc,
   SortDesc,
   Tag,
+  Link2,
 } from "lucide-react";
 
 export default function Categories() {
@@ -546,10 +547,10 @@ const fetchCategories = async () => {
     let result = [...categories];
     if (searchTerm) {
       result = result.filter((c) =>
-        c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (c.text && c.text.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        c.id.toString().includes(searchTerm)
-      );
+  c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  c.id.toString().includes(searchTerm) ||
+  (c.slug && c.slug.toLowerCase().includes(searchTerm.toLowerCase()))
+);
     }
     if (filters.hasImage !== "all") {
       result = result.filter((c) => filters.hasImage === "yes" ? !!c.image : !c.image);
@@ -689,7 +690,7 @@ const fetchCategories = async () => {
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               <input
                 type="text"
-                placeholder="Search by name, description or ID…"
+                placeholder="Search by name, slug or ID…"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-9 pr-8 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent bg-slate-50 placeholder:text-slate-400"
@@ -798,7 +799,7 @@ const fetchCategories = async () => {
         ) : (
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[600px]">
+              <table className="w-full min-w-[650px]">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200">
                     <th
@@ -816,8 +817,14 @@ const fetchCategories = async () => {
                     >
                       <span className="flex items-center gap-1">Name {getSortIcon("name")}</span>
                     </th>
-                    <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide hidden md:table-cell">
-                      Description
+                    <th
+                      className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide cursor-pointer select-none hover:text-slate-800"
+                      onClick={() => handleSort("slug")}
+                    >
+                      <span className="flex items-center gap-1">
+                        <Link2 size={12} className="text-slate-400" />
+                        Slug {getSortIcon("slug")}
+                      </span>
                     </th>
                     <th className="px-5 py-3.5 text-right text-xs font-semibold text-slate-500 uppercase tracking-wide">
                       Actions
@@ -855,27 +862,33 @@ const fetchCategories = async () => {
                       <td className="px-5 py-4">
                         <div className="flex flex-col gap-0.5">
                           <span className="text-sm font-semibold text-slate-800">{category.name}</span>
-                          {/* Show description here on small screens */}
-                          <span className="text-xs text-slate-400 md:hidden line-clamp-1">
-                            {category.text || "No description"}
+                          {/* Show slug on small screens */}
+                          <span className="text-xs text-amber-600 md:hidden line-clamp-1 flex items-center gap-1">
+                            <Link2 size={10} />
+                            {category.slug || <span className="italic text-slate-300">No slug</span>}
                           </span>
                         </div>
                       </td>
 
-                      {/* Description (hidden on small) */}
-                      <td className="px-5 py-4 hidden md:table-cell">
-                        <span className="text-sm text-slate-500 line-clamp-1 max-w-xs block">
-                          {category.text || (
-                            <span className="italic text-slate-300">No description provided</span>
-                          )}
-                        </span>
+                      {/* Slug (replaces description) */}
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-1.5">
+                          <Link2 size={12} className="text-amber-500 flex-shrink-0" />
+                          <span className="text-sm text-slate-600 font-mono">
+                            {category.slug ? (
+                              `/${category.slug}`
+                            ) : (
+                              <span className="italic text-slate-300">No slug</span>
+                            )}
+                          </span>
+                        </div>
                       </td>
 
                       {/* Actions */}
                       <td className="px-5 py-4">
                         <div className="flex items-center justify-end gap-1.5">
                           <button
-                            onClick={() => navigate(`/edit-category/${category.id}`)}
+                            onClick={() => navigate(`/edit-category/${category.id}`, { state: { category } })}
                             className="p-2 rounded-lg text-slate-400 hover:text-violet-600 hover:bg-violet-50 transition-all"
                             title="Edit"
                           >
