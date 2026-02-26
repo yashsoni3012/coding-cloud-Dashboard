@@ -1341,9 +1341,9 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  BookOpen, Search, X, Filter, Plus, Edit, Trash2,
+  Search, X, Filter, Plus, Edit, Trash2,
   AlertCircle, CheckCircle, Layers, FolderOpen, Eye,
-  ChevronDown, ChevronUp, RefreshCw, SortAsc, SortDesc,
+  ChevronDown, RefreshCw, SortAsc, SortDesc,
   BookMarked,
 } from "lucide-react";
 
@@ -1352,8 +1352,8 @@ export default function Modules() {
 
   const [modules, setModules] = useState([]);
   const [filteredModules, setFilteredModules] = useState([]);
-  const [loading, setLoading] = useState(true);       // only true on FIRST load
-  const [refreshing, setRefreshing] = useState(false); // silent background refresh
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -1377,13 +1377,9 @@ export default function Modules() {
 
   const isFirstLoad = useRef(true);
 
-  // ── Fetch — silent=true means no full-page spinner ──
   const fetchModules = async (silent = false) => {
-    if (silent) {
-      setRefreshing(true);
-    } else {
-      setLoading(true);
-    }
+    if (silent) setRefreshing(true);
+    else setLoading(true);
 
     try {
       const [modulesRes, coursesRes] = await Promise.all([
@@ -1399,7 +1395,6 @@ export default function Modules() {
           ...item,
           display_id: index + 1,
         }));
-
         setModules(dataWithDisplayIds);
 
         const courses = [...new Set(modulesData.data.map((m) => m.course_data))].sort((a, b) => a - b);
@@ -1414,7 +1409,7 @@ export default function Modules() {
       } else {
         if (!silent) setError("Failed to fetch modules");
       }
-    } catch (err) {
+    } catch {
       if (!silent) setError("Network error. Please try again.");
     } finally {
       setLoading(false);
@@ -1425,7 +1420,6 @@ export default function Modules() {
 
   useEffect(() => { fetchModules(false); }, []);
 
-  // ── Filter + sort ──
   useEffect(() => {
     let result = [...modules];
 
@@ -1445,13 +1439,9 @@ export default function Modules() {
 
     result.sort((a, b) => {
       let aVal, bVal;
-      if (sortConfig.key === "display_id") {
-        aVal = a.display_id || 0;
-        bVal = b.display_id || 0;
-      } else if (sortConfig.key === "name") {
-        aVal = a.name?.toLowerCase() || "";
-        bVal = b.name?.toLowerCase() || "";
-      } else if (sortConfig.key === "course") {
+      if (sortConfig.key === "display_id") { aVal = a.display_id || 0; bVal = b.display_id || 0; }
+      else if (sortConfig.key === "name") { aVal = a.name?.toLowerCase() || ""; bVal = b.name?.toLowerCase() || ""; }
+      else if (sortConfig.key === "course") {
         aVal = coursesMap[a.course_data]?.toLowerCase() || String(a.course_data);
         bVal = coursesMap[b.course_data]?.toLowerCase() || String(b.course_data);
       }
@@ -1472,10 +1462,10 @@ export default function Modules() {
   };
 
   const getSortIcon = (key) => {
-    if (sortConfig.key !== key) return <SortAsc size={14} className="text-gray-400" />;
+    if (sortConfig.key !== key) return <SortAsc size={13} className="text-slate-400" />;
     return sortConfig.direction === "asc"
-      ? <SortAsc size={14} className="text-indigo-600" />
-      : <SortDesc size={14} className="text-indigo-600" />;
+      ? <SortAsc size={13} className="text-violet-500" />
+      : <SortDesc size={13} className="text-violet-500" />;
   };
 
   const resetFilters = () => {
@@ -1484,14 +1474,10 @@ export default function Modules() {
     setSortConfig({ key: "name", direction: "asc" });
   };
 
-  // Pagination
   const indexOfFirstItem = (currentPage - 1) * itemsPerPage;
   const indexOfLastItem = indexOfFirstItem + itemsPerPage;
   const paginatedModules = filteredModules.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filteredModules.length / itemsPerPage);
-
-  const handleView = (module) => { setSelectedModule(module); setShowViewModal(true); };
-  const handleEdit = (e, moduleId) => { e.stopPropagation(); navigate(`/edit-module/${moduleId}`); };
 
   const handleDeleteClick = (e, module) => {
     e.stopPropagation();
@@ -1513,12 +1499,8 @@ export default function Modules() {
       );
       if (response.ok || response.status === 204) {
         setDeleteSuccess("Module deleted successfully!");
-        fetchModules(true); // silent refresh — no jerk
-        setTimeout(() => {
-          setShowDeleteModal(false);
-          setModuleToDelete(null);
-          setDeleteSuccess("");
-        }, 1500);
+        fetchModules(true);
+        setTimeout(() => { setShowDeleteModal(false); setModuleToDelete(null); setDeleteSuccess(""); }, 1500);
       } else {
         setDeleteError("Failed to delete module.");
       }
@@ -1529,13 +1511,17 @@ export default function Modules() {
     }
   };
 
-  // ── Initial full-page loader ──
+  const activeFiltersCount = [
+    filters.course !== "all",
+    sortConfig.key !== "name" || sortConfig.direction !== "asc",
+  ].filter(Boolean).length;
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto" />
-          <p className="mt-4 text-gray-600 font-medium">Loading modules...</p>
+          <div className="w-12 h-12 border-4 border-violet-200 border-t-violet-600 rounded-full animate-spin mx-auto" />
+          <p className="mt-4 text-slate-500 text-sm font-medium">Loading modules…</p>
         </div>
       </div>
     );
@@ -1543,15 +1529,15 @@ export default function Modules() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full text-center">
-          <div className="bg-red-100 rounded-full p-4 w-20 h-20 mx-auto mb-4 flex items-center justify-center">
-            <X size={32} className="text-red-500" />
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-lg p-8 max-w-sm w-full text-center">
+          <div className="bg-red-50 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+            <X size={24} className="text-red-500" />
           </div>
-          <h3 className="text-xl font-bold text-gray-900 mb-2">Oops! Something went wrong</h3>
-          <p className="text-gray-500 mb-6">{error}</p>
+          <h3 className="text-lg font-semibold text-slate-900 mb-1">Something went wrong</h3>
+          <p className="text-slate-500 text-sm mb-5">{error}</p>
           <button onClick={() => window.location.reload()}
-            className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
+            className="px-5 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors text-sm font-medium">
             Try Again
           </button>
         </div>
@@ -1560,81 +1546,114 @@ export default function Modules() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
 
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Modules</h1>
-            <p className="text-gray-500 text-sm mt-1">Manage your course modules and lessons</p>
+        {/* ── Header ── */}
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-1">
+            <Layers size={20} className="text-violet-600" />
+            <h1 className="text-2xl font-bold text-slate-900">Modules</h1>
+            <span className="ml-1 px-2 py-0.5 bg-violet-100 text-violet-700 text-xs font-semibold rounded-full">
+              {modules.length}
+            </span>
           </div>
-          <div className="flex items-center gap-3">
-            {/* Silent refresh button with spinner indicator */}
-            <button
-              onClick={() => fetchModules(true)}
-              disabled={refreshing}
-              className="p-2 border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 transition-colors disabled:opacity-60"
-              title="Refresh"
-            >
-              <RefreshCw size={16} className={refreshing ? "animate-spin text-indigo-500" : ""} />
-            </button>
-            <button onClick={() => navigate("/add-module")}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2">
-              <Plus size={16} />
-              <span>Add Module</span>
-            </button>
-          </div>
+          <p className="text-slate-500 text-sm">Manage your course modules and lessons</p>
         </div>
 
-        {/* Search & Filters */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
-          <div className="flex flex-col lg:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input type="text" placeholder="Search by module name, course, or ID..."
-                value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" />
+        {/* ── Toolbar (single line) ── */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 px-4 py-3 mb-5">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+
+            {/* Search */}
+            <div className="relative flex-1 min-w-0">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Search by module name, course or ID…"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-8 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent bg-slate-50 placeholder:text-slate-400"
+              />
               {searchTerm && (
-                <button onClick={() => setSearchTerm("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                  <X size={16} />
+                <button onClick={() => setSearchTerm("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                  <X size={14} />
                 </button>
               )}
             </div>
 
-            <button onClick={() => setShowFilters(!showFilters)}
-              className={`px-4 py-2.5 border rounded-lg flex items-center gap-2 transition-colors ${showFilters ? "border-indigo-300 bg-indigo-50 text-indigo-700" : "border-gray-300 text-gray-700 hover:bg-gray-50"}`}>
-              <Filter size={18} />
-              <span>Filters</span>
-              {showFilters ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            {/* Filter toggle */}
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all whitespace-nowrap ${
+                showFilters || activeFiltersCount > 0
+                  ? "border-violet-400 bg-violet-50 text-violet-700"
+                  : "border-slate-200 text-slate-600 hover:bg-slate-50"
+              }`}
+            >
+              <Filter size={15} />
+              Filters
+              {activeFiltersCount > 0 && (
+                <span className="px-1.5 py-0.5 bg-violet-600 text-white text-xs rounded-full leading-none">{activeFiltersCount}</span>
+              )}
+              <ChevronDown size={14} className={`transition-transform ${showFilters ? "rotate-180" : ""}`} />
             </button>
 
-            <button onClick={resetFilters}
-              className="px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2">
-              <RefreshCw size={18} />
+            {/* Reset */}
+            <button
+              onClick={resetFilters}
+              className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-slate-200 text-slate-500 text-sm hover:bg-slate-50 transition-colors"
+              title="Reset filters"
+            >
+              <RefreshCw size={15} />
               <span className="hidden sm:inline">Reset</span>
+            </button>
+
+            {/* Silent refresh */}
+            <button
+              onClick={() => fetchModules(true)}
+              disabled={refreshing}
+              className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-slate-200 text-slate-500 text-sm hover:bg-slate-50 transition-colors disabled:opacity-50"
+              title="Refresh"
+            >
+              <RefreshCw size={15} className={refreshing ? "animate-spin text-violet-500" : ""} />
+            </button>
+
+            {/* Add Module */}
+            <button
+              onClick={() => navigate("/add-module")}
+              className="flex items-center gap-2 px-4 py-2.5 bg-violet-600 text-white rounded-xl hover:bg-violet-700 transition-colors text-sm font-medium whitespace-nowrap shadow-sm shadow-violet-200"
+            >
+              <Plus size={16} />
+              Add Module
             </button>
           </div>
 
+          {/* Expandable filter panel */}
           {showFilters && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 pt-4 border-t border-gray-200">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 pt-4 border-t border-slate-100">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Course</label>
-                <select value={filters.course} onChange={(e) => setFilters({ course: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Course</label>
+                <select
+                  value={filters.course}
+                  onChange={(e) => setFilters({ course: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 bg-slate-50"
+                >
                   <option value="all">All Courses</option>
                   {uniqueCourses.map((courseId) => (
                     <option key={courseId} value={courseId}>
-                      {coursesMap[courseId] || `Course ${courseId}`} ({modules.filter(m => m.course_data === courseId).length})
+                      {coursesMap[courseId] || `Course ${courseId}`} ({modules.filter((m) => m.course_data === courseId).length})
                     </option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Items Per Page</label>
-                <select value={itemsPerPage} onChange={(e) => setItemsPerPage(Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Items Per Page</label>
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 bg-slate-50"
+                >
                   <option value={5}>5 per page</option>
                   <option value={10}>10 per page</option>
                   <option value={25}>25 per page</option>
@@ -1645,86 +1664,114 @@ export default function Modules() {
           )}
         </div>
 
-        {/* Table */}
+        {/* ── Table / Empty state ── */}
         {filteredModules.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-            <div className="bg-gray-100 rounded-full p-4 w-20 h-20 mx-auto mb-4 flex items-center justify-center">
-              <Layers size={32} className="text-gray-400" />
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-16 text-center">
+            <div className="bg-slate-100 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+              <Layers size={28} className="text-slate-400" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No modules found</h3>
-            <p className="text-gray-500 mb-4">
+            <h3 className="text-base font-semibold text-slate-800 mb-1">No modules found</h3>
+            <p className="text-slate-400 text-sm mb-5">
               {searchTerm || filters.course !== "all"
-                ? "Try adjusting your filters"
-                : "Get started by adding your first module"}
+                ? "Try adjusting your filters or search term."
+                : "Get started by adding your first module."}
             </p>
-            <button onClick={() => navigate("/add-module")}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors inline-flex items-center gap-2">
-              <Plus size={16} /> Add Module
+            <button
+              onClick={() => navigate("/add-module")}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-xl hover:bg-violet-700 transition-colors text-sm font-medium"
+            >
+              <Plus size={15} /> Add Module
             </button>
           </div>
         ) : (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            {/* Subtle top bar shown during silent refresh */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            {/* Silent refresh progress bar */}
             {refreshing && (
-              <div style={{ height: 3, background: "linear-gradient(90deg, #6366f1, #818cf8, #6366f1)", backgroundSize: "200% 100%", animation: "shimmer 1.2s linear infinite" }} />
+              <>
+                <style>{`@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }`}</style>
+                <div style={{ height: 3, background: "linear-gradient(90deg, #7c3aed, #a78bfa, #7c3aed)", backgroundSize: "200% 100%", animation: "shimmer 1.2s linear infinite" }} />
+              </>
             )}
-            <style>{`@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }`}</style>
 
             <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                      onClick={() => handleSort("display_id")}>
-                      <div className="flex items-center gap-1"># {getSortIcon("display_id")}</div>
+              <table className="w-full min-w-[500px]">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200">
+                    <th
+                      className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide cursor-pointer select-none hover:text-slate-800 w-14"
+                      onClick={() => handleSort("display_id")}
+                    >
+                      <span className="flex items-center gap-1"># {getSortIcon("display_id")}</span>
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                      onClick={() => handleSort("name")}>
-                      <div className="flex items-center gap-1">Module Name {getSortIcon("name")}</div>
+                    <th
+                      className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide cursor-pointer select-none hover:text-slate-800"
+                      onClick={() => handleSort("name")}
+                    >
+                      <span className="flex items-center gap-1">Module Name {getSortIcon("name")}</span>
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                      onClick={() => handleSort("course")}>
-                      <div className="flex items-center gap-1">Course {getSortIcon("course")}</div>
+                    <th
+                      className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide cursor-pointer select-none hover:text-slate-800"
+                      onClick={() => handleSort("course")}
+                    >
+                      <span className="flex items-center gap-1">Course {getSortIcon("course")}</span>
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-5 py-3.5 text-right text-xs font-semibold text-slate-500 uppercase tracking-wide">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-slate-100">
                   {paginatedModules.map((module, index) => (
-                    <tr key={module.id}
-                      className="hover:bg-gray-50 transition-colors cursor-pointer"
-                      onClick={() => handleView(module)}>
-                      <td className="px-4 py-3 text-sm font-medium text-gray-500">
+                    <tr
+                      key={module.id}
+                      className="hover:bg-slate-50/70 transition-colors cursor-pointer group"
+                      onClick={() => { setSelectedModule(module); setShowViewModal(true); }}
+                    >
+                      {/* # */}
+                      <td className="px-5 py-4 text-sm font-semibold text-slate-400">
                         {indexOfFirstItem + index + 1}
                       </td>
-                      <td className="px-4 py-3">
+
+                      {/* Module name */}
+                      <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center text-indigo-600 flex-shrink-0">
-                            <BookMarked size={16} />
+                          <div className="w-9 h-9 bg-violet-100 rounded-xl flex items-center justify-center text-violet-600 flex-shrink-0">
+                            <BookMarked size={15} />
                           </div>
-                          <span className="text-sm font-medium text-gray-900">{module.name}</span>
+                          <span className="text-sm font-semibold text-slate-800">{module.name}</span>
                         </div>
                       </td>
-                      <td className="px-4 py-3">
-                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-50 text-indigo-700 text-xs rounded-full">
-                          <FolderOpen size={10} />
+
+                      {/* Course badge */}
+                      <td className="px-5 py-4">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-violet-50 text-violet-700 border border-violet-100 text-xs font-semibold rounded-full">
+                          <FolderOpen size={11} />
                           {coursesMap[module.course_data] || `Course ${module.course_data}`}
                         </span>
                       </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center justify-end gap-1">
-                          <button onClick={(e) => { e.stopPropagation(); handleView(module); }}
-                            className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="View">
+
+                      {/* Actions */}
+                      <td className="px-5 py-4">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setSelectedModule(module); setShowViewModal(true); }}
+                            className="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all"
+                            title="View"
+                          >
                             <Eye size={15} />
                           </button>
-                          <button onClick={(e) => handleEdit(e, module.id)}
-                            className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Edit">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); navigate(`/edit-module/${module.id}`); }}
+                            className="p-2 rounded-lg text-slate-400 hover:text-violet-600 hover:bg-violet-50 transition-all"
+                            title="Edit"
+                          >
                             <Edit size={15} />
                           </button>
-                          <button onClick={(e) => handleDeleteClick(e, module)}
-                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
+                          <button
+                            onClick={(e) => handleDeleteClick(e, module)}
+                            className="p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all"
+                            title="Delete"
+                          >
                             <Trash2 size={15} />
                           </button>
                         </div>
@@ -1736,21 +1783,47 @@ export default function Modules() {
             </div>
 
             {/* Pagination */}
-            <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
-              <div className="text-sm text-gray-500">
-                Showing {indexOfFirstItem + 1}–{Math.min(indexOfLastItem, filteredModules.length)} of {filteredModules.length}
-              </div>
+            <div className="px-5 py-3.5 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <span className="text-xs text-slate-400 font-medium">
+                Showing <span className="text-slate-700 font-semibold">{indexOfFirstItem + 1}–{Math.min(indexOfLastItem, filteredModules.length)}</span> of <span className="text-slate-700 font-semibold">{filteredModules.length}</span> modules
+              </span>
               <div className="flex items-center gap-2">
-                <button onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
                   disabled={currentPage === 1}
-                  className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50">
-                  Previous
+                  className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white transition-colors"
+                >
+                  ← Prev
                 </button>
-                <span className="text-sm text-gray-700">Page {currentPage} of {totalPages}</span>
-                <button onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                    let page = i + 1;
+                    if (totalPages > 5) {
+                      if (currentPage <= 3) page = i + 1;
+                      else if (currentPage >= totalPages - 2) page = totalPages - 4 + i;
+                      else page = currentPage - 2 + i;
+                    }
+                    return (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`w-8 h-8 rounded-lg text-xs font-semibold transition-colors ${
+                          currentPage === page
+                            ? "bg-violet-600 text-white shadow-sm"
+                            : "text-slate-500 hover:bg-slate-200"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    );
+                  })}
+                </div>
+                <button
+                  onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
                   disabled={currentPage === totalPages}
-                  className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50">
-                  Next
+                  className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white transition-colors"
+                >
+                  Next →
                 </button>
               </div>
             </div>
@@ -1760,51 +1833,62 @@ export default function Modules() {
 
       {/* ── View Modal ── */}
       {showViewModal && selectedModule && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20">
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75" onClick={() => setShowViewModal(false)} />
-            <div className="relative bg-white rounded-xl shadow-xl max-w-lg w-full overflow-hidden">
-              <div className="px-6 pt-6 pb-4">
-                <div className="flex justify-between items-start mb-5">
-                  <h3 className="text-lg font-semibold text-gray-900">Module Details</h3>
-                  <button onClick={() => setShowViewModal(false)} className="text-gray-400 hover:text-gray-600">
-                    <X size={20} />
-                  </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => setShowViewModal(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full z-10 overflow-hidden">
+            {/* Close */}
+            <button
+              onClick={() => setShowViewModal(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+            >
+              <X size={16} />
+            </button>
+
+            <div className="p-6">
+              {/* Icon + title */}
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-14 h-14 bg-violet-100 rounded-2xl flex items-center justify-center text-violet-600 flex-shrink-0">
+                  <BookMarked size={26} />
                 </div>
-                <div className="space-y-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600 flex-shrink-0">
-                      <BookMarked size={28} />
-                    </div>
-                    <div>
-                      <h2 className="text-xl font-bold text-gray-900">{selectedModule.name}</h2>
-                      <p className="text-sm text-gray-400">ID: #{selectedModule.display_id}</p>
-                    </div>
-                  </div>
-                  <div className="bg-gray-50 p-4 rounded-xl">
-                    <p className="text-xs font-medium text-gray-400 mb-1">Course</p>
-                    <p className="text-sm font-semibold text-gray-900">
-                      {coursesMap[selectedModule.course_data] || `Course ${selectedModule.course_data}`}
-                    </p>
-                  </div>
-                  {selectedModule.description && (
-                    <div>
-                      <p className="text-xs font-medium text-gray-500 mb-1">Description</p>
-                      <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-xl">{selectedModule.description}</p>
-                    </div>
-                  )}
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900">{selectedModule.name}</h2>
+                  <p className="text-sm text-slate-400 mt-0.5">Module #{selectedModule.display_id}</p>
                 </div>
               </div>
-              <div className="bg-gray-50 px-6 py-4 flex justify-end gap-3">
-                <button onClick={() => setShowViewModal(false)}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 text-sm font-medium">
-                  Close
-                </button>
-                <button onClick={() => { setShowViewModal(false); navigate(`/edit-module/${selectedModule.id}`); }}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm font-medium flex items-center gap-2">
-                  <Edit size={14} /> Edit Module
-                </button>
+
+              {/* Course */}
+              <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 mb-4">
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Course</p>
+                <div className="flex items-center gap-2">
+                  <FolderOpen size={15} className="text-violet-500 flex-shrink-0" />
+                  <p className="text-sm font-semibold text-slate-800">
+                    {coursesMap[selectedModule.course_data] || `Course ${selectedModule.course_data}`}
+                  </p>
+                </div>
               </div>
+
+              {/* Description */}
+              {selectedModule.description && (
+                <div className="bg-slate-50 border border-slate-100 rounded-xl p-4">
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Description</p>
+                  <p className="text-sm text-slate-600 leading-relaxed">{selectedModule.description}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
+              <button
+                onClick={() => setShowViewModal(false)}
+                className="px-4 py-2 border border-slate-200 text-slate-600 text-sm font-medium rounded-xl hover:bg-slate-100 transition-colors"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => { setShowViewModal(false); navigate(`/edit-module/${selectedModule.id}`); }}
+                className="px-5 py-2 bg-violet-600 text-white text-sm font-medium rounded-xl hover:bg-violet-700 transition-colors flex items-center gap-2 shadow-sm shadow-violet-200"
+              >
+                <Edit size={14} /> Edit Module
+              </button>
             </div>
           </div>
         </div>
@@ -1812,50 +1896,68 @@ export default function Modules() {
 
       {/* ── Delete Modal ── */}
       {showDeleteModal && moduleToDelete && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20">
-            <div className="fixed inset-0 bg-gray-500 bg-opacity-75"
-              onClick={() => !deleteLoading && setShowDeleteModal(false)} />
-            <div className="relative bg-white rounded-xl shadow-xl max-w-md w-full overflow-hidden">
-              <div className="px-6 pt-6 pb-4">
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
-                    <AlertCircle size={20} className="text-red-600" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-semibold text-gray-900 mb-1">Delete Module</h3>
-                    <p className="text-sm text-gray-500">
-                      Are you sure you want to delete <strong>"{moduleToDelete.name}"</strong>? This cannot be undone.
-                    </p>
-                    {deleteSuccess && (
-                      <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
-                        <CheckCircle size={15} className="text-green-600" />
-                        <p className="text-sm text-green-700">{deleteSuccess}</p>
-                      </div>
-                    )}
-                    {deleteError && (
-                      <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
-                        <AlertCircle size={15} className="text-red-600" />
-                        <p className="text-sm text-red-700">{deleteError}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm"
+            onClick={() => !deleteLoading && setShowDeleteModal(false)}
+          />
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 z-10">
+            <button
+              onClick={() => !deleteLoading && setShowDeleteModal(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors"
+            >
+              <X size={16} />
+            </button>
+
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-red-50 flex items-center justify-center">
+                <AlertCircle size={22} className="text-red-500" />
               </div>
-              <div className="bg-gray-50 px-6 py-4 flex justify-end gap-3">
-                <button onClick={() => setShowDeleteModal(false)} disabled={deleteLoading}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 text-sm font-medium disabled:opacity-50">
-                  Cancel
-                </button>
-                <button onClick={handleDeleteConfirm} disabled={deleteLoading || !!deleteSuccess}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium flex items-center gap-2 disabled:opacity-50">
-                  {deleteLoading ? (
-                    <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Deleting...</>
-                  ) : (
-                    <><Trash2 size={14} /> Delete</>
-                  )}
-                </button>
+              <div className="flex-1">
+                <h3 className="text-base font-semibold text-slate-900 mb-1">Delete Module</h3>
+                <p className="text-sm text-slate-500">
+                  Are you sure you want to delete <span className="font-semibold text-slate-700">"{moduleToDelete.name}"</span>? This action cannot be undone.
+                </p>
               </div>
+            </div>
+
+            {deleteSuccess && (
+              <div className="mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2">
+                <CheckCircle size={15} className="text-emerald-600 flex-shrink-0" />
+                <p className="text-sm text-emerald-700">{deleteSuccess}</p>
+              </div>
+            )}
+            {deleteError && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2">
+                <AlertCircle size={15} className="text-red-500 flex-shrink-0" />
+                <p className="text-sm text-red-600">{deleteError}</p>
+              </div>
+            )}
+
+            <div className="mt-6 flex gap-3 justify-end">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                disabled={deleteLoading}
+                className="px-4 py-2 border border-slate-200 text-slate-600 text-sm font-medium rounded-xl hover:bg-slate-50 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                disabled={deleteLoading || !!deleteSuccess}
+                className="px-5 py-2 bg-red-600 text-white text-sm font-medium rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                {deleteLoading ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Deleting…
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={14} /> Delete
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>

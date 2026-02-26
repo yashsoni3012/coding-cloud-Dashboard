@@ -619,7 +619,7 @@ export default function EditCategory() {
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <button
-                                onClick={() => navigate("/categories")}
+                                onClick={() => navigate("/category")}
                                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                             >
                                 <ArrowLeft size={20} className="text-gray-600" />
