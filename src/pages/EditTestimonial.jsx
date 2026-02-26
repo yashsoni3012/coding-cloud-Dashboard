@@ -541,7 +541,7 @@ useEffect(() => {
             {/* Category */}
             <div>
               <label style={labelStyle}>
-                Category
+                Course
               </label>
               {categoriesLoading ? (
                 <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 10 }}>
