@@ -12,6 +12,7 @@ const pageTitles = {
   '/analytics':   'Analytics',
   '/orders':      'Orders',
   '/settings':    'Settings',
+  '/category':    'Categories',
 }
 
 export default function Topbar() {
@@ -70,72 +71,11 @@ export default function Topbar() {
             </button>
           ) : (
             <div className="relative">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search anything..."
-                className="pl-9 pr-10 py-2 w-44 lg:w-60 bg-slate-50 border border-slate-200 rounded-xl text-[13px] text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-400 transition-all"
-              />
-              <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 hidden lg:inline-flex items-center text-[10px] text-slate-400 bg-white border border-slate-200 rounded-md px-1.5 py-0.5 font-mono">
-                ⌘K
-              </kbd>
+              
             </div>
           )}
 
-          {/* Notifications */}
-          <div className="relative">
-            <button
-              onClick={() => {
-                setShowNotifications(!showNotifications)
-                setShowProfileMenu(false)
-              }}
-              className="relative p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
-              aria-label="Notifications"
-            >
-              <Bell size={18} />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-white" />
-            </button>
-
-            {showNotifications && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)} />
-                <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-slate-200/80 z-50 overflow-hidden">
-                  <div className="flex items-center justify-between px-4 py-3.5 border-b border-slate-100">
-                    <h3 className="text-[13px] font-semibold text-slate-800">Notifications</h3>
-                    <button className="text-[11px] text-sky-600 hover:text-sky-700 font-semibold">
-                      Mark all as read
-                    </button>
-                  </div>
-                  <div className="max-h-80 overflow-y-auto divide-y divide-slate-100">
-                    {notifications.map((notif) => (
-                      <div
-                        key={notif.id}
-                        className={`px-4 py-3 hover:bg-slate-50 cursor-pointer transition-colors ${
-                          notif.unread ? 'bg-sky-50/40' : ''
-                        }`}
-                      >
-                        <div className="flex items-start gap-2.5">
-                          {notif.unread && (
-                            <span className="mt-1.5 w-1.5 h-1.5 bg-sky-500 rounded-full shrink-0" />
-                          )}
-                          <div className={notif.unread ? '' : 'pl-4'}>
-                            <p className="text-[13px] text-slate-700 font-medium">{notif.text}</p>
-                            <p className="text-[11px] text-slate-400 mt-0.5">{notif.time}</p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="px-4 py-3 border-t border-slate-100 text-center">
-                    <button className="text-[12px] text-sky-600 hover:text-sky-700 font-semibold">
-                      View all notifications
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-
+       
           {/* Divider */}
           <div className="w-px h-6 bg-slate-200 hidden sm:block" />
 

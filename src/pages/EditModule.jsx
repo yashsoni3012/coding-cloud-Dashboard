@@ -597,15 +597,12 @@
 //   );
 // }
 
-
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   Save,
   X,
-  BookOpen,
-  HelpCircle,
   Layers,
   ChevronDown,
   Info,
@@ -620,27 +617,20 @@ export default function EditModule() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  // Categories state
   const [categories, setCategories] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(false);
 
-  // Form state matching API format
   const [formData, setFormData] = useState({
     name: "",
     course_data: "",
   });
 
-  // Fetch all categories/courses
   const fetchCategories = async () => {
     try {
       setLoadingCategories(true);
-      const response = await fetch(
-        "https://codingcloud.pythonanywhere.com/course/"
-      );
+      const response = await fetch("https://codingcloud.pythonanywhere.com/course/");
       const data = await response.json();
-
       if (data.success) {
-        // Extract unique courses with ID and name
         const courseList = data.data.map((course) => ({
           id: course.id,
           name: course.name,
@@ -655,21 +645,13 @@ export default function EditModule() {
     }
   };
 
-  // Fetch module data
   useEffect(() => {
     const fetchModuleData = async () => {
       try {
         setLoading(true);
-
-        // Fetch categories first
         await fetchCategories();
-
-        // Then fetch module details
-        const response = await fetch(
-          `https://codingcloud.pythonanywhere.com/modules/${id}/`
-        );
+        const response = await fetch(`https://codingcloud.pythonanywhere.com/modules/${id}/`);
         const data = await response.json();
-
         if (data.success) {
           const module = data.data;
           setFormData({
@@ -680,122 +662,61 @@ export default function EditModule() {
           setError("Failed to fetch module details");
         }
       } catch (err) {
-        console.error("Error fetching module:", err);
         setError("Network error. Please try again.");
       } finally {
         setLoading(false);
       }
     };
-
-    if (id) {
-      fetchModuleData();
-    }
+    if (id) fetchModuleData();
   }, [id]);
 
-  // Handle input changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-    // Clear error when user starts typing
+    setFormData((prev) => ({ ...prev, [name]: value }));
     setError("");
   };
 
-  // Validate form
   const validateForm = () => {
-    if (!formData.name.trim()) {
-      return "Module name is required";
-    }
-    if (!formData.course_data) {
-      return "Please select a course";
-    }
+    if (!formData.name.trim()) return "Module name is required";
+    if (!formData.course_data) return "Please select a course";
     return "";
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Validate
     const validationError = validateForm();
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
-
+    if (validationError) { setError(validationError); return; }
     setSaving(true);
     setError("");
     setSuccess("");
-
     try {
-      // Prepare data for API
-      const submitData = {
-        name: formData.name.trim(),
-        course_data: parseInt(formData.course_data),
-      };
-
-      console.log("Updating module data:", submitData);
-
-      // Make API request (PATCH request for update)
-      const response = await fetch(
-        `https://codingcloud.pythonanywhere.com/modules/${id}/`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(submitData),
-        }
-      );
-
+      const submitData = { name: formData.name.trim(), course_data: parseInt(formData.course_data) };
+      const response = await fetch(`https://codingcloud.pythonanywhere.com/modules/${id}/`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(submitData),
+      });
       const data = await response.json();
-      console.log("API Response:", data);
-
       if (response.ok || response.status === 200) {
         setSuccess("Module updated successfully!");
-        // Redirect after 2 seconds
-        setTimeout(() => {
-          navigate("/modules");
-        }, 2000);
+        setTimeout(() => navigate("/modules"), 2000);
       } else {
-        setError(
-          data.message ||
-            data.detail ||
-            "Failed to update module. Please try again."
-        );
+        setError(data.message || data.detail || "Failed to update module. Please try again.");
       }
     } catch (err) {
-      console.error("Error updating module:", err);
       setError("Network error. Please check your connection and try again.");
     } finally {
       setSaving(false);
     }
   };
 
-  // Get selected course name for display
   const getSelectedCourseName = () => {
-    const selected = categories.find(
-      (c) => c.id === parseInt(formData.course_data)
-    );
+    const selected = categories.find((c) => c.id === parseInt(formData.course_data));
     return selected ? selected.name : "Unknown Course";
   };
 
-  const Section = ({ title, description, icon, children }) => (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      <div className="p-5 border-b border-gray-100 bg-gray-50/50">
-        <div className="flex items-center gap-3">
-          <div className={`w-2 h-2 rounded-full ${icon} shadow-sm`} />
-          <div>
-            <h2 className="text-base font-semibold text-gray-900">{title}</h2>
-            <p className="text-xs text-gray-500 mt-0.5">{description}</p>
-          </div>
-        </div>
-      </div>
-      <div className="p-5">{children}</div>
-    </div>
-  );
+  const inputClass = "w-full px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-sm";
+  const labelClass = "block text-sm font-semibold text-gray-800 mb-1.5";
 
   if (loading) {
     return (
@@ -810,28 +731,17 @@ export default function EditModule() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-      `}</style>
-
       {/* Header */}
       <div className="bg-white border-b border-gray-200 top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <button
-                onClick={() => navigate("/modules")}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
+              <button onClick={() => navigate("/modules")} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
                 <ArrowLeft size={18} className="text-gray-600" />
               </button>
               <div>
-                <h1 className="text-lg sm:text-xl font-semibold text-gray-900">
-                  Edit Module
-                </h1>
-                <p className="text-xs text-gray-500 hidden sm:block">
-                  ID: {id} • Update module information
-                </p>
+                <h1 className="text-lg sm:text-xl font-semibold text-gray-900">Edit Module</h1>
+                <p className="text-xs text-gray-500 hidden sm:block">ID: {id} • Update module information</p>
               </div>
             </div>
             <button
@@ -864,12 +774,9 @@ export default function EditModule() {
               <X size={12} className="text-red-600" />
             </div>
             <p className="text-xs text-red-600 flex-1">{error}</p>
-            <button onClick={() => setError("")} className="text-gray-400 hover:text-gray-600">
-              <X size={14} />
-            </button>
+            <button onClick={() => setError("")} className="text-gray-400 hover:text-gray-600"><X size={14} /></button>
           </div>
         )}
-
         {success && (
           <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-start gap-2">
             <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
@@ -880,73 +787,67 @@ export default function EditModule() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Module Information Section */}
-          <Section title="Module Information" description="Update module details" icon="bg-blue-500">
-            <div className="space-y-5">
-              {/* Module Name */}
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                  Module Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  placeholder="e.g., Introduction to Python, Module 1 - Basics"
-                  className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                  required
-                />
-                <p className="text-xs text-gray-500 mt-1.5 flex items-center gap-1">
-                  <Info size={12} className="text-gray-400" />
-                  Enter a descriptive name for the module
+
+          {/* Module Name */}
+          <div>
+            <label className={labelClass}>
+              Module Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleInputChange}
+              placeholder="e.g., Introduction to Python, Module 1 - Basics"
+              className={inputClass}
+              required
+            />
+            <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+              <Info size={11} className="text-gray-400" />
+              Enter a descriptive name for the module
+            </p>
+          </div>
+
+          {/* Course Selection */}
+          <div>
+            <label className={labelClass}>
+              <Layers size={13} className="inline mr-1 text-gray-500" />
+              Select Course <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <select
+                name="course_data"
+                value={formData.course_data}
+                onChange={handleInputChange}
+                className={inputClass + " appearance-none disabled:opacity-50 disabled:cursor-not-allowed"}
+                required
+                disabled={loadingCategories}
+              >
+                <option value="">-- Select a course --</option>
+                {categories.map((course) => (
+                  <option key={course.id} value={course.id}>
+                    {course.id}: {course.name} ({course.category})
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            </div>
+
+            {loadingCategories && (
+              <div className="flex items-center gap-2 mt-2">
+                <div className="w-3 h-3 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+                <p className="text-xs text-gray-500">Loading courses...</p>
+              </div>
+            )}
+
+            {formData.course_data && !loadingCategories && (
+              <div className="mt-2 p-3 bg-indigo-50 rounded-lg border border-indigo-100">
+                <p className="text-xs text-indigo-700">
+                  <span className="font-semibold">Selected Course:</span> {getSelectedCourseName()}
                 </p>
               </div>
-
-              {/* Course Selection Dropdown */}
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                  <Layers size={12} className="inline mr-1 text-gray-500" />
-                  Select Course <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <select
-                    name="course_data"
-                    value={formData.course_data}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
-                    required
-                    disabled={loadingCategories}
-                  >
-                    <option value="">-- Select a course --</option>
-                    {categories.map((course) => (
-                      <option key={course.id} value={course.id}>
-                        {course.id}: {course.name} ({course.category})
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                </div>
-
-                {loadingCategories && (
-                  <div className="flex items-center gap-2 mt-2">
-                    <div className="w-3 h-3 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
-                    <p className="text-xs text-gray-500">Loading courses...</p>
-                  </div>
-                )}
-
-                {formData.course_data && !loadingCategories && (
-                  <div className="mt-3 p-3 bg-indigo-50 rounded-lg border border-indigo-100">
-                    <p className="text-xs text-indigo-700">
-                      <span className="font-semibold">Selected Course:</span> {getSelectedCourseName()}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </Section>
-
-          
+            )}
+          </div>
 
           {/* Mobile Submit Button */}
           <div className="block sm:hidden">
@@ -969,7 +870,6 @@ export default function EditModule() {
             </button>
           </div>
 
-         
         </form>
       </div>
     </div>

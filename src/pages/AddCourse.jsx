@@ -1328,7 +1328,6 @@ import {
   Globe,
   Award,
   ChevronDown,
-  Image as ImageIcon,
 } from "lucide-react";
 
 export default function AddCourse() {
@@ -1342,9 +1341,7 @@ export default function AddCourse() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch(
-          "https://codingcloud.pythonanywhere.com/category/"
-        );
+        const response = await fetch("https://codingcloud.pythonanywhere.com/category/");
         const data = await response.json();
         setCategories(data);
       } catch (err) {
@@ -1398,24 +1395,19 @@ export default function AddCourse() {
     const { name, files } = e.target;
     const file = files[0];
     if (file) {
-      // File size validation
       const maxSize = name === "pdf_file" ? 10 * 1024 * 1024 : 5 * 1024 * 1024;
       if (file.size > maxSize) {
         setError(`File size must be less than ${maxSize / (1024 * 1024)}MB`);
         return;
       }
-
-      // File type validation
       if (name === "pdf_file" && file.type !== "application/pdf") {
         setError("Please upload a valid PDF file");
         return;
       }
-
       if (name !== "pdf_file" && !file.type.startsWith("image/")) {
         setError("Please upload a valid image file");
         return;
       }
-
       setFormData((prev) => ({ ...prev, [name]: file }));
       if (name === "image") setImagePreview(URL.createObjectURL(file));
       else if (name === "banner_img") setBannerPreview(URL.createObjectURL(file));
@@ -1427,19 +1419,10 @@ export default function AddCourse() {
 
   const removeFile = (field) => {
     setFormData((prev) => ({ ...prev, [field]: null }));
-    if (field === "image") {
-      setImagePreview("");
-      document.getElementById("image-upload").value = "";
-    } else if (field === "banner_img") {
-      setBannerPreview("");
-      document.getElementById("banner-upload").value = "";
-    } else if (field === "icon") {
-      setIconPreview("");
-      document.getElementById("icon-upload").value = "";
-    } else if (field === "pdf_file") {
-      setPdfName("");
-      document.getElementById("pdf-upload").value = "";
-    }
+    if (field === "image") { setImagePreview(""); document.getElementById("image-upload").value = ""; }
+    else if (field === "banner_img") { setBannerPreview(""); document.getElementById("banner-upload").value = ""; }
+    else if (field === "icon") { setIconPreview(""); document.getElementById("icon-upload").value = ""; }
+    else if (field === "pdf_file") { setPdfName(""); document.getElementById("pdf-upload").value = ""; }
   };
 
   const validateForm = () => {
@@ -1453,10 +1436,7 @@ export default function AddCourse() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const validationError = validateForm();
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
+    if (validationError) { setError(validationError); return; }
     setLoading(true);
     setError("");
     setSuccess("");
@@ -1480,13 +1460,10 @@ export default function AddCourse() {
       if (formData.pdf_file) submitData.append("pdf_file", formData.pdf_file);
       if (formData.icon) submitData.append("icon", formData.icon);
 
-      const response = await fetch(
-        "https://codingcloud.pythonanywhere.com/course/",
-        {
-          method: "POST",
-          body: submitData,
-        }
-      );
+      const response = await fetch("https://codingcloud.pythonanywhere.com/course/", {
+        method: "POST",
+        body: submitData,
+      });
       const data = await response.json();
       if (response.ok || response.status === 201) {
         setSuccess("Course created successfully!");
@@ -1501,24 +1478,23 @@ export default function AddCourse() {
     }
   };
 
+  const inputClass = "w-full px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-sm";
+  const labelClass = "block text-sm font-semibold text-gray-800 mb-1.5";
+
   const UploadBox = ({ preview, onRemove, inputId, inputName, label, hint }) => (
-    <div className="space-y-2">
-      <label className="block text-sm font-medium text-gray-700">{label}</label>
+    <div>
+      <label className={labelClass}>{label}</label>
       <div
         onClick={() => !preview && document.getElementById(inputId)?.click()}
         className={`border-2 border-dashed rounded-xl p-6 transition-all ${
-          preview 
-            ? "border-indigo-300 bg-indigo-50/30" 
+          preview
+            ? "border-indigo-300 bg-indigo-50/30"
             : "border-gray-300 hover:border-indigo-400 hover:bg-indigo-50/20 cursor-pointer"
         }`}
       >
         {preview ? (
           <div className="relative inline-block">
-            <img
-              src={preview}
-              alt="preview"
-              className="max-h-40 rounded-lg shadow-md mx-auto"
-            />
+            <img src={preview} alt="preview" className="max-h-40 rounded-lg shadow-md mx-auto" />
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onRemove(); }}
@@ -1536,26 +1512,19 @@ export default function AddCourse() {
             <p className="text-sm text-gray-500">{hint}</p>
           </div>
         )}
-        <input
-          type="file"
-          name={inputName}
-          accept={inputName === "pdf_file" ? ".pdf" : "image/*"}
-          onChange={handleFileChange}
-          className="hidden"
-          id={inputId}
-        />
+        <input type="file" name={inputName} accept={inputName === "pdf_file" ? ".pdf" : "image/*"} onChange={handleFileChange} className="hidden" id={inputId} />
       </div>
     </div>
   );
 
   const PdfBox = () => (
-    <div className="space-y-2">
-      <label className="block text-sm font-medium text-gray-700">Syllabus PDF</label>
+    <div>
+      <label className={labelClass}>Syllabus PDF</label>
       <div
         onClick={() => !pdfName && document.getElementById("pdf-upload")?.click()}
         className={`border-2 border-dashed rounded-xl p-6 transition-all ${
-          pdfName 
-            ? "border-indigo-300 bg-indigo-50/30" 
+          pdfName
+            ? "border-indigo-300 bg-indigo-50/30"
             : "border-gray-300 hover:border-indigo-400 hover:bg-indigo-50/20 cursor-pointer"
         }`}
       >
@@ -1565,9 +1534,7 @@ export default function AddCourse() {
               <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
                 <FileText size={20} className="text-red-600" />
               </div>
-              <span className="text-sm font-medium text-gray-700 max-w-[150px] truncate">
-                {pdfName}
-              </span>
+              <span className="text-sm font-medium text-gray-700 max-w-[150px] truncate">{pdfName}</span>
             </div>
             <button
               type="button"
@@ -1586,57 +1553,24 @@ export default function AddCourse() {
             <p className="text-sm text-gray-500">PDF only, up to 10MB</p>
           </div>
         )}
-        <input
-          type="file"
-          name="pdf_file"
-          accept=".pdf"
-          onChange={handleFileChange}
-          id="pdf-upload"
-          className="hidden"
-        />
+        <input type="file" name="pdf_file" accept=".pdf" onChange={handleFileChange} id="pdf-upload" className="hidden" />
       </div>
-    </div>
-  );
-
-  const Section = ({ title, description, icon, children }) => (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      <div className="p-6 border-b border-gray-100 bg-gray-50/50">
-        <div className="flex items-center gap-3">
-          <div className={`w-2 h-2 rounded-full ${icon} shadow-lg`} />
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
-            <p className="text-sm text-gray-500 mt-0.5">{description}</p>
-          </div>
-        </div>
-      </div>
-      <div className="p-6">{children}</div>
     </div>
   );
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-      `}</style>
-
       {/* Header */}
       <div className="bg-white border-b border-gray-200 top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <button
-                onClick={() => navigate("/course")}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
+              <button onClick={() => navigate("/course")} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
                 <ArrowLeft size={20} className="text-gray-600" />
               </button>
               <div>
-                <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">
-                  Create New Course
-                </h1>
-                <p className="text-sm text-gray-500 hidden sm:block">
-                  Add a new course to your platform
-                </p>
+                <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Create New Course</h1>
+                <p className="text-sm text-gray-500 hidden sm:block">Add a new course to your platform</p>
               </div>
             </div>
             <button
@@ -1669,12 +1603,9 @@ export default function AddCourse() {
               <X size={14} className="text-red-600" />
             </div>
             <p className="text-sm text-red-600 flex-1">{error}</p>
-            <button onClick={() => setError("")} className="text-gray-400 hover:text-gray-600">
-              <X size={16} />
-            </button>
+            <button onClick={() => setError("")} className="text-gray-400 hover:text-gray-600"><X size={16} /></button>
           </div>
         )}
-
         {success && (
           <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
             <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
@@ -1683,264 +1614,217 @@ export default function AddCourse() {
             <p className="text-sm text-green-600">✓ {success}</p>
           </div>
         )}
-
-        {/* Loading Categories */}
         {loadingCategories && (
           <div className="text-center py-4 text-gray-500">Loading categories...</div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Basic Information */}
-          <Section title="Basic Information" description="Essential course details" icon="bg-blue-500">
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Course Name <span className="text-red-500">*</span>
+        <form onSubmit={handleSubmit} className="space-y-5">
+
+          {/* ── Basic Information ── */}
+          <p className="text-xs font-bold uppercase tracking-widest text-gray-400 pt-2">Basic Information</p>
+
+          <div>
+            <label className={labelClass}>Course Name <span className="text-red-500">*</span></label>
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleInputChange}
+              placeholder="e.g., Advanced React Development 2024"
+              className={inputClass}
+              required
+            />
+          </div>
+
+          <div>
+            <label className={labelClass}>Course Slug <span className="text-red-500">*</span></label>
+            <div className="flex">
+              <span className="inline-flex items-center px-4 bg-gray-200 border border-r-0 border-gray-300 rounded-l-lg text-sm text-gray-600">
+                /course/
+              </span>
+              <input
+                type="text"
+                name="slug"
+                value={formData.slug}
+                onChange={handleInputChange}
+                placeholder="advanced-react-development-2024"
+                className="flex-1 px-4 py-2.5 bg-gray-100 border border-gray-300 rounded-r-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-sm"
+                required
+              />
+            </div>
+            <p className="text-xs text-gray-400 mt-1">Auto-generated from course name. You can customize it.</p>
+          </div>
+
+          <div>
+            <label className={labelClass}>Category <span className="text-red-500">*</span></label>
+            <div className="relative">
+              <select
+                name="category"
+                value={formData.category}
+                onChange={handleInputChange}
+                className={inputClass + " appearance-none"}
+                required
+              >
+                <option value="">Select a category</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
+              </select>
+              <ChevronDown size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            </div>
+          </div>
+
+          <div>
+            <label className={labelClass}>Description <span className="text-red-500">*</span></label>
+            <textarea
+              name="text"
+              value={formData.text}
+              onChange={handleInputChange}
+              rows={5}
+              placeholder="Write a detailed description of your course..."
+              className={inputClass + " resize-none"}
+              required
+            />
+            <p className="text-xs text-gray-400 mt-1">Minimum 50 characters recommended for better SEO</p>
+          </div>
+
+          {/* ── Course Details ── */}
+          <p className="text-xs font-bold uppercase tracking-widest text-gray-400 pt-2">Course Details</p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {[
+              { icon: Clock, label: "Duration", name: "duration", placeholder: "e.g., 40 hours" },
+              { icon: BookOpen, label: "Lectures", name: "lecture", placeholder: "e.g., 98 lectures" },
+              { icon: Users, label: "Students", name: "students", placeholder: "e.g., 1,000+" },
+            ].map((field) => (
+              <div key={field.name}>
+                <label className={labelClass}>
+                  <field.icon size={14} className="inline mr-1 text-gray-500" />
+                  {field.label}
                 </label>
                 <input
                   type="text"
-                  name="name"
-                  value={formData.name}
+                  name={field.name}
+                  value={formData[field.name]}
                   onChange={handleInputChange}
-                  placeholder="e.g., Advanced React Development 2024"
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                  required
+                  placeholder={field.placeholder}
+                  className={inputClass}
                 />
               </div>
+            ))}
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Course Slug <span className="text-red-500">*</span>
-                </label>
-                <div className="flex">
-                  <span className="inline-flex items-center px-4 bg-gray-100 border border-r-0 border-gray-300 rounded-l-lg text-sm text-gray-600">
-                    /course/
-                  </span>
-                  <input
-                    type="text"
-                    name="slug"
-                    value={formData.slug}
-                    onChange={handleInputChange}
-                    placeholder="advanced-react-development-2024"
-                    className="flex-1 px-4 py-3 bg-gray-50 border border-gray-300 rounded-r-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                    required
-                  />
-                </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  Auto-generated from course name. You can customize it.
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Category <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <select
-                    name="category"
-                    value={formData.category}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    required
-                  >
-                    <option value="">Select a category</option>
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Description <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  name="text"
-                  value={formData.text}
+            <div>
+              <label className={labelClass}>
+                <Signal size={14} className="inline mr-1 text-gray-500" />
+                Difficulty Level
+              </label>
+              <div className="relative">
+                <select
+                  name="level"
+                  value={formData.level}
                   onChange={handleInputChange}
-                  rows={5}
-                  placeholder="Write a detailed description of your course..."
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all resize-none"
-                  required
-                />
-                <p className="text-xs text-gray-500 mt-2">
-                  Minimum 50 characters recommended for better SEO
-                </p>
+                  className={inputClass + " appearance-none"}
+                >
+                  <option value="">Select Level</option>
+                  <option value="Beginner">Beginner</option>
+                  <option value="Intermediate">Intermediate</option>
+                  <option value="Advanced">Advanced</option>
+                  <option value="All Levels">All Levels</option>
+                </select>
+                <ChevronDown size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               </div>
             </div>
-          </Section>
 
-          {/* Course Details */}
-          <Section title="Course Details" description="Additional information (optional)" icon="bg-purple-500">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[
-                { icon: Clock, label: "Duration", name: "duration", placeholder: "e.g., 40 hours" },
-                { icon: BookOpen, label: "Lectures", name: "lecture", placeholder: "e.g., 98 lectures" },
-                { icon: Users, label: "Students", name: "students", placeholder: "e.g., 1,000+" },
-              ].map((field) => (
-                <div key={field.name}>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <field.icon size={16} className="inline mr-1 text-gray-500" />
-                    {field.label}
+            <div>
+              <label className={labelClass}>
+                <Globe size={14} className="inline mr-1 text-gray-500" />
+                Language
+              </label>
+              <input
+                type="text"
+                name="language"
+                value={formData.language}
+                onChange={handleInputChange}
+                placeholder="e.g., English"
+                className={inputClass}
+              />
+            </div>
+
+            <div>
+              <label className={labelClass}>
+                <Award size={14} className="inline mr-1 text-gray-500" />
+                Certificate
+              </label>
+              <div className="flex gap-3">
+                {["No", "Yes"].map((val) => (
+                  <label
+                    key={val}
+                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border-2 rounded-lg cursor-pointer transition-all text-sm ${
+                      formData.certificate === val
+                        ? "border-indigo-500 bg-indigo-50 text-indigo-700"
+                        : "border-gray-200 bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
+                  >
+                    <input type="radio" name="certificate" value={val} checked={formData.certificate === val} onChange={handleInputChange} className="hidden" />
+                    {val === "Yes" ? <Award size={14} /> : <X size={14} />}
+                    {val}
                   </label>
-                  <input
-                    type="text"
-                    name={field.name}
-                    value={formData[field.name]}
-                    onChange={handleInputChange}
-                    placeholder={field.placeholder}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                  />
-                </div>
-              ))}
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Signal size={16} className="inline mr-1 text-gray-500" />
-                  Difficulty Level
-                </label>
-                <div className="relative">
-                  <select
-                    name="level"
-                    value={formData.level}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  >
-                    <option value="">Select Level</option>
-                    <option value="Beginner">Beginner</option>
-                    <option value="Intermediate">Intermediate</option>
-                    <option value="Advanced">Advanced</option>
-                    <option value="All Levels">All Levels</option>
-                  </select>
-                  <ChevronDown size={18} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Globe size={16} className="inline mr-1 text-gray-500" />
-                  Language
-                </label>
-                <input
-                  type="text"
-                  name="language"
-                  value={formData.language}
-                  onChange={handleInputChange}
-                  placeholder="e.g., English"
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Award size={16} className="inline mr-1 text-gray-500" />
-                  Certificate
-                </label>
-                <div className="flex gap-3">
-                  {["No", "Yes"].map((val) => (
-                    <label
-                      key={val}
-                      className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-lg cursor-pointer transition-all ${
-                        formData.certificate === val
-                          ? "border-indigo-500 bg-indigo-50 text-indigo-700"
-                          : "border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="certificate"
-                        value={val}
-                        checked={formData.certificate === val}
-                        onChange={handleInputChange}
-                        className="hidden"
-                      />
-                      {val === "Yes" ? <Award size={16} /> : <X size={16} />}
-                      {val}
-                    </label>
-                  ))}
-                </div>
+                ))}
               </div>
             </div>
-          </Section>
+          </div>
 
-          {/* Media Files */}
-          <Section title="Media Files" description="Upload images and materials (optional)" icon="bg-orange-500">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <UploadBox
-                preview={imagePreview}
-                onRemove={() => removeFile("image")}
-                inputId="image-upload"
-                inputName="image"
-                label="Course Image"
-                hint="PNG, JPG, WebP up to 5MB"
-              />
-              <UploadBox
-                preview={bannerPreview}
-                onRemove={() => removeFile("banner_img")}
-                inputId="banner-upload"
-                inputName="banner_img"
-                label="Banner Image"
-                hint="PNG, JPG, WebP up to 5MB"
-              />
-              <UploadBox
-                preview={iconPreview}
-                onRemove={() => removeFile("icon")}
-                inputId="icon-upload"
-                inputName="icon"
-                label="Course Icon"
-                hint="PNG, JPG up to 2MB"
-              />
-              <PdfBox />
-            </div>
-          </Section>
+          {/* ── Media Files ── */}
+          <p className="text-xs font-bold uppercase tracking-widest text-gray-400 pt-2">Media Files</p>
 
-          {/* SEO & Metadata */}
-          <Section title="SEO & Metadata" description="Improve search visibility (optional)" icon="bg-green-500">
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Meta Title</label>
-                <input
-                  type="text"
-                  name="meta_title"
-                  value={formData.meta_title}
-                  onChange={handleInputChange}
-                  placeholder="SEO optimized title for your course"
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                />
-                <p className="text-xs text-gray-500 mt-2">Recommended length: 50-60 characters</p>
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <UploadBox preview={imagePreview} onRemove={() => removeFile("image")} inputId="image-upload" inputName="image" label="Course Image" hint="PNG, JPG, WebP up to 5MB" />
+            <UploadBox preview={bannerPreview} onRemove={() => removeFile("banner_img")} inputId="banner-upload" inputName="banner_img" label="Banner Image" hint="PNG, JPG, WebP up to 5MB" />
+            <UploadBox preview={iconPreview} onRemove={() => removeFile("icon")} inputId="icon-upload" inputName="icon" label="Course Icon" hint="PNG, JPG up to 2MB" />
+            <PdfBox />
+          </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Meta Description</label>
-                <textarea
-                  name="meta_description"
-                  value={formData.meta_description}
-                  onChange={handleInputChange}
-                  rows={4}
-                  placeholder="Brief description for search engines"
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all resize-none"
-                />
-                <p className="text-xs text-gray-500 mt-2">Recommended length: 150-160 characters</p>
-              </div>
+          {/* ── SEO & Metadata ── */}
+          <p className="text-xs font-bold uppercase tracking-widest text-gray-400 pt-2">SEO & Metadata</p>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Keywords</label>
-                <input
-                  type="text"
-                  name="keywords"
-                  value={formData.keywords}
-                  onChange={handleInputChange}
-                  placeholder="react, javascript, web development, frontend"
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                />
-                <p className="text-xs text-gray-500 mt-2">Comma-separated keywords for better searchability</p>
-              </div>
-            </div>
-          </Section>
+          <div>
+            <label className={labelClass}>Meta Title</label>
+            <input
+              type="text"
+              name="meta_title"
+              value={formData.meta_title}
+              onChange={handleInputChange}
+              placeholder="SEO optimized title for your course"
+              className={inputClass}
+            />
+            <p className="text-xs text-gray-400 mt-1">Recommended length: 50-60 characters</p>
+          </div>
+
+          <div>
+            <label className={labelClass}>Meta Description</label>
+            <textarea
+              name="meta_description"
+              value={formData.meta_description}
+              onChange={handleInputChange}
+              rows={4}
+              placeholder="Brief description for search engines"
+              className={inputClass + " resize-none"}
+            />
+            <p className="text-xs text-gray-400 mt-1">Recommended length: 150-160 characters</p>
+          </div>
+
+          <div>
+            <label className={labelClass}>Keywords</label>
+            <input
+              type="text"
+              name="keywords"
+              value={formData.keywords}
+              onChange={handleInputChange}
+              placeholder="react, javascript, web development, frontend"
+              className={inputClass}
+            />
+            <p className="text-xs text-gray-400 mt-1">Comma-separated keywords for better searchability</p>
+          </div>
 
           {/* Mobile Submit Button */}
           <div className="block sm:hidden">

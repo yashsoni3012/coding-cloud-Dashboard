@@ -367,7 +367,7 @@
 
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Save, X, Image as ImageIcon, Upload } from "lucide-react";
+import { ArrowLeft, Save, X, Upload } from "lucide-react";
 
 export default function AddCategory() {
     const navigate = useNavigate();
@@ -414,12 +414,12 @@ export default function AddCategory() {
     const removeImage = () => {
         setFormData((prev) => ({ ...prev, image: null }));
         setImagePreview(null);
-        if (fileInputRef.current) fileInputRef.current.value = '';
+        if (fileInputRef.current) fileInputRef.current.value = "";
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         if (!formData.name.trim()) {
             setError("Category name is required");
             return;
@@ -443,7 +443,7 @@ export default function AddCategory() {
             if (!response.ok) throw new Error("Failed to create category");
 
             setSuccess("Category created successfully!");
-            
+
             setTimeout(() => navigate("/categories"), 1500);
         } catch (err) {
             setError(err.message || "Failed to create category");
@@ -513,10 +513,10 @@ export default function AddCategory() {
                 )}
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-5">
                     {/* Name Field */}
-                    <div className="bg-white rounded-xl border border-gray-200 p-6">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <div>
+                        <label className="block text-sm font-semibold text-gray-800 mb-1.5">
                             Category Name <span className="text-red-500">*</span>
                         </label>
                         <input
@@ -525,14 +525,14 @@ export default function AddCategory() {
                             value={formData.name}
                             onChange={handleInputChange}
                             placeholder="e.g., Web Development, Design, Marketing"
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                            className="w-full px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-sm"
                             required
                         />
                     </div>
 
                     {/* Description Field */}
-                    <div className="bg-white rounded-xl border border-gray-200 p-6">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <div>
+                        <label className="block text-sm font-semibold text-gray-800 mb-1.5">
                             Description
                         </label>
                         <textarea
@@ -541,13 +541,13 @@ export default function AddCategory() {
                             onChange={handleInputChange}
                             rows={4}
                             placeholder="Write a brief description about this category..."
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all resize-none"
+                            className="w-full px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all resize-none text-sm"
                         />
                     </div>
 
                     {/* Image Upload */}
-                    <div className="bg-white rounded-xl border border-gray-200 p-6">
-                        <label className="block text-sm font-medium text-gray-700 mb-4">
+                    <div>
+                        <label className="block text-sm font-semibold text-gray-800 mb-1.5">
                             Category Image
                         </label>
 

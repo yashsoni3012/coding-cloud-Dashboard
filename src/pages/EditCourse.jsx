@@ -1465,7 +1465,6 @@ export default function EditCourse() {
   const [success, setSuccess] = useState("");
   const [categories, setCategories] = useState([]);
 
-  // Form state matching exact API format
   const [formData, setFormData] = useState({
     id: "",
     name: "",
@@ -1481,25 +1480,21 @@ export default function EditCourse() {
     meta_title: "",
     meta_description: "",
     keywords: "",
-    // File states
     image: null,
     banner_img: null,
     pdf_file: null,
     icon: null,
-    // Existing file URLs (for display)
     existing_image: "",
     existing_banner: "",
     existing_icon: "",
     existing_pdf: "",
   });
 
-  // Preview URLs for new files
   const [imagePreview, setImagePreview] = useState("");
   const [bannerPreview, setBannerPreview] = useState("");
   const [iconPreview, setIconPreview] = useState("");
   const [pdfName, setPdfName] = useState("");
 
-  // Track which files have been changed
   const [filesChanged, setFilesChanged] = useState({
     image: false,
     banner_img: false,
@@ -1507,15 +1502,11 @@ export default function EditCourse() {
     pdf_file: false,
   });
 
-  // Fetch course data
   useEffect(() => {
     const fetchCourseData = async () => {
       try {
         setLoading(true);
-
-        const response = await fetch(
-          `https://codingcloud.pythonanywhere.com/course/${id}/`
-        );
+        const response = await fetch(`https://codingcloud.pythonanywhere.com/course/${id}/`);
         const data = await response.json();
 
         if (data.success) {
@@ -1548,7 +1539,6 @@ export default function EditCourse() {
           setError("Failed to fetch course details");
         }
 
-        // Fetch categories
         setCategories([
           { id: 40, name: "IT and Software" },
           { id: 43, name: "Mobile Application" },
@@ -1562,122 +1552,50 @@ export default function EditCourse() {
       }
     };
 
-    if (id) {
-      fetchCourseData();
-    }
+    if (id) fetchCourseData();
   }, [id]);
 
-  // Handle text input changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-
-    // Auto-generate slug from name
+    setFormData((prev) => ({ ...prev, [name]: value }));
     if (name === "name" && !formData.slug) {
-      const generatedSlug = value
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-|-$/g, "");
-
-      setFormData((prev) => ({
-        ...prev,
-        slug: generatedSlug,
-      }));
+      const generatedSlug = value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      setFormData((prev) => ({ ...prev, slug: generatedSlug }));
     }
   };
 
-  // Handle file uploads
   const handleFileChange = (e) => {
     const { name, files } = e.target;
     const file = files[0];
-
     if (file) {
-      // File size validation
       const maxSize = name === "pdf_file" ? 10 * 1024 * 1024 : 5 * 1024 * 1024;
-      if (file.size > maxSize) {
-        setError(`File size must be less than ${maxSize / (1024 * 1024)}MB`);
-        return;
-      }
-
-      // File type validation
-      if (name === "pdf_file" && file.type !== "application/pdf") {
-        setError("Please upload a valid PDF file");
-        return;
-      }
-
-      if (name !== "pdf_file" && !file.type.startsWith("image/")) {
-        setError("Please upload a valid image file");
-        return;
-      }
-
-      setFormData((prev) => ({
-        ...prev,
-        [name]: file,
-      }));
-
-      setFilesChanged((prev) => ({
-        ...prev,
-        [name]: true,
-      }));
-
-      // Create preview URLs for images
-      if (name === "image") {
-        setImagePreview(URL.createObjectURL(file));
-      } else if (name === "banner_img") {
-        setBannerPreview(URL.createObjectURL(file));
-      } else if (name === "icon") {
-        setIconPreview(URL.createObjectURL(file));
-      } else if (name === "pdf_file") {
-        setPdfName(file.name);
-      }
-
+      if (file.size > maxSize) { setError(`File size must be less than ${maxSize / (1024 * 1024)}MB`); return; }
+      if (name === "pdf_file" && file.type !== "application/pdf") { setError("Please upload a valid PDF file"); return; }
+      if (name !== "pdf_file" && !file.type.startsWith("image/")) { setError("Please upload a valid image file"); return; }
+      setFormData((prev) => ({ ...prev, [name]: file }));
+      setFilesChanged((prev) => ({ ...prev, [name]: true }));
+      if (name === "image") setImagePreview(URL.createObjectURL(file));
+      else if (name === "banner_img") setBannerPreview(URL.createObjectURL(file));
+      else if (name === "icon") setIconPreview(URL.createObjectURL(file));
+      else if (name === "pdf_file") setPdfName(file.name);
       setError("");
     }
   };
 
-  // Remove file
   const removeFile = (field, isExisting = false) => {
     if (isExisting) {
-      // Mark existing file for deletion
-      setFormData((prev) => ({
-        ...prev,
-        [`existing_${field}`]: "",
-      }));
-      setFilesChanged((prev) => ({
-        ...prev,
-        [field]: true,
-      }));
+      setFormData((prev) => ({ ...prev, [`existing_${field}`]: "" }));
+      setFilesChanged((prev) => ({ ...prev, [field]: true }));
     } else {
-      // Remove new file
-      setFormData((prev) => ({
-        ...prev,
-        [field]: null,
-      }));
-      setFilesChanged((prev) => ({
-        ...prev,
-        [field]: true,
-      }));
-
-      if (field === "image") {
-        setImagePreview("");
-        document.getElementById("image-upload").value = "";
-      } else if (field === "banner_img") {
-        setBannerPreview("");
-        document.getElementById("banner-upload").value = "";
-      } else if (field === "icon") {
-        setIconPreview("");
-        document.getElementById("icon-upload").value = "";
-      } else if (field === "pdf_file") {
-        setPdfName("");
-        document.getElementById("pdf-upload").value = "";
-      }
+      setFormData((prev) => ({ ...prev, [field]: null }));
+      setFilesChanged((prev) => ({ ...prev, [field]: true }));
+      if (field === "image") { setImagePreview(""); document.getElementById("image-upload").value = ""; }
+      else if (field === "banner_img") { setBannerPreview(""); document.getElementById("banner-upload").value = ""; }
+      else if (field === "icon") { setIconPreview(""); document.getElementById("icon-upload").value = ""; }
+      else if (field === "pdf_file") { setPdfName(""); document.getElementById("pdf-upload").value = ""; }
     }
   };
 
-  // Validate form
   const validateForm = () => {
     if (!formData.name.trim()) return "Course name is required";
     if (!formData.slug.trim()) return "Course slug is required";
@@ -1686,120 +1604,66 @@ export default function EditCourse() {
     return "";
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const validationError = validateForm();
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
-
+    if (validationError) { setError(validationError); return; }
     setSaving(true);
     setError("");
     setSuccess("");
-
     try {
       const submitData = new FormData();
-
-      // Append all text fields
       submitData.append("name", formData.name);
       submitData.append("slug", formData.slug);
       submitData.append("category", formData.category);
       submitData.append("text", formData.text);
-
       if (formData.duration) submitData.append("duration", formData.duration);
       if (formData.lecture) submitData.append("lecture", formData.lecture);
       if (formData.students) submitData.append("students", formData.students);
       if (formData.level) submitData.append("level", formData.level);
       if (formData.language) submitData.append("language", formData.language);
-
-      submitData.append(
-        "certificate",
-        formData.certificate === "Yes" ? "Yes" : "No"
-      );
-
-      if (formData.meta_title)
-        submitData.append("meta_title", formData.meta_title);
-      if (formData.meta_description)
-        submitData.append("meta_description", formData.meta_description);
+      submitData.append("certificate", formData.certificate === "Yes" ? "Yes" : "No");
+      if (formData.meta_title) submitData.append("meta_title", formData.meta_title);
+      if (formData.meta_description) submitData.append("meta_description", formData.meta_description);
       if (formData.keywords) submitData.append("keywords", formData.keywords);
-
-      // Append new files if they exist
       if (formData.image) submitData.append("image", formData.image);
-      if (formData.banner_img)
-        submitData.append("banner_img", formData.banner_img);
+      if (formData.banner_img) submitData.append("banner_img", formData.banner_img);
       if (formData.pdf_file) submitData.append("pdf_file", formData.pdf_file);
       if (formData.icon) submitData.append("icon", formData.icon);
 
-      const response = await fetch(
-        `https://codingcloud.pythonanywhere.com/course/${id}/`,
-        {
-          method: "PATCH",
-          body: submitData,
-        }
-      );
-
+      const response = await fetch(`https://codingcloud.pythonanywhere.com/course/${id}/`, { method: "PATCH", body: submitData });
       const data = await response.json();
-
       if (response.ok || response.status === 200) {
         setSuccess("Course updated successfully!");
-        setTimeout(() => {
-          navigate("/course");
-        }, 2000);
+        setTimeout(() => navigate("/course"), 2000);
       } else {
-        setError(
-          data.message ||
-            data.detail ||
-            "Failed to update course. Please try again."
-        );
+        setError(data.message || data.detail || "Failed to update course. Please try again.");
       }
     } catch (err) {
-      console.error("Error updating course:", err);
       setError("Network error. Please check your connection and try again.");
     } finally {
       setSaving(false);
     }
   };
 
-  const Section = ({ title, description, icon, children }) => (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      <div className="p-5 border-b border-gray-100 bg-gray-50/50">
-        <div className="flex items-center gap-3">
-          <div className={`w-2 h-2 rounded-full ${icon} shadow-sm`} />
-          <div>
-            <h2 className="text-base font-semibold text-gray-900">{title}</h2>
-            <p className="text-xs text-gray-500 mt-0.5">{description}</p>
-          </div>
-        </div>
-      </div>
-      <div className="p-5">{children}</div>
-    </div>
-  );
+  const inputClass = "w-full px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-sm";
+  const labelClass = "block text-sm font-semibold text-gray-800 mb-1.5";
 
   const UploadBox = ({ preview, existingUrl, onRemove, inputId, inputName, label, hint }) => {
     const hasPreview = preview || existingUrl;
     const previewSrc = preview || (existingUrl ? `https://codingcloud.pythonanywhere.com${existingUrl}` : "");
-
     return (
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">{label}</label>
+      <div>
+        <label className={labelClass}>{label}</label>
         <div
           onClick={() => !hasPreview && document.getElementById(inputId)?.click()}
           className={`border-2 border-dashed rounded-xl p-5 transition-all ${
-            hasPreview 
-              ? "border-indigo-300 bg-indigo-50/30" 
-              : "border-gray-300 hover:border-indigo-400 hover:bg-indigo-50/20 cursor-pointer"
+            hasPreview ? "border-indigo-300 bg-indigo-50/30" : "border-gray-300 hover:border-indigo-400 hover:bg-indigo-50/20 cursor-pointer"
           }`}
         >
           {hasPreview ? (
             <div className="relative inline-block">
-              <img
-                src={previewSrc}
-                alt="preview"
-                className="max-h-32 rounded-lg shadow-md mx-auto"
-              />
+              <img src={previewSrc} alt="preview" className="max-h-32 rounded-lg shadow-md mx-auto" />
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); onRemove(); }}
@@ -1817,14 +1681,7 @@ export default function EditCourse() {
               <p className="text-xs text-gray-500">{hint}</p>
             </div>
           )}
-          <input
-            type="file"
-            name={inputName}
-            accept="image/*"
-            onChange={handleFileChange}
-            className="hidden"
-            id={inputId}
-          />
+          <input type="file" name={inputName} accept="image/*" onChange={handleFileChange} className="hidden" id={inputId} />
         </div>
       </div>
     );
@@ -1833,16 +1690,13 @@ export default function EditCourse() {
   const PdfBox = () => {
     const hasPdf = pdfName || formData.existing_pdf;
     const pdfDisplayName = pdfName || (formData.existing_pdf ? formData.existing_pdf.split("/").pop() : "");
-
     return (
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">Syllabus PDF</label>
+      <div>
+        <label className={labelClass}>Syllabus PDF</label>
         <div
           onClick={() => !hasPdf && document.getElementById("pdf-upload")?.click()}
           className={`border-2 border-dashed rounded-xl p-5 transition-all ${
-            hasPdf 
-              ? "border-indigo-300 bg-indigo-50/30" 
-              : "border-gray-300 hover:border-indigo-400 hover:bg-indigo-50/20 cursor-pointer"
+            hasPdf ? "border-indigo-300 bg-indigo-50/30" : "border-gray-300 hover:border-indigo-400 hover:bg-indigo-50/20 cursor-pointer"
           }`}
         >
           {hasPdf ? (
@@ -1851,9 +1705,7 @@ export default function EditCourse() {
                 <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
                   <FileText size={16} className="text-red-600" />
                 </div>
-                <span className="text-xs font-medium text-gray-700 max-w-[120px] truncate">
-                  {pdfDisplayName}
-                </span>
+                <span className="text-xs font-medium text-gray-700 max-w-[120px] truncate">{pdfDisplayName}</span>
               </div>
               <button
                 type="button"
@@ -1872,14 +1724,7 @@ export default function EditCourse() {
               <p className="text-xs text-gray-500">PDF only, up to 10MB</p>
             </div>
           )}
-          <input
-            type="file"
-            name="pdf_file"
-            accept=".pdf"
-            onChange={handleFileChange}
-            id="pdf-upload"
-            className="hidden"
-          />
+          <input type="file" name="pdf_file" accept=".pdf" onChange={handleFileChange} id="pdf-upload" className="hidden" />
         </div>
       </div>
     );
@@ -1898,28 +1743,17 @@ export default function EditCourse() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-      `}</style>
-
       {/* Header */}
       <div className="bg-white border-b border-gray-200 top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <button
-                onClick={() => navigate("/course")}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
+              <button onClick={() => navigate("/course")} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
                 <ArrowLeft size={18} className="text-gray-600" />
               </button>
               <div>
-                <h1 className="text-lg sm:text-xl font-semibold text-gray-900">
-                  Edit Course
-                </h1>
-                <p className="text-xs text-gray-500 hidden sm:block">
-                  ID: {id} • Update course information
-                </p>
+                <h1 className="text-lg sm:text-xl font-semibold text-gray-900">Edit Course</h1>
+                <p className="text-xs text-gray-500 hidden sm:block">ID: {id} • Update course information</p>
               </div>
             </div>
             <button
@@ -1952,12 +1786,9 @@ export default function EditCourse() {
               <X size={12} className="text-red-600" />
             </div>
             <p className="text-xs text-red-600 flex-1">{error}</p>
-            <button onClick={() => setError("")} className="text-gray-400 hover:text-gray-600">
-              <X size={14} />
-            </button>
+            <button onClick={() => setError("")} className="text-gray-400 hover:text-gray-600"><X size={14} /></button>
           </div>
         )}
-
         {success && (
           <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-start gap-2">
             <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
@@ -1968,275 +1799,140 @@ export default function EditCourse() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Basic Information */}
-          <Section title="Basic Information" description="Required fields are marked with *" icon="bg-blue-500">
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                  Course Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  placeholder="e.g., Advanced React Development"
-                  className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                  required
-                />
-              </div>
 
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                  Slug <span className="text-red-500">*</span>
-                </label>
-                <div className="flex">
-                  <span className="inline-flex items-center px-3 bg-gray-100 border border-r-0 border-gray-300 rounded-l-lg text-xs text-gray-600">
-                    /course/
-                  </span>
-                  <input
-                    type="text"
-                    name="slug"
-                    value={formData.slug}
-                    onChange={handleInputChange}
-                    placeholder="advanced-react-development"
-                    className="flex-1 px-3 py-2.5 bg-gray-50 border border-gray-300 rounded-r-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                    required
-                  />
-                </div>
-                <p className="text-xs text-gray-500 mt-1.5">
-                  URL-friendly version of the name. Auto-generated from course name.
-                </p>
-              </div>
+          {/* ── Basic Information ── */}
+          <p className="text-xs font-bold uppercase tracking-widest text-gray-400 pt-2">Basic Information</p>
 
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                  Category <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <select
-                    name="category"
-                    value={formData.category}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    required
-                  >
-                    <option value="">Select a category</option>
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name} (ID: {cat.id})
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                </div>
-              </div>
+          <div>
+            <label className={labelClass}>Course Name <span className="text-red-500">*</span></label>
+            <input type="text" name="name" value={formData.name} onChange={handleInputChange} placeholder="e.g., Advanced React Development" className={inputClass} required />
+          </div>
 
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                  Description <span className="text-red-500">*</span>
+          <div>
+            <label className={labelClass}>Slug <span className="text-red-500">*</span></label>
+            <div className="flex">
+              <span className="inline-flex items-center px-3 bg-gray-200 border border-r-0 border-gray-300 rounded-l-lg text-xs text-gray-600">/course/</span>
+              <input type="text" name="slug" value={formData.slug} onChange={handleInputChange} placeholder="advanced-react-development" className="flex-1 px-4 py-2.5 bg-gray-100 border border-gray-300 rounded-r-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-sm" required />
+            </div>
+            <p className="text-xs text-gray-400 mt-1">URL-friendly version of the name. Auto-generated from course name.</p>
+          </div>
+
+          <div>
+            <label className={labelClass}>Category <span className="text-red-500">*</span></label>
+            <div className="relative">
+              <select name="category" value={formData.category} onChange={handleInputChange} className={inputClass + " appearance-none"} required>
+                <option value="">Select a category</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>{cat.name} (ID: {cat.id})</option>
+                ))}
+              </select>
+              <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+            </div>
+          </div>
+
+          <div>
+            <label className={labelClass}>Description <span className="text-red-500">*</span></label>
+            <textarea name="text" value={formData.text} onChange={handleInputChange} rows={4} placeholder="Detailed description of the course..." className={inputClass + " resize-none"} required />
+          </div>
+
+          {/* ── Course Details ── */}
+          <p className="text-xs font-bold uppercase tracking-widest text-gray-400 pt-2">Course Details</p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {[
+              { icon: Clock, label: "Duration", name: "duration", placeholder: "e.g., 40 hours" },
+              { icon: BookOpen, label: "Lectures", name: "lecture", placeholder: "e.g., 98 lectures" },
+              { icon: Users, label: "Students", name: "students", placeholder: "e.g., 1000" },
+            ].map((field) => (
+              <div key={field.name}>
+                <label className={labelClass}>
+                  <field.icon size={13} className="inline mr-1 text-gray-500" />
+                  {field.label}
                 </label>
-                <textarea
-                  name="text"
-                  value={formData.text}
-                  onChange={handleInputChange}
-                  rows={4}
-                  placeholder="Detailed description of the course..."
-                  className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all resize-none"
-                  required
-                />
+                <input type="text" name={field.name} value={formData[field.name]} onChange={handleInputChange} placeholder={field.placeholder} className={inputClass} />
+              </div>
+            ))}
+
+            <div>
+              <label className={labelClass}>
+                <Signal size={13} className="inline mr-1 text-gray-500" />
+                Level
+              </label>
+              <div className="relative">
+                <select name="level" value={formData.level} onChange={handleInputChange} className={inputClass + " appearance-none"}>
+                  <option value="">Select Level</option>
+                  <option value="Beginner">Beginner</option>
+                  <option value="Intermediate">Intermediate</option>
+                  <option value="Advanced">Advanced</option>
+                  <option value="All Levels">All Levels</option>
+                  <option value="hard">Hard</option>
+                </select>
+                <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               </div>
             </div>
-          </Section>
 
-          {/* Course Details */}
-          <Section title="Course Details" description="Additional information (optional)" icon="bg-purple-500">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[
-                { icon: Clock, label: "Duration", name: "duration", placeholder: "e.g., 40 hours" },
-                { icon: BookOpen, label: "Lectures", name: "lecture", placeholder: "e.g., 98 lectures" },
-                { icon: Users, label: "Students", name: "students", placeholder: "e.g., 1000" },
-              ].map((field) => (
-                <div key={field.name}>
-                  <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                    <field.icon size={12} className="inline mr-1 text-gray-500" />
-                    {field.label}
+            <div>
+              <label className={labelClass}>
+                <Globe size={13} className="inline mr-1 text-gray-500" />
+                Language
+              </label>
+              <input type="text" name="language" value={formData.language} onChange={handleInputChange} placeholder="e.g., English" className={inputClass} />
+            </div>
+
+            <div>
+              <label className={labelClass}>
+                <Award size={13} className="inline mr-1 text-gray-500" />
+                Certificate
+              </label>
+              <div className="flex gap-2">
+                {["No", "Yes"].map((val) => (
+                  <label
+                    key={val}
+                    className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-2.5 border-2 rounded-lg cursor-pointer transition-all text-xs ${
+                      formData.certificate === val
+                        ? "border-indigo-500 bg-indigo-50 text-indigo-700"
+                        : "border-gray-200 bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
+                  >
+                    <input type="radio" name="certificate" value={val} checked={formData.certificate === val} onChange={(e) => setFormData((prev) => ({ ...prev, certificate: e.target.value }))} className="hidden" />
+                    {val === "Yes" ? <Award size={12} /> : <X size={12} />}
+                    {val}
                   </label>
-                  <input
-                    type="text"
-                    name={field.name}
-                    value={formData[field.name]}
-                    onChange={handleInputChange}
-                    placeholder={field.placeholder}
-                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                  />
-                </div>
-              ))}
-
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                  <Signal size={12} className="inline mr-1 text-gray-500" />
-                  Level
-                </label>
-                <div className="relative">
-                  <select
-                    name="level"
-                    value={formData.level}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  >
-                    <option value="">Select Level</option>
-                    <option value="Beginner">Beginner</option>
-                    <option value="Intermediate">Intermediate</option>
-                    <option value="Advanced">Advanced</option>
-                    <option value="All Levels">All Levels</option>
-                    <option value="hard">Hard</option>
-                  </select>
-                  <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                  <Globe size={12} className="inline mr-1 text-gray-500" />
-                  Language
-                </label>
-                <input
-                  type="text"
-                  name="language"
-                  value={formData.language}
-                  onChange={handleInputChange}
-                  placeholder="e.g., English"
-                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                  <Award size={12} className="inline mr-1 text-gray-500" />
-                  Certificate
-                </label>
-                <div className="flex gap-2">
-                  {["No", "Yes"].map((val) => (
-                    <label
-                      key={val}
-                      className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-2 border rounded-lg cursor-pointer transition-all text-xs ${
-                        formData.certificate === val
-                          ? "border-indigo-500 bg-indigo-50 text-indigo-700"
-                          : "border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="certificate"
-                        value={val}
-                        checked={formData.certificate === val}
-                        onChange={(e) => {
-                          setFormData((prev) => ({
-                            ...prev,
-                            certificate: e.target.value,
-                          }));
-                        }}
-                        className="hidden"
-                      />
-                      {val === "Yes" ? <Award size={12} /> : <X size={12} />}
-                      {val}
-                    </label>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </Section>
-
-          {/* Media Files */}
-          <Section title="Media Files" description="Upload new files to replace existing ones" icon="bg-orange-500">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <UploadBox
-                preview={imagePreview}
-                existingUrl={formData.existing_image}
-                onRemove={() => removeFile("image", !imagePreview)}
-                inputId="image-upload"
-                inputName="image"
-                label="Course Image"
-                hint="PNG, JPG up to 5MB"
-              />
-              <UploadBox
-                preview={bannerPreview}
-                existingUrl={formData.existing_banner}
-                onRemove={() => removeFile("banner_img", !bannerPreview)}
-                inputId="banner-upload"
-                inputName="banner_img"
-                label="Banner Image"
-                hint="PNG, JPG up to 5MB"
-              />
-              <UploadBox
-                preview={iconPreview}
-                existingUrl={formData.existing_icon}
-                onRemove={() => removeFile("icon", !iconPreview)}
-                inputId="icon-upload"
-                inputName="icon"
-                label="Course Icon"
-                hint="PNG, JPG up to 2MB"
-              />
-              <PdfBox />
-            </div>
-          </Section>
-
-          {/* SEO & Metadata */}
-          <Section title="SEO & Metadata" description="For search engine optimization (optional)" icon="bg-green-500">
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1.5">Meta Title</label>
-                <input
-                  type="text"
-                  name="meta_title"
-                  value={formData.meta_title}
-                  onChange={handleInputChange}
-                  placeholder="SEO title for the course"
-                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1.5">Meta Description</label>
-                <textarea
-                  name="meta_description"
-                  value={formData.meta_description}
-                  onChange={handleInputChange}
-                  rows={3}
-                  placeholder="SEO description for search engines"
-                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all resize-none"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1.5">Keywords</label>
-                <input
-                  type="text"
-                  name="keywords"
-                  value={formData.keywords}
-                  onChange={handleInputChange}
-                  placeholder="react, javascript, web development"
-                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                />
-                <p className="text-xs text-gray-500 mt-1.5">Comma-separated keywords for search</p>
-              </div>
-            </div>
-          </Section>
-
-          {/* Help Section */}
-          <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
-            <div className="flex items-start gap-2">
-              <HelpCircle size={16} className="text-blue-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-xs font-semibold text-blue-800 mb-1">Editing Tips</p>
-                <ul className="text-xs text-blue-700 list-disc pl-4 space-y-0.5">
-                  <li>Fields marked with <span className="text-red-500">*</span> are required</li>
-                  <li>Upload new files to replace existing ones</li>
-                  <li>Changes will be saved using PATCH method (partial update)</li>
-                  <li>Category ID must match existing categories</li>
-                </ul>
+                ))}
               </div>
             </div>
           </div>
+
+          {/* ── Media Files ── */}
+          <p className="text-xs font-bold uppercase tracking-widest text-gray-400 pt-2">Media Files</p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <UploadBox preview={imagePreview} existingUrl={formData.existing_image} onRemove={() => removeFile("image", !imagePreview)} inputId="image-upload" inputName="image" label="Course Image" hint="PNG, JPG up to 5MB" />
+            <UploadBox preview={bannerPreview} existingUrl={formData.existing_banner} onRemove={() => removeFile("banner_img", !bannerPreview)} inputId="banner-upload" inputName="banner_img" label="Banner Image" hint="PNG, JPG up to 5MB" />
+            <UploadBox preview={iconPreview} existingUrl={formData.existing_icon} onRemove={() => removeFile("icon", !iconPreview)} inputId="icon-upload" inputName="icon" label="Course Icon" hint="PNG, JPG up to 2MB" />
+            <PdfBox />
+          </div>
+
+          {/* ── SEO & Metadata ── */}
+          <p className="text-xs font-bold uppercase tracking-widest text-gray-400 pt-2">SEO & Metadata</p>
+
+          <div>
+            <label className={labelClass}>Meta Title</label>
+            <input type="text" name="meta_title" value={formData.meta_title} onChange={handleInputChange} placeholder="SEO title for the course" className={inputClass} />
+          </div>
+
+          <div>
+            <label className={labelClass}>Meta Description</label>
+            <textarea name="meta_description" value={formData.meta_description} onChange={handleInputChange} rows={3} placeholder="SEO description for search engines" className={inputClass + " resize-none"} />
+          </div>
+
+          <div>
+            <label className={labelClass}>Keywords</label>
+            <input type="text" name="keywords" value={formData.keywords} onChange={handleInputChange} placeholder="react, javascript, web development" className={inputClass} />
+            <p className="text-xs text-gray-400 mt-1">Comma-separated keywords for search</p>
+          </div>
+
+          
 
           {/* Mobile Submit Button */}
           <div className="block sm:hidden">

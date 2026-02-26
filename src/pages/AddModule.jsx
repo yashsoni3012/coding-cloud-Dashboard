@@ -498,7 +498,6 @@ import {
   Save,
   X,
   BookOpen,
-  HelpCircle,
   Info,
   ChevronDown,
 } from "lucide-react";
@@ -510,30 +509,22 @@ export default function AddModule() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  // Form state matching API format
   const [formData, setFormData] = useState({
     name: "",
     course_data: ""
   });
 
-  // Fetch courses for dropdown (optional - you can let user enter ID directly)
   const [courses, setCourses] = useState([]);
   const [loadingCourses, setLoadingCourses] = useState(false);
 
-  // Fetch available courses (optional feature)
   useEffect(() => {
     const fetchCourses = async () => {
       try {
         setLoadingCourses(true);
         const response = await fetch("https://codingcloud.pythonanywhere.com/course/");
         const data = await response.json();
-        
         if (data.success) {
-          // Extract unique course IDs with names
-          const courseList = data.data.map(course => ({
-            id: course.id,
-            name: course.name
-          }));
+          const courseList = data.data.map(course => ({ id: course.id, name: course.name }));
           setCourses(courseList);
         }
       } catch (err) {
@@ -542,132 +533,67 @@ export default function AddModule() {
         setLoadingCourses(false);
       }
     };
-
     fetchCourses();
   }, []);
 
-  // Handle input changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    // Clear error when user starts typing
+    setFormData(prev => ({ ...prev, [name]: value }));
     setError("");
   };
 
-  // Validate form
   const validateForm = () => {
-    if (!formData.name.trim()) {
-      return "Module name is required";
-    }
-    if (!formData.course_data) {
-      return "Course ID is required";
-    }
-    if (isNaN(formData.course_data) || parseInt(formData.course_data) <= 0) {
-      return "Please enter a valid Course ID";
-    }
+    if (!formData.name.trim()) return "Module name is required";
+    if (!formData.course_data) return "Course ID is required";
+    if (isNaN(formData.course_data) || parseInt(formData.course_data) <= 0) return "Please enter a valid Course ID";
     return "";
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Validate
     const validationError = validateForm();
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
-
+    if (validationError) { setError(validationError); return; }
     setLoading(true);
     setError("");
     setSuccess("");
-
     try {
-      // Prepare data for API
-      const submitData = {
-        name: formData.name.trim(),
-        course_data: parseInt(formData.course_data)
-      };
-
-      console.log("Submitting module data:", submitData);
-
-      // Make API request
+      const submitData = { name: formData.name.trim(), course_data: parseInt(formData.course_data) };
       const response = await fetch("https://codingcloud.pythonanywhere.com/modules/", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(submitData)
       });
-
       const data = await response.json();
-      console.log("API Response:", data);
-
       if (response.ok || response.status === 201) {
         setSuccess("Module created successfully!");
-        // Reset form
-        setFormData({
-          name: "",
-          course_data: ""
-        });
-        // Redirect after 2 seconds
-        setTimeout(() => {
-          navigate("/modules");
-        }, 2000);
+        setFormData({ name: "", course_data: "" });
+        setTimeout(() => navigate("/modules"), 2000);
       } else {
         setError(data.message || data.detail || "Failed to create module. Please try again.");
       }
     } catch (err) {
-      console.error("Error creating module:", err);
       setError("Network error. Please check your connection and try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const Section = ({ title, description, icon, children }) => (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      <div className="p-5 border-b border-gray-100 bg-gray-50/50">
-        <div className="flex items-center gap-3">
-          <div className={`w-2 h-2 rounded-full ${icon} shadow-sm`} />
-          <div>
-            <h2 className="text-base font-semibold text-gray-900">{title}</h2>
-            <p className="text-xs text-gray-500 mt-0.5">{description}</p>
-          </div>
-        </div>
-      </div>
-      <div className="p-5">{children}</div>
-    </div>
-  );
+  const inputClass = "w-full px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-sm";
+  const labelClass = "block text-sm font-semibold text-gray-800 mb-1.5";
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-      `}</style>
-
       {/* Header */}
       <div className="bg-white border-b border-gray-200 top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <button
-                onClick={() => navigate("/modules")}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
+              <button onClick={() => navigate("/modules")} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
                 <ArrowLeft size={18} className="text-gray-600" />
               </button>
               <div>
-                <h1 className="text-lg sm:text-xl font-semibold text-gray-900">
-                  Add New Module
-                </h1>
-                <p className="text-xs text-gray-500 hidden sm:block">
-                  Create a new module for your course
-                </p>
+                <h1 className="text-lg sm:text-xl font-semibold text-gray-900">Add New Module</h1>
+                <p className="text-xs text-gray-500 hidden sm:block">Create a new module for your course</p>
               </div>
             </div>
             <button
@@ -700,12 +626,9 @@ export default function AddModule() {
               <X size={12} className="text-red-600" />
             </div>
             <p className="text-xs text-red-600 flex-1">{error}</p>
-            <button onClick={() => setError("")} className="text-gray-400 hover:text-gray-600">
-              <X size={14} />
-            </button>
+            <button onClick={() => setError("")} className="text-gray-400 hover:text-gray-600"><X size={14} /></button>
           </div>
         )}
-
         {success && (
           <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-start gap-2">
             <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
@@ -714,8 +637,6 @@ export default function AddModule() {
             <p className="text-xs text-green-600">✓ {success}</p>
           </div>
         )}
-
-        {/* Loading Courses */}
         {loadingCourses && (
           <div className="mb-4 text-center py-2">
             <div className="inline-block w-4 h-4 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mr-2"></div>
@@ -724,85 +645,51 @@ export default function AddModule() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Module Information Section */}
-          <Section title="Module Information" description="Required fields are marked with *" icon="bg-blue-500">
-            <div className="space-y-5">
-              {/* Module Name */}
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                  Module Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  placeholder="e.g., Module 1 - Introduction to Python"
-                  className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                  required
-                />
-                <p className="text-xs text-gray-500 mt-1.5 flex items-center gap-1">
-                  <Info size={12} className="text-gray-400" />
-                  Enter a descriptive name for the module
-                </p>
-              </div>
 
-              {/* Course ID */}
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                  Course ID <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  name="course_data"
-                  value={formData.course_data}
-                  onChange={handleInputChange}
-                  placeholder="e.g., 42"
-                  className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                  required
-                  min="1"
-                />
-                <p className="text-xs text-gray-500 mt-1.5">
-                  Enter the ID of the course this module belongs to
-                </p>
-              </div>
+          {/* Module Name */}
+          <div>
+            <label className={labelClass}>
+              Module Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleInputChange}
+              placeholder="e.g., Module 1 - Introduction to Python"
+              className={inputClass}
+              required
+            />
+            <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+              <Info size={11} className="text-gray-400" />
+              Enter a descriptive name for the module
+            </p>
+          </div>
 
-              {/* OR Option: Course Dropdown (Optional) */}
-              {courses.length > 0 && (
-                <div className="pt-4 border-t border-gray-100">
-                  <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                    <BookOpen size={12} className="inline mr-1 text-gray-500" />
-                    Or select from existing course:
-                  </label>
-                  <div className="relative">
-                    <select
-                      onChange={(e) => {
-                        if (e.target.value) {
-                          setFormData(prev => ({
-                            ...prev,
-                            course_data: e.target.value
-                          }));
-                        }
-                      }}
-                      className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                    >
-                      <option value="">-- Select a course --</option>
-                      {courses.map(course => (
-                        <option key={course.id} value={course.id}>
-                          {course.id}: {course.name}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1.5">
-                    Select from list to auto-fill Course ID
-                  </p>
-                </div>
-              )}
+          {/* Course Dropdown */}
+          {courses.length > 0 && (
+            <div>
+              <label className={labelClass}>
+                <BookOpen size={13} className="inline mr-1 text-gray-500" />
+                Or select from existing course
+              </label>
+              <div className="relative">
+                <select
+                  onChange={(e) => {
+                    if (e.target.value) setFormData(prev => ({ ...prev, course_data: e.target.value }));
+                  }}
+                  className={inputClass + " appearance-none"}
+                >
+                  <option value="">-- Select a course --</option>
+                  {courses.map(course => (
+                    <option key={course.id} value={course.id}>{course.id}: {course.name}</option>
+                  ))}
+                </select>
+                <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              </div>
+              <p className="text-xs text-gray-400 mt-1">Select from list to auto-fill Course ID</p>
             </div>
-          </Section>
-
+          )}
 
           {/* Mobile Submit Button */}
           <div className="block sm:hidden">
@@ -825,7 +712,6 @@ export default function AddModule() {
             </button>
           </div>
 
-         
         </form>
       </div>
     </div>

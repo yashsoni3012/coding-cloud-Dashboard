@@ -1438,44 +1438,7 @@ export default function FAQs() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        {/* Header with Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Total FAQs</p>
-                <p className="text-2xl font-bold text-gray-900">{totalFaqs}</p>
-              </div>
-              <div className="p-3 bg-indigo-100 rounded-lg">
-                <MessageCircleQuestion size={20} className="text-indigo-600" />
-              </div>
-            </div>
-          </div>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Courses</p>
-                <p className="text-2xl font-bold text-gray-900">{uniqueCourseCount}</p>
-              </div>
-              <div className="p-3 bg-purple-100 rounded-lg">
-                <BookOpen size={20} className="text-purple-600" />
-              </div>
-            </div>
-          </div>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Avg per Course</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {uniqueCourseCount ? Math.round((totalFaqs / uniqueCourseCount) * 10) / 10 : 0}
-                </p>
-              </div>
-              <div className="p-3 bg-amber-100 rounded-lg">
-                <Tag size={20} className="text-amber-600" />
-              </div>
-            </div>
-          </div>
-        </div>
+       
 
         {/* Header Actions */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">

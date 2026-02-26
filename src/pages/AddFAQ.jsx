@@ -563,15 +563,12 @@
 //   );
 // }
 
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   Save,
   X,
-  FileText,
-  HelpCircle,
   ChevronDown,
   Info,
 } from "lucide-react";
@@ -579,18 +576,14 @@ import {
 export default function AddFAQ() {
   const navigate = useNavigate();
 
-  // State for form data
   const [formData, setFormData] = useState({
-    course: "", // string ID that we parsing to int later
+    course: "",
     question: "",
     answer: "",
   });
 
-  // Data state
   const [courses, setCourses] = useState([]);
   const [loadingCourses, setLoadingCourses] = useState(true);
-
-  // UI States
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -598,18 +591,14 @@ export default function AddFAQ() {
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const response = await fetch(
-          "https://codingcloud.pythonanywhere.com/course/"
-        );
+        const response = await fetch("https://codingcloud.pythonanywhere.com/course/");
         if (response.ok) {
           const data = await response.json();
-          // Assuming course data comes inside a "data" property if wrapped, otherwise use directly
           setCourses(data.data || data);
         } else {
           setError("Failed to fetch available courses.");
         }
       } catch (err) {
-        console.error("Error fetching courses:", err);
         setError("Network error when loading courses.");
       } finally {
         setLoadingCourses(false);
@@ -618,139 +607,70 @@ export default function AddFAQ() {
     fetchCourses();
   }, []);
 
-  // Handle text input changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
     setError("");
   };
 
-  // Validate form
   const validateForm = () => {
-    if (!formData.course) {
-      return "Please select a course";
-    }
-    if (!formData.question.trim()) {
-      return "Question is required";
-    }
-    if (!formData.answer.trim()) {
-      return "Answer is required";
-    }
+    if (!formData.course) return "Please select a course";
+    if (!formData.question.trim()) return "Question is required";
+    if (!formData.answer.trim()) return "Answer is required";
     return "";
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Validate
     const validationError = validateForm();
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
-
+    if (validationError) { setError(validationError); return; }
     setSaving(true);
     setError("");
     setSuccess("");
-
     try {
       const payload = {
         course: parseInt(formData.course),
         question: formData.question.trim(),
         answer: formData.answer.trim(),
       };
-
-      const response = await fetch(
-        "https://codingcloud.pythonanywhere.com/faqs/",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        }
-      );
-
-      // If the response is not ok, try to get the error details
+      const response = await fetch("https://codingcloud.pythonanywhere.com/faqs/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
       if (!response.ok) {
         const errorText = await response.text();
         let errorMessage;
-        try {
-          const errorData = JSON.parse(errorText);
-          errorMessage =
-            errorData.message || errorData.detail || JSON.stringify(errorData);
-        } catch {
-          errorMessage = errorText || `HTTP error ${response.status}`;
-        }
+        try { const errorData = JSON.parse(errorText); errorMessage = errorData.message || errorData.detail || JSON.stringify(errorData); }
+        catch { errorMessage = errorText || `HTTP error ${response.status}`; }
         throw new Error(errorMessage);
       }
-
       setSuccess("FAQ created successfully!");
-
-      // Reset form
-      setFormData({
-        course: "",
-        question: "",
-        answer: "",
-      });
-
-      // Redirect after 2 seconds
-      setTimeout(() => {
-        navigate("/faqs");
-      }, 2000);
+      setFormData({ course: "", question: "", answer: "" });
+      setTimeout(() => navigate("/faqs"), 2000);
     } catch (err) {
-      console.error("Error creating FAQ:", err);
-      setError(
-        err.message || "Failed to create FAQ. Please check the API endpoint."
-      );
+      setError(err.message || "Failed to create FAQ. Please check the API endpoint.");
     } finally {
       setSaving(false);
     }
   };
 
-  const Section = ({ title, description, icon, children }) => (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      <div className="p-5 border-b border-gray-100 bg-gray-50/50">
-        <div className="flex items-center gap-3">
-          <div className={`w-2 h-2 rounded-full ${icon} shadow-sm`} />
-          <div>
-            <h2 className="text-base font-semibold text-gray-900">{title}</h2>
-            <p className="text-xs text-gray-500 mt-0.5">{description}</p>
-          </div>
-        </div>
-      </div>
-      <div className="p-5">{children}</div>
-    </div>
-  );
+  const inputClass = "w-full px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-sm";
+  const labelClass = "block text-sm font-semibold text-gray-800 mb-1.5";
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-      `}</style>
-
       {/* Header */}
       <div className="bg-white border-b border-gray-200 top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <button
-                onClick={() => navigate(-1)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
+              <button onClick={() => navigate(-1)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
                 <ArrowLeft size={18} className="text-gray-600" />
               </button>
               <div>
-                <h1 className="text-lg sm:text-xl font-semibold text-gray-900">
-                  Add New FAQ
-                </h1>
-                <p className="text-xs text-gray-500 hidden sm:block">
-                  Create a frequently asked question for a course
-                </p>
+                <h1 className="text-lg sm:text-xl font-semibold text-gray-900">Add New FAQ</h1>
+                <p className="text-xs text-gray-500 hidden sm:block">Create a frequently asked question for a course</p>
               </div>
             </div>
             <button
@@ -783,12 +703,9 @@ export default function AddFAQ() {
               <X size={12} className="text-red-600" />
             </div>
             <p className="text-xs text-red-600 flex-1">{error}</p>
-            <button onClick={() => setError("")} className="text-gray-400 hover:text-gray-600">
-              <X size={14} />
-            </button>
+            <button onClick={() => setError("")} className="text-gray-400 hover:text-gray-600"><X size={14} /></button>
           </div>
         )}
-
         {success && (
           <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-start gap-2">
             <div className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
@@ -799,82 +716,77 @@ export default function AddFAQ() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* FAQ Information Section */}
-          <Section title="FAQ Information" description="Create a new frequently asked question" icon="bg-blue-500">
-            <div className="space-y-5">
-              {/* Associated Course */}
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                  Related Course <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <select
-                    name="course"
-                    value={formData.course}
-                    onChange={handleInputChange}
-                    disabled={loadingCourses}
-                    className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
-                    required
-                  >
-                    <option value="" disabled>
-                      {loadingCourses ? "Loading courses..." : "Select a Course"}
-                    </option>
-                    {courses.map((course) => (
-                      <option key={course.id} value={course.id}>
-                        {course.name} (ID: {course.id})
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                </div>
 
-                {loadingCourses && (
-                  <div className="flex items-center gap-2 mt-2">
-                    <div className="w-3 h-3 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
-                    <p className="text-xs text-gray-500">Loading courses...</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Question */}
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                  Question <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="question"
-                  value={formData.question}
-                  onChange={handleInputChange}
-                  placeholder="e.g., What is Python used for?"
-                  className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                  required
-                />
-              </div>
-
-              {/* Answer */}
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                  Answer <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  name="answer"
-                  value={formData.answer}
-                  onChange={handleInputChange}
-                  rows={5}
-                  placeholder="Enter the comprehensive answer here..."
-                  className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all resize-none"
-                  required
-                />
-                <p className="text-xs text-gray-500 mt-1.5 flex items-center gap-1">
-                  <Info size={12} className="text-gray-400" />
-                  Provide a clear and detailed answer to help students
-                </p>
-              </div>
+          {/* Related Course */}
+          <div>
+            <label className={labelClass}>
+              Related Course <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <select
+                name="course"
+                value={formData.course}
+                onChange={handleInputChange}
+                disabled={loadingCourses}
+                className={inputClass + " appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"}
+                required
+              >
+                <option value="" disabled>
+                  {loadingCourses ? "Loading courses..." : "Select a Course"}
+                </option>
+                {courses.map((course) => (
+                  <option key={course.id} value={course.id}>
+                    {course.name} (ID: {course.id})
+                  </option>
+                ))}
+              </select>
+              <svg className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
             </div>
-          </Section>
+            {loadingCourses && (
+              <div className="flex items-center gap-2 mt-1.5">
+                <div className="w-3 h-3 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+                <p className="text-xs text-gray-500">Loading courses...</p>
+              </div>
+            )}
+          </div>
 
-          
+          {/* Question */}
+          <div>
+            <label className={labelClass}>
+              Question <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              name="question"
+              value={formData.question}
+              onChange={handleInputChange}
+              placeholder="e.g., What is Python used for?"
+              className={inputClass}
+              required
+            />
+          </div>
+
+          {/* Answer */}
+          <div>
+            <label className={labelClass}>
+              Answer <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              name="answer"
+              value={formData.answer}
+              onChange={handleInputChange}
+              rows={5}
+              placeholder="Enter the comprehensive answer here..."
+              className={inputClass + " resize-none"}
+              required
+            />
+            <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+              <Info size={11} className="text-gray-400" />
+              Provide a clear and detailed answer to help students
+            </p>
+          </div>
 
           {/* Mobile Submit Button */}
           <div className="block sm:hidden">
@@ -897,7 +809,6 @@ export default function AddFAQ() {
             </button>
           </div>
 
-          
         </form>
       </div>
     </div>
