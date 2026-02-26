@@ -661,9 +661,7 @@ export default function Testimonials() {
                       <h2 className="text-xl font-bold text-slate-900">
                         {selectedTestimonial.name}
                       </h2>
-                      <p className="text-sm text-slate-400 mt-0.5">
-                        Testimonial #{selectedTestimonial.display_id}
-                      </p>
+                      
                     </div>
                     <span
                       className={`inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full flex-shrink-0 ${getRatingColor(selectedTestimonial.rating)}`}

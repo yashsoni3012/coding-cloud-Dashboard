@@ -899,7 +899,6 @@ export default function Blogs() {
               <div className="flex items-start justify-between gap-3 mb-5">
                 <div>
                   <h2 className="text-xl font-bold text-slate-900">{selectedBlog.title}</h2>
-                  <p className="text-sm text-slate-400 mt-0.5">Blog #{selectedBlog.display_id}</p>
                 </div>
                 <span className={`inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full flex-shrink-0 ${getStatusStyles(selectedBlog.status)}`}>
                   {selectedBlog.status || "Draft"}

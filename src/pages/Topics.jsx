@@ -1119,7 +1119,6 @@ export default function Topics() {
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-slate-900">{selectedTopic.name}</h2>
-                  <p className="text-sm text-slate-400 mt-0.5">Topic #{selectedTopic.display_id}</p>
                 </div>
               </div>
 
@@ -1131,18 +1130,8 @@ export default function Topics() {
                   </p>
                   <p className="text-sm font-semibold text-slate-800">{selectedTopic.module_name}</p>
                 </div>
-                <div className="bg-slate-50 border border-slate-100 rounded-xl p-4">
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1 flex items-center gap-1">
-                    <Tag size={11} /> Topic ID
-                  </p>
-                  <p className="text-sm font-semibold text-slate-800">#{selectedTopic.id}</p>
-                </div>
-                <div className="bg-slate-50 border border-slate-100 rounded-xl p-4">
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1 flex items-center gap-1">
-                    <BookOpen size={11} /> Module ID
-                  </p>
-                  <p className="text-sm font-semibold text-slate-800">#{selectedTopic.module_id}</p>
-                </div>
+               
+                
               </div>
             </div>
 

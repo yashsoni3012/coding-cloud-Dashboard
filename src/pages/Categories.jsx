@@ -502,27 +502,43 @@ export default function Categories() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
-  const fetchCategories = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch("https://codingcloud.pythonanywhere.com/category/");
-      if (response.ok) {
-        const data = await response.json();
-        const dataWithDates = data.map((item) => ({
-          ...item,
-          created_at: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
-        }));
-        setCategories(dataWithDates);
-        setFilteredCategories(dataWithDates);
-      } else {
-        setError("Failed to fetch categories.");
-      }
-    } catch (err) {
-      setError("Network error. Please try again.");
-    } finally {
-      setLoading(false);
+const fetchCategories = async () => {
+  try {
+    setLoading(true);
+
+    const response = await fetch(
+      "https://codingcloud.pythonanywhere.com/category/"
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch categories");
     }
-  };
+
+    const json = await response.json();
+
+    // ✅ FIX HERE
+    const categoryArray = json.data || [];
+
+    const dataWithDates = categoryArray.map((item) => ({
+      ...item,
+      created_at:
+        item.created_at ||
+        new Date(
+          Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000
+        ).toISOString(),
+    }));
+
+    setCategories(dataWithDates);
+    setFilteredCategories(dataWithDates);
+
+    setError(null);
+  } catch (err) {
+    console.error("Fetch Error:", err);
+    setError("Failed to load categories");
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => { fetchCategories(); }, []);
 
