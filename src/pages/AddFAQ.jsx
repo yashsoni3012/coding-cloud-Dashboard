@@ -670,7 +670,7 @@ export default function AddFAQ() {
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => navigate(-1)}
-                            className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-all text-sm font-medium"
+                            className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-all text-base font-medium"
                         >
                             <ArrowLeft size={16} />
                             <span className="hidden sm:inline">Back</span>
@@ -684,7 +684,7 @@ export default function AddFAQ() {
                     <button
                         onClick={handleSubmit}
                         disabled={saving || loadingCourses}
-                        className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-semibold rounded-xl shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-base font-semibold rounded-xl shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {saving ? (
                             <>
@@ -706,7 +706,7 @@ export default function AddFAQ() {
 
                 {/* Error Alert */}
                 {error && (
-                    <div className="flex items-start gap-3 p-4 mb-6 bg-red-50 border border-red-200 rounded-2xl text-sm text-red-700">
+                    <div className="flex items-start gap-3 p-4 mb-6 bg-red-50 border border-red-200 rounded-2xl text-base text-red-700">
                         <AlertCircle size={18} className="mt-0.5 flex-shrink-0 text-red-500" />
                         <span className="flex-1">{error}</span>
                         <button onClick={() => setError("")} className="text-red-400 hover:text-red-600 transition-colors flex-shrink-0">
@@ -717,7 +717,7 @@ export default function AddFAQ() {
 
                 {/* Success Alert */}
                 {success && (
-                    <div className="flex items-start gap-3 p-4 mb-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-sm text-emerald-700">
+                    <div className="flex items-start gap-3 p-4 mb-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-base text-emerald-700">
                         <CheckCircle2 size={18} className="mt-0.5 flex-shrink-0 text-emerald-500" />
                         <span>{success}</span>
                     </div>
@@ -725,7 +725,7 @@ export default function AddFAQ() {
 
                 {/* Courses loading banner */}
                 {loadingCourses && (
-                    <div className="flex items-center gap-3 p-4 mb-6 bg-indigo-50 border border-indigo-100 rounded-2xl text-sm text-indigo-600">
+                    <div className="flex items-center gap-3 p-4 mb-6 bg-indigo-50 border border-indigo-100 rounded-2xl text-base text-indigo-600">
                         <div className="w-4 h-4 border-2 border-indigo-300 border-t-indigo-600 rounded-full animate-spin flex-shrink-0" />
                         Loading courses…
                     </div>
@@ -740,7 +740,7 @@ export default function AddFAQ() {
                                 <Layers size={16} className="text-violet-600" />
                             </div>
                             <div>
-                                <label className="block text-sm font-semibold text-gray-800">
+                                <label className="block text-base font-semibold text-gray-800">
                                     Related Course <span className="text-red-500">*</span>
                                 </label>
                                 <p className="text-xs text-gray-400 mt-0.5">Select the course this FAQ belongs to</p>
@@ -753,7 +753,7 @@ export default function AddFAQ() {
                                 value={formData.course}
                                 onChange={handleInputChange}
                                 disabled={loadingCourses}
-                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                 required
                             >
                                 <option value="" disabled>
@@ -789,7 +789,7 @@ export default function AddFAQ() {
                                 <HelpCircle size={16} className="text-indigo-600" />
                             </div>
                             <div>
-                                <label htmlFor="question" className="block text-sm font-semibold text-gray-800">
+                                <label htmlFor="question" className="block text-base font-semibold text-gray-800">
                                     Question <span className="text-red-500">*</span>
                                 </label>
                                 <p className="text-xs text-gray-400 mt-0.5">Write a clear, concise question students might ask</p>
@@ -802,7 +802,7 @@ export default function AddFAQ() {
                             value={formData.question}
                             onChange={handleInputChange}
                             placeholder="e.g., What is Python used for?"
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
                             required
                         />
                     </div>
@@ -814,7 +814,7 @@ export default function AddFAQ() {
                                 <MessageSquare size={16} className="text-emerald-600" />
                             </div>
                             <div>
-                                <label htmlFor="answer" className="block text-sm font-semibold text-gray-800">
+                                <label htmlFor="answer" className="block text-base font-semibold text-gray-800">
                                     Answer <span className="text-red-500">*</span>
                                 </label>
                                 <p className="text-xs text-gray-400 mt-0.5">Provide a clear and detailed answer to help students</p>
@@ -827,7 +827,7 @@ export default function AddFAQ() {
                             onChange={handleInputChange}
                             rows={5}
                             placeholder="Enter the comprehensive answer here…"
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-none"
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-none"
                             required
                         />
                         <p className="flex items-center gap-1.5 text-xs text-gray-400 mt-2">
@@ -850,7 +850,7 @@ export default function AddFAQ() {
                                     <div className="w-5 h-5 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                                         <HelpCircle size={11} className="text-indigo-600" />
                                     </div>
-                                    <p className="text-sm font-semibold text-gray-800">
+                                    <p className="text-base font-semibold text-gray-800">
                                         {formData.question || <span className="text-gray-400 font-normal italic">No question entered…</span>}
                                     </p>
                                 </div>
@@ -868,7 +868,7 @@ export default function AddFAQ() {
                         <button
                             type="submit"
                             disabled={saving || loadingCourses}
-                            className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-base font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
                             {saving ? (
                                 <>

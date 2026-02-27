@@ -1517,7 +1517,7 @@ export default function Modules() {
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-violet-200 border-t-violet-600 rounded-full animate-spin mx-auto" />
-          <p className="mt-4 text-slate-500 text-sm font-medium">Loading modules…</p>
+          <p className="mt-4 text-slate-500 text-base font-medium">Loading modules…</p>
         </div>
       </div>
     );
@@ -1531,9 +1531,9 @@ export default function Modules() {
             <X size={24} className="text-red-500" />
           </div>
           <h3 className="text-lg font-semibold text-slate-900 mb-1">Something went wrong</h3>
-          <p className="text-slate-500 text-sm mb-5">{error}</p>
+          <p className="text-slate-500 text-base mb-5">{error}</p>
           <button onClick={() => window.location.reload()}
-            className="px-5 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors text-sm font-medium">
+            className="px-5 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors text-base font-medium">
             Try Again
           </button>
         </div>
@@ -1554,7 +1554,7 @@ export default function Modules() {
               {modules.length}
             </span>
           </div>
-          <p className="text-slate-500 text-sm">Manage your course modules and lessons</p>
+          <p className="text-slate-500 text-base">Manage your course modules and lessons</p>
         </div>
 
         {/* ── Toolbar (single line) ── */}
@@ -1569,7 +1569,7 @@ export default function Modules() {
                 placeholder="Search by module name, course or ID…"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-8 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent bg-slate-50 placeholder:text-slate-400"
+                className="w-full pl-9 pr-8 py-2.5 border border-slate-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent bg-slate-50 placeholder:text-slate-400"
               />
               {searchTerm && (
                 <button onClick={() => setSearchTerm("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
@@ -1581,7 +1581,7 @@ export default function Modules() {
             {/* Filter toggle */}
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all whitespace-nowrap ${
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-base font-medium transition-all whitespace-nowrap ${
                 showFilters || activeFiltersCount > 0
                   ? "border-violet-400 bg-violet-50 text-violet-700"
                   : "border-slate-200 text-slate-600 hover:bg-slate-50"
@@ -1602,7 +1602,7 @@ export default function Modules() {
             {/* Add Module */}
             <button
               onClick={() => navigate("/add-module")}
-              className="flex items-center gap-2 px-4 py-2.5 bg-violet-600 text-white rounded-xl hover:bg-violet-700 transition-colors text-sm font-medium whitespace-nowrap shadow-sm shadow-violet-200"
+              className="flex items-center gap-2 px-4 py-2.5 bg-violet-600 text-white rounded-xl hover:bg-violet-700 transition-colors text-base font-medium whitespace-nowrap shadow-sm shadow-violet-200"
             >
               <Plus size={16} />
               Add Module
@@ -1617,7 +1617,7 @@ export default function Modules() {
                 <select
                   value={filters.course}
                   onChange={(e) => setFilters({ course: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 bg-slate-50"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-violet-500 bg-slate-50"
                 >
                   <option value="all">All Courses</option>
                   {uniqueCourses.map((courseId) => (
@@ -1632,7 +1632,7 @@ export default function Modules() {
                 <select
                   value={itemsPerPage}
                   onChange={(e) => setItemsPerPage(Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 bg-slate-50"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-violet-500 bg-slate-50"
                 >
                   <option value={5}>5 per page</option>
                   <option value={10}>10 per page</option>
@@ -1651,14 +1651,14 @@ export default function Modules() {
               <Layers size={28} className="text-slate-400" />
             </div>
             <h3 className="text-base font-semibold text-slate-800 mb-1">No modules found</h3>
-            <p className="text-slate-400 text-sm mb-5">
+            <p className="text-slate-400 text-base mb-5">
               {searchTerm || filters.course !== "all"
                 ? "Try adjusting your filters or search term."
                 : "Get started by adding your first module."}
             </p>
             <button
               onClick={() => navigate("/add-module")}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-xl hover:bg-violet-700 transition-colors text-sm font-medium"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-xl hover:bg-violet-700 transition-colors text-base font-medium"
             >
               <Plus size={15} /> Add Module
             </button>
@@ -1708,7 +1708,7 @@ export default function Modules() {
                       onClick={() => { setSelectedModule(module); setShowViewModal(true); }}
                     >
                       {/* # */}
-                      <td className="px-5 py-4 text-sm font-semibold text-slate-400">
+                      <td className="px-5 py-4 text-base font-semibold text-slate-400">
                         {indexOfFirstItem + index + 1}
                       </td>
 
@@ -1718,7 +1718,7 @@ export default function Modules() {
                           <div className="w-9 h-9 bg-violet-100 rounded-xl flex items-center justify-center text-violet-600 flex-shrink-0">
                             <BookMarked size={15} />
                           </div>
-                          <span className="text-sm font-semibold text-slate-800">{module.name}</span>
+                          <span className="text-base font-semibold text-slate-800">{module.name}</span>
                         </div>
                       </td>
 
@@ -1832,7 +1832,7 @@ export default function Modules() {
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-slate-900">{selectedModule.name}</h2>
-                  <p className="text-sm text-slate-400 mt-0.5">Module #{selectedModule.display_id}</p>
+                  <p className="text-base text-slate-400 mt-0.5">Module #{selectedModule.display_id}</p>
                 </div>
               </div>
 
@@ -1841,7 +1841,7 @@ export default function Modules() {
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Course</p>
                 <div className="flex items-center gap-2">
                   <FolderOpen size={15} className="text-violet-500 flex-shrink-0" />
-                  <p className="text-sm font-semibold text-slate-800">
+                  <p className="text-base font-semibold text-slate-800">
                     {coursesMap[selectedModule.course_data] || `Course ${selectedModule.course_data}`}
                   </p>
                 </div>
@@ -1851,7 +1851,7 @@ export default function Modules() {
               {selectedModule.description && (
                 <div className="bg-slate-50 border border-slate-100 rounded-xl p-4">
                   <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Description</p>
-                  <p className="text-sm text-slate-600 leading-relaxed">{selectedModule.description}</p>
+                  <p className="text-base text-slate-600 leading-relaxed">{selectedModule.description}</p>
                 </div>
               )}
             </div>
@@ -1859,13 +1859,13 @@ export default function Modules() {
             <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
               <button
                 onClick={() => setShowViewModal(false)}
-                className="px-4 py-2 border border-slate-200 text-slate-600 text-sm font-medium rounded-xl hover:bg-slate-100 transition-colors"
+                className="px-4 py-2 border border-slate-200 text-slate-600 text-base font-medium rounded-xl hover:bg-slate-100 transition-colors"
               >
                 Close
               </button>
               <button
                 onClick={() => { setShowViewModal(false); navigate(`/edit-module/${selectedModule.id}`); }}
-                className="px-5 py-2 bg-violet-600 text-white text-sm font-medium rounded-xl hover:bg-violet-700 transition-colors flex items-center gap-2 shadow-sm shadow-violet-200"
+                className="px-5 py-2 bg-violet-600 text-white text-base font-medium rounded-xl hover:bg-violet-700 transition-colors flex items-center gap-2 shadow-sm shadow-violet-200"
               >
                 <Edit size={14} /> Edit Module
               </button>
@@ -1895,7 +1895,7 @@ export default function Modules() {
               </div>
               <div className="flex-1">
                 <h3 className="text-base font-semibold text-slate-900 mb-1">Delete Module</h3>
-                <p className="text-sm text-slate-500">
+                <p className="text-base text-slate-500">
                   Are you sure you want to delete <span className="font-semibold text-slate-700">"{moduleToDelete.name}"</span>? This action cannot be undone.
                 </p>
               </div>
@@ -1904,13 +1904,13 @@ export default function Modules() {
             {deleteSuccess && (
               <div className="mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2">
                 <CheckCircle size={15} className="text-emerald-600 flex-shrink-0" />
-                <p className="text-sm text-emerald-700">{deleteSuccess}</p>
+                <p className="text-base text-emerald-700">{deleteSuccess}</p>
               </div>
             )}
             {deleteError && (
               <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2">
                 <AlertCircle size={15} className="text-red-500 flex-shrink-0" />
-                <p className="text-sm text-red-600">{deleteError}</p>
+                <p className="text-base text-red-600">{deleteError}</p>
               </div>
             )}
 
@@ -1918,14 +1918,14 @@ export default function Modules() {
               <button
                 onClick={() => setShowDeleteModal(false)}
                 disabled={deleteLoading}
-                className="px-4 py-2 border border-slate-200 text-slate-600 text-sm font-medium rounded-xl hover:bg-slate-50 transition-colors disabled:opacity-50"
+                className="px-4 py-2 border border-slate-200 text-slate-600 text-base font-medium rounded-xl hover:bg-slate-50 transition-colors disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeleteConfirm}
                 disabled={deleteLoading || !!deleteSuccess}
-                className="px-5 py-2 bg-red-600 text-white text-sm font-medium rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                className="px-5 py-2 bg-red-600 text-white text-base font-medium rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center gap-2"
               >
                 {deleteLoading ? (
                   <>

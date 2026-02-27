@@ -722,7 +722,7 @@ export default function EditModule() {
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
                 <div className="text-center">
                     <div className="w-14 h-14 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4" />
-                    <p className="text-sm text-gray-500 font-medium">Loading module data…</p>
+                    <p className="text-base text-gray-500 font-medium">Loading module data…</p>
                 </div>
             </div>
         );
@@ -737,7 +737,7 @@ export default function EditModule() {
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => navigate("/modules")}
-                            className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-all text-sm font-medium"
+                            className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-all text-base font-medium"
                         >
                             <ArrowLeft size={16} />
                             <span className="hidden sm:inline">Back</span>
@@ -751,7 +751,7 @@ export default function EditModule() {
                     <button
                         onClick={handleSubmit}
                         disabled={saving}
-                        className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-semibold rounded-xl shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-base font-semibold rounded-xl shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {saving ? (
                             <>
@@ -773,7 +773,7 @@ export default function EditModule() {
 
                 {/* Error Alert */}
                 {error && (
-                    <div className="flex items-start gap-3 p-4 mb-6 bg-red-50 border border-red-200 rounded-2xl text-sm text-red-700">
+                    <div className="flex items-start gap-3 p-4 mb-6 bg-red-50 border border-red-200 rounded-2xl text-base text-red-700">
                         <AlertCircle size={18} className="mt-0.5 flex-shrink-0 text-red-500" />
                         <span className="flex-1">{error}</span>
                         <button onClick={() => setError("")} className="text-red-400 hover:text-red-600 transition-colors flex-shrink-0">
@@ -784,7 +784,7 @@ export default function EditModule() {
 
                 {/* Success Alert */}
                 {success && (
-                    <div className="flex items-start gap-3 p-4 mb-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-sm text-emerald-700">
+                    <div className="flex items-start gap-3 p-4 mb-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-base text-emerald-700">
                         <CheckCircle2 size={18} className="mt-0.5 flex-shrink-0 text-emerald-500" />
                         <span>{success}</span>
                     </div>
@@ -799,7 +799,7 @@ export default function EditModule() {
                                 <Tag size={16} className="text-indigo-600" />
                             </div>
                             <div>
-                                <label htmlFor="name" className="block text-sm font-semibold text-gray-800">
+                                <label htmlFor="name" className="block text-base font-semibold text-gray-800">
                                     Module Name <span className="text-red-500">*</span>
                                 </label>
                                 <p className="text-xs text-gray-400 mt-0.5">Enter a descriptive name for the module</p>
@@ -812,7 +812,7 @@ export default function EditModule() {
                             value={formData.name}
                             onChange={handleInputChange}
                             placeholder="e.g., Introduction to Python, Module 1 - Basics"
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
                             required
                         />
                         <p className="flex items-center gap-1.5 text-xs text-gray-400 mt-2">
@@ -828,7 +828,7 @@ export default function EditModule() {
                                 <BookOpen size={16} className="text-violet-600" />
                             </div>
                             <div>
-                                <label className="block text-sm font-semibold text-gray-800">
+                                <label className="block text-base font-semibold text-gray-800">
                                     Select Course <span className="text-red-500">*</span>
                                 </label>
                                 <p className="text-xs text-gray-400 mt-0.5">Choose the course this module belongs to</p>
@@ -848,7 +848,7 @@ export default function EditModule() {
                                 name="course_data"
                                 value={formData.course_data}
                                 onChange={handleInputChange}
-                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none disabled:opacity-50 disabled:cursor-not-allowed"
                                 required
                                 disabled={loadingCategories}
                             >
@@ -885,7 +885,7 @@ export default function EditModule() {
                                     <Layers size={18} className="text-indigo-500" />
                                 </div>
                                 <div className="min-w-0">
-                                    <p className="text-sm font-bold text-gray-800 truncate">
+                                    <p className="text-base font-bold text-gray-800 truncate">
                                         {formData.name || <span className="text-gray-400 font-normal italic">Untitled Module</span>}
                                     </p>
                                     {selectedCourse && (
@@ -903,7 +903,7 @@ export default function EditModule() {
                         <button
                             type="submit"
                             disabled={saving}
-                            className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-base font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
                             {saving ? (
                                 <>

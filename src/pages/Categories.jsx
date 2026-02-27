@@ -134,7 +134,7 @@
 //       <div className="flex items-center justify-center min-h-[60vh]">
 //         <div className="relative">
 //           <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
-//           <p className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-gray-500 text-sm whitespace-nowrap">
+//           <p className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-gray-500 text-base whitespace-nowrap">
 //             Loading categories...
 //           </p>
 //         </div>
@@ -172,7 +172,7 @@
 //           <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
 //             Categories
 //           </h1>
-//           <p className="text-gray-500 text-sm mt-1">
+//           <p className="text-gray-500 text-base mt-1">
 //             Manage your {categories.length} categories
 //           </p>
 //         </div>
@@ -237,7 +237,7 @@
 //       ) : (
 //         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
 //           {/* Table Header */}
-//           <div className="hidden md:grid grid-cols-12 gap-4 p-4 bg-gray-50 border-b border-gray-200 text-sm font-semibold text-gray-600">
+//           <div className="hidden md:grid grid-cols-12 gap-4 p-4 bg-gray-50 border-b border-gray-200 text-base font-semibold text-gray-600">
 //             <div className="col-span-1">ID</div>
 //             <div className="col-span-2">Image</div>
 //             <div className="col-span-2">Name</div>
@@ -287,7 +287,7 @@
 //                           </span>
 //                         </div>
 //                       </div>
-//                       <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+//                       <p className="text-base text-gray-600 mt-1 line-clamp-2">
 //                         {category.text || "No description provided."}
 //                       </p>
 //                     </div>
@@ -315,7 +315,7 @@
 //                 {/* Desktop View */}
 //                 <div className="hidden md:grid grid-cols-12 gap-4 items-center">
 //                   <div className="col-span-1">
-//                     <span className="text-sm font-medium text-gray-900">
+//                     <span className="text-base font-medium text-gray-900">
 //                       {category.id}
 //                     </span>
 //                   </div>
@@ -340,12 +340,12 @@
 //                     </div>
 //                   </div>
 //                   <div className="col-span-2">
-//                     <span className="text-sm font-medium text-gray-900">
+//                     <span className="text-base font-medium text-gray-900">
 //                       {category.name}
 //                     </span>
 //                   </div>
 //                   <div className="col-span-4">
-//                     <p className="text-sm text-gray-600 line-clamp-2">
+//                     <p className="text-base text-gray-600 line-clamp-2">
 //                       {category.text || "No description provided."}
 //                     </p>
 //                   </div>
@@ -371,7 +371,7 @@
 //           </div>
 
 //           {/* Footer with count */}
-//           <div className="p-4 bg-gray-50 border-t border-gray-200 text-sm text-gray-600">
+//           <div className="p-4 bg-gray-50 border-t border-gray-200 text-base text-gray-600">
 //             Showing {filteredCategories.length} of {categories.length}{" "}
 //             categories
 //           </div>
@@ -403,7 +403,7 @@
 //                   Delete Category
 //                 </h3>
 
-//                 <p className="text-sm text-gray-500 text-center mb-6">
+//                 <p className="text-base text-gray-500 text-center mb-6">
 //                   Are you sure you want to delete{" "}
 //                   <span className="font-semibold text-gray-900">
 //                     "{categoryToDelete.name}"
@@ -414,7 +414,7 @@
 //                 {deleteSuccess && (
 //                   <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
 //                     <CheckCircle size={16} className="text-green-600" />
-//                     <p className="text-sm text-green-600">{deleteSuccess}</p>
+//                     <p className="text-base text-green-600">{deleteSuccess}</p>
 //                   </div>
 //                 )}
 
@@ -424,7 +424,7 @@
 //                       size={16}
 //                       className="text-red-600 mt-0.5 shrink-0"
 //                     />
-//                     <p className="text-sm text-red-600">{deleteError}</p>
+//                     <p className="text-base text-red-600">{deleteError}</p>
 //                   </div>
 //                 )}
 
@@ -486,11 +486,14 @@ export default function Categories() {
 
   const [categories, setCategories] = useState([]);
   const [filteredCategories, setFilteredCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // ✅ changed from false to true
   const [error, setError] = useState(null);
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortConfig, setSortConfig] = useState({ key: "id", direction: "desc" });
+  const [sortConfig, setSortConfig] = useState({
+    key: "id",
+    direction: "desc",
+  });
   const [filters, setFilters] = useState({ hasImage: "all", dateRange: "all" });
   const [showFilters, setShowFilters] = useState(false);
 
@@ -503,57 +506,62 @@ export default function Categories() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
-const fetchCategories = async () => {
-  try {
-    setLoading(true);
+  const fetchCategories = async () => {
+    try {
+      setLoading(true); // ensure loading is true before fetch
 
-    const response = await fetch(
-      "https://codingcloud.pythonanywhere.com/category/"
-    );
+      const response = await fetch(
+        "https://codingcloud.pythonanywhere.com/category/",
+      );
 
-    if (!response.ok) {
-      throw new Error("Failed to fetch categories");
+      if (!response.ok) {
+        throw new Error("Failed to fetch categories");
+      }
+
+      const json = await response.json();
+
+      // ✅ FIX HERE
+      const categoryArray = json.data || [];
+
+      const dataWithDates = categoryArray.map((item) => ({
+        ...item,
+        created_at:
+          item.created_at ||
+          new Date(
+            Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000,
+          ).toISOString(),
+      }));
+
+      setCategories(dataWithDates);
+      setFilteredCategories(dataWithDates);
+
+      setError(null);
+    } catch (err) {
+      console.error("Fetch Error:", err);
+      setError("Failed to load categories");
+    } finally {
+      setLoading(false);
     }
+  };
 
-    const json = await response.json();
-
-    // ✅ FIX HERE
-    const categoryArray = json.data || [];
-
-    const dataWithDates = categoryArray.map((item) => ({
-      ...item,
-      created_at:
-        item.created_at ||
-        new Date(
-          Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000
-        ).toISOString(),
-    }));
-
-    setCategories(dataWithDates);
-    setFilteredCategories(dataWithDates);
-
-    setError(null);
-  } catch (err) {
-    console.error("Fetch Error:", err);
-    setError("Failed to load categories");
-  } finally {
-    setLoading(false);
-  }
-};
-
-  useEffect(() => { fetchCategories(); }, []);
+  useEffect(() => {
+    fetchCategories();
+  }, []);
 
   useEffect(() => {
     let result = [...categories];
     if (searchTerm) {
-      result = result.filter((c) =>
-  c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-  c.id.toString().includes(searchTerm) ||
-  (c.slug && c.slug.toLowerCase().includes(searchTerm.toLowerCase()))
-);
+      result = result.filter(
+        (c) =>
+          c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          c.id.toString().includes(searchTerm) ||
+          (c.slug && c.slug.toLowerCase().includes(searchTerm.toLowerCase())),
+      );
     }
     if (filters.hasImage !== "all") {
-      result = result.filter((c) => filters.hasImage === "yes" ? !!c.image : !c.image);
+      result = result.filter((c) =>
+        filters.hasImage === "yes" ? !!c.image : !c.image,
+      );
     }
     if (filters.dateRange !== "all") {
       const now = new Date();
@@ -569,8 +577,14 @@ const fetchCategories = async () => {
       });
     }
     result.sort((a, b) => {
-      let aVal = sortConfig.key === "created_at" ? new Date(a[sortConfig.key]) : a[sortConfig.key];
-      let bVal = sortConfig.key === "created_at" ? new Date(b[sortConfig.key]) : b[sortConfig.key];
+      let aVal =
+        sortConfig.key === "created_at"
+          ? new Date(a[sortConfig.key])
+          : a[sortConfig.key];
+      let bVal =
+        sortConfig.key === "created_at"
+          ? new Date(b[sortConfig.key])
+          : b[sortConfig.key];
       if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
       if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
       return 0;
@@ -580,21 +594,28 @@ const fetchCategories = async () => {
   }, [searchTerm, filters, sortConfig, categories]);
 
   const handleSort = (key) => {
-    setSortConfig((c) => ({ key, direction: c.key === key && c.direction === "asc" ? "desc" : "asc" }));
+    setSortConfig((c) => ({
+      key,
+      direction: c.key === key && c.direction === "asc" ? "desc" : "asc",
+    }));
   };
 
   const getSortIcon = (key) => {
-    if (sortConfig.key !== key) return <SortAsc size={13} className="text-slate-400" />;
-    return sortConfig.direction === "asc"
-      ? <SortAsc size={13} className="text-violet-500" />
-      : <SortDesc size={13} className="text-violet-500" />;
+    if (sortConfig.key !== key)
+      return <SortAsc size={13} className="text-slate-400" />;
+    return sortConfig.direction === "asc" ? (
+      <SortAsc size={13} className="text-violet-500" />
+    ) : (
+      <SortDesc size={13} className="text-violet-500" />
+    );
   };
-
- 
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const paginatedCategories = filteredCategories.slice(indexOfFirstItem, indexOfLastItem);
+  const paginatedCategories = filteredCategories.slice(
+    indexOfFirstItem,
+    indexOfLastItem,
+  );
   const totalPages = Math.ceil(filteredCategories.length / itemsPerPage);
 
   const handleDeleteClick = (category) => {
@@ -612,17 +633,23 @@ const fetchCategories = async () => {
     try {
       const response = await fetch(
         `https://codingcloud.pythonanywhere.com/category/${categoryToDelete.id}/`,
-        { method: "DELETE" }
+        { method: "DELETE" },
       );
       if (response.ok || response.status === 204) {
         setDeleteSuccess("Category deleted successfully!");
         fetchCategories();
-        setTimeout(() => { setShowDeleteModal(false); setCategoryToDelete(null); setDeleteSuccess(""); }, 1500);
+        setTimeout(() => {
+          setShowDeleteModal(false);
+          setCategoryToDelete(null);
+          setDeleteSuccess("");
+        }, 1500);
       } else {
         try {
           const data = await response.json();
           setDeleteError(data.message || "Failed to delete category.");
-        } catch { setDeleteError(`HTTP Error: ${response.status}`); }
+        } catch {
+          setDeleteError(`HTTP Error: ${response.status}`);
+        }
       }
     } catch {
       setDeleteError("Network error. Please try again.");
@@ -636,7 +663,9 @@ const fetchCategories = async () => {
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-violet-200 border-t-violet-600 rounded-full animate-spin mx-auto"></div>
-          <p className="mt-4 text-slate-500 text-sm font-medium">Loading categories…</p>
+          <p className="mt-4 text-slate-500 text-base font-medium">
+            Loading categories…
+          </p>
         </div>
       </div>
     );
@@ -649,9 +678,14 @@ const fetchCategories = async () => {
           <div className="bg-red-50 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
             <X size={24} className="text-red-500" />
           </div>
-          <h3 className="text-lg font-semibold text-slate-900 mb-1">Something went wrong</h3>
-          <p className="text-slate-500 text-sm mb-5">{error}</p>
-          <button onClick={() => window.location.reload()} className="px-5 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors text-sm font-medium">
+          <h3 className="text-lg font-semibold text-slate-900 mb-1">
+            Something went wrong
+          </h3>
+          <p className="text-slate-500 text-base mb-5">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-5 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors text-base font-medium"
+          >
             Try Again
           </button>
         </div>
@@ -668,7 +702,6 @@ const fetchCategories = async () => {
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-
         {/* ── Header ── */}
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-1">
@@ -678,25 +711,32 @@ const fetchCategories = async () => {
               {categories.length}
             </span>
           </div>
-          <p className="text-slate-500 text-sm">Manage and organise your product categories</p>
+          <p className="text-slate-500 text-base">
+            Manage and organise your product categories
+          </p>
         </div>
 
         {/* ── Toolbar (single line) ── */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 px-4 py-3 mb-5">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-
             {/* Search */}
             <div className="relative flex-1 min-w-0">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <Search
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+              />
               <input
                 type="text"
                 placeholder="Search by name, slug or ID…"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-8 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent bg-slate-50 placeholder:text-slate-400"
+                className="w-full pl-9 pr-8 py-2.5 border border-slate-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent bg-slate-50 placeholder:text-slate-400"
               />
               {searchTerm && (
-                <button onClick={() => setSearchTerm("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                <button
+                  onClick={() => setSearchTerm("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
                   <X size={14} />
                 </button>
               )}
@@ -705,7 +745,7 @@ const fetchCategories = async () => {
             {/* Filter toggle */}
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all whitespace-nowrap ${
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-base font-medium transition-all whitespace-nowrap ${
                 showFilters || activeFiltersCount > 0
                   ? "border-violet-400 bg-violet-50 text-violet-700"
                   : "border-slate-200 text-slate-600 hover:bg-slate-50"
@@ -714,17 +754,20 @@ const fetchCategories = async () => {
               <Filter size={15} />
               Filters
               {activeFiltersCount > 0 && (
-                <span className="px-1.5 py-0.5 bg-violet-600 text-white text-xs rounded-full leading-none">{activeFiltersCount}</span>
+                <span className="px-1.5 py-0.5 bg-violet-600 text-white text-xs rounded-full leading-none">
+                  {activeFiltersCount}
+                </span>
               )}
-              <ChevronDown size={14} className={`transition-transform ${showFilters ? "rotate-180" : ""}`} />
+              <ChevronDown
+                size={14}
+                className={`transition-transform ${showFilters ? "rotate-180" : ""}`}
+              />
             </button>
-
-           
 
             {/* Add Category */}
             <button
               onClick={() => navigate("/add-category")}
-              className="flex items-center gap-2 px-4 py-2.5 bg-violet-600 text-white rounded-xl hover:bg-violet-700 transition-colors text-sm font-medium whitespace-nowrap shadow-sm shadow-violet-200"
+              className="flex items-center gap-2 px-4 py-2.5 bg-violet-600 text-white rounded-xl hover:bg-violet-700 transition-colors text-base font-medium whitespace-nowrap shadow-sm shadow-violet-200"
             >
               <Plus size={16} />
               Add Category
@@ -735,11 +778,15 @@ const fetchCategories = async () => {
           {showFilters && (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4 pt-4 border-t border-slate-100">
               <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Image</label>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
+                  Image
+                </label>
                 <select
                   value={filters.hasImage}
-                  onChange={(e) => setFilters({ ...filters, hasImage: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 bg-slate-50"
+                  onChange={(e) =>
+                    setFilters({ ...filters, hasImage: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-violet-500 bg-slate-50"
                 >
                   <option value="all">All Categories</option>
                   <option value="yes">With Image</option>
@@ -747,11 +794,15 @@ const fetchCategories = async () => {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Date Added</label>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
+                  Date Added
+                </label>
                 <select
                   value={filters.dateRange}
-                  onChange={(e) => setFilters({ ...filters, dateRange: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 bg-slate-50"
+                  onChange={(e) =>
+                    setFilters({ ...filters, dateRange: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-violet-500 bg-slate-50"
                 >
                   <option value="all">All Time</option>
                   <option value="today">Today</option>
@@ -760,11 +811,13 @@ const fetchCategories = async () => {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Items Per Page</label>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
+                  Items Per Page
+                </label>
                 <select
                   value={itemsPerPage}
                   onChange={(e) => setItemsPerPage(Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 bg-slate-50"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-violet-500 bg-slate-50"
                 >
                   <option value={5}>5 per page</option>
                   <option value={10}>10 per page</option>
@@ -777,20 +830,27 @@ const fetchCategories = async () => {
         </div>
 
         {/* ── Table / Empty state ── */}
-        {filteredCategories.length === 0 ? (
+        {categories.length === 0 ? (
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-16 text-center">
             <div className="bg-slate-100 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
               <FolderOpen size={28} className="text-slate-400" />
             </div>
-            <h3 className="text-base font-semibold text-slate-800 mb-1">No categories found</h3>
-            <p className="text-slate-400 text-sm mb-5">
-              {searchTerm || filters.hasImage !== "all" || filters.dateRange !== "all"
+
+            <h3 className="text-base font-semibold text-slate-800 mb-1">
+              No categories found
+            </h3>
+
+            <p className="text-slate-400 text-base mb-5">
+              {searchTerm ||
+              filters.hasImage !== "all" ||
+              filters.dateRange !== "all"
                 ? "Try adjusting your filters or search term."
                 : "Get started by adding your first category."}
             </p>
+
             <button
               onClick={() => navigate("/add-category")}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-xl hover:bg-violet-700 transition-colors text-sm font-medium"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-xl hover:bg-violet-700 transition-colors text-base font-medium"
             >
               <Plus size={15} />
               Add Category
@@ -803,22 +863,29 @@ const fetchCategories = async () => {
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200">
                     <th
-                      className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide cursor-pointer select-none hover:text-slate-800 w-16"
+                      className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide cursor-pointer hover:text-slate-800 w-16"
                       onClick={() => handleSort("id")}
                     >
-                      <span className="flex items-center gap-1"># {getSortIcon("id")}</span>
+                      <span className="flex items-center gap-1">
+                        # {getSortIcon("id")}
+                      </span>
                     </th>
+
                     <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide w-16">
                       Image
                     </th>
+
                     <th
-                      className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide cursor-pointer select-none hover:text-slate-800"
+                      className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide cursor-pointer hover:text-slate-800"
                       onClick={() => handleSort("name")}
                     >
-                      <span className="flex items-center gap-1">Name {getSortIcon("name")}</span>
+                      <span className="flex items-center gap-1">
+                        Name {getSortIcon("name")}
+                      </span>
                     </th>
+
                     <th
-                      className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide cursor-pointer select-none hover:text-slate-800"
+                      className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide cursor-pointer hover:text-slate-800"
                       onClick={() => handleSort("slug")}
                     >
                       <span className="flex items-center gap-1">
@@ -826,30 +893,36 @@ const fetchCategories = async () => {
                         Slug {getSortIcon("slug")}
                       </span>
                     </th>
+
                     <th className="px-5 py-3.5 text-right text-xs font-semibold text-slate-500 uppercase tracking-wide">
                       Actions
                     </th>
                   </tr>
                 </thead>
+
                 <tbody className="divide-y divide-slate-100">
                   {paginatedCategories.map((category, index) => (
-                    <tr key={category.id} className="hover:bg-slate-50/70 transition-colors group">
-                      {/* Serial number */}
-                      <td className="px-5 py-4 text-sm font-semibold text-slate-400">
+                    <tr
+                      key={category.id}
+                      className="hover:bg-slate-50 transition-colors"
+                    >
+                      {/* Serial */}
+                      <td className="px-5 py-4 text-base font-semibold text-slate-400">
                         {indexOfFirstItem + index + 1}
                       </td>
 
                       {/* Image */}
                       <td className="px-5 py-4">
-                        <div className="w-11 h-11 bg-slate-100 rounded-xl overflow-hidden border border-slate-200 flex items-center justify-center flex-shrink-0">
+                        <div className="w-11 h-11 bg-slate-100 rounded-xl overflow-hidden border border-slate-200 flex items-center justify-center">
                           {category.image ? (
                             <img
                               src={`https://codingcloud.pythonanywhere.com${category.image}`}
                               alt={category.name}
                               className="w-full h-full object-cover"
+                              loading="lazy"
                               onError={(e) => {
-                                e.target.onerror = null;
-                                e.target.src = "https://via.placeholder.com/80?text=?";
+                                e.target.src =
+                                  "https://via.placeholder.com/80?text=?";
                               }}
                             />
                           ) : (
@@ -861,43 +934,45 @@ const fetchCategories = async () => {
                       {/* Name */}
                       <td className="px-5 py-4">
                         <div className="flex flex-col gap-0.5">
-                          <span className="text-sm font-semibold text-slate-800">{category.name}</span>
-                          {/* Show slug on small screens */}
-                          <span className="text-xs text-amber-600 md:hidden line-clamp-1 flex items-center gap-1">
+                          <span className="text-base font-semibold text-slate-800">
+                            {category.name}
+                          </span>
+
+                          <span className="text-xs text-amber-600 md:hidden flex items-center gap-1">
                             <Link2 size={10} />
-                            {category.slug || <span className="italic text-slate-300">No slug</span>}
+                            {category.slug || "No slug"}
                           </span>
                         </div>
                       </td>
 
-                      {/* Slug (replaces description) */}
+                      {/* Slug */}
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-1.5">
-                          <Link2 size={12} className="text-amber-500 flex-shrink-0" />
-                          <span className="text-sm text-slate-600 font-mono">
-                            {category.slug ? (
-                              `/${category.slug}`
-                            ) : (
-                              <span className="italic text-slate-300">No slug</span>
-                            )}
+                          <Link2 size={12} className="text-amber-500" />
+
+                          <span className="text-base text-slate-600 font-mono">
+                            {category.slug ? `/${category.slug}` : "No slug"}
                           </span>
                         </div>
                       </td>
 
                       {/* Actions */}
                       <td className="px-5 py-4">
-                        <div className="flex items-center justify-end gap-1.5">
+                        <div className="flex justify-end gap-1.5">
                           <button
-                            onClick={() => navigate(`/edit-category/${category.id}`, { state: { category } })}
-                            className="p-2 rounded-lg text-slate-400 hover:text-violet-600 hover:bg-violet-50 transition-all"
-                            title="Edit"
+                            onClick={() =>
+                              navigate(`/edit-category/${category.id}`, {
+                                state: { category },
+                              })
+                            }
+                            className="p-2 rounded-lg text-slate-400 hover:text-violet-600 hover:bg-violet-50"
                           >
                             <Edit size={15} />
                           </button>
+
                           <button
                             onClick={() => handleDeleteClick(category)}
-                            className="p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all"
-                            title="Delete"
+                            className="p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50"
                           >
                             <Trash2 size={15} />
                           </button>
@@ -910,45 +985,28 @@ const fetchCategories = async () => {
             </div>
 
             {/* Pagination */}
-            <div className="px-5 py-3.5 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="px-5 py-3.5 bg-slate-50 border-t border-slate-100 flex justify-between items-center">
               <span className="text-xs text-slate-400 font-medium">
-                Showing <span className="text-slate-700 font-semibold">{indexOfFirstItem + 1}–{Math.min(indexOfLastItem, filteredCategories.length)}</span> of <span className="text-slate-700 font-semibold">{filteredCategories.length}</span> categories
+                Showing {indexOfFirstItem + 1}–
+                {Math.min(indexOfLastItem, filteredCategories.length)} of{" "}
+                {filteredCategories.length}
               </span>
-              <div className="flex items-center gap-2">
+
+              <div className="flex gap-2">
                 <button
                   onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
                   disabled={currentPage === 1}
-                  className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white transition-colors"
+                  className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs"
                 >
                   ← Prev
                 </button>
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                    let page = i + 1;
-                    if (totalPages > 5) {
-                      if (currentPage <= 3) page = i + 1;
-                      else if (currentPage >= totalPages - 2) page = totalPages - 4 + i;
-                      else page = currentPage - 2 + i;
-                    }
-                    return (
-                      <button
-                        key={page}
-                        onClick={() => setCurrentPage(page)}
-                        className={`w-8 h-8 rounded-lg text-xs font-semibold transition-colors ${
-                          currentPage === page
-                            ? "bg-violet-600 text-white shadow-sm"
-                            : "text-slate-500 hover:bg-slate-200"
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    );
-                  })}
-                </div>
+
                 <button
-                  onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(p + 1, totalPages))
+                  }
                   disabled={currentPage === totalPages}
-                  className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white transition-colors"
+                  className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs"
                 >
                   Next →
                 </button>
@@ -979,23 +1037,32 @@ const fetchCategories = async () => {
                 <AlertCircle size={22} className="text-red-500" />
               </div>
               <div className="flex-1">
-                <h3 className="text-base font-semibold text-slate-900 mb-1">Delete Category</h3>
-                <p className="text-sm text-slate-500">
-                  Are you sure you want to delete <span className="font-semibold text-slate-700">"{categoryToDelete.name}"</span>? This action cannot be undone.
+                <h3 className="text-base font-semibold text-slate-900 mb-1">
+                  Delete Category
+                </h3>
+                <p className="text-base text-slate-500">
+                  Are you sure you want to delete{" "}
+                  <span className="font-semibold text-slate-700">
+                    "{categoryToDelete.name}"
+                  </span>
+                  ? This action cannot be undone.
                 </p>
               </div>
             </div>
 
             {deleteSuccess && (
               <div className="mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2">
-                <CheckCircle size={15} className="text-emerald-600 flex-shrink-0" />
-                <p className="text-sm text-emerald-700">{deleteSuccess}</p>
+                <CheckCircle
+                  size={15}
+                  className="text-emerald-600 flex-shrink-0"
+                />
+                <p className="text-base text-emerald-700">{deleteSuccess}</p>
               </div>
             )}
             {deleteError && (
               <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2">
                 <AlertCircle size={15} className="text-red-500 flex-shrink-0" />
-                <p className="text-sm text-red-600">{deleteError}</p>
+                <p className="text-base text-red-600">{deleteError}</p>
               </div>
             )}
 
@@ -1003,14 +1070,14 @@ const fetchCategories = async () => {
               <button
                 onClick={() => setShowDeleteModal(false)}
                 disabled={deleteLoading}
-                className="px-4 py-2 border border-slate-200 text-slate-600 text-sm font-medium rounded-xl hover:bg-slate-50 transition-colors disabled:opacity-50"
+                className="px-4 py-2 border border-slate-200 text-slate-600 text-base font-medium rounded-xl hover:bg-slate-50 transition-colors disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeleteConfirm}
                 disabled={deleteLoading}
-                className="px-5 py-2 bg-red-600 text-white text-sm font-medium rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                className="px-5 py-2 bg-red-600 text-white text-base font-medium rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center gap-2"
               >
                 {deleteLoading ? (
                   <>

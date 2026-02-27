@@ -218,7 +218,7 @@
 //             <div className="flex items-center justify-center min-h-[60vh]">
 //                 <div className="relative">
 //                     <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
-//                     <p className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-gray-500 text-sm whitespace-nowrap">
+//                     <p className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-gray-500 text-base whitespace-nowrap">
 //                         Loading category details...
 //                     </p>
 //                 </div>
@@ -240,7 +240,7 @@
 //                     </button>
 //                     <div>
 //                         <h1 className="text-2xl font-bold text-gray-900">Edit Category</h1>
-//                         <p className="text-gray-500 text-sm mt-1">
+//                         <p className="text-gray-500 text-base mt-1">
 //                             Update category details and image
 //                         </p>
 //                     </div>
@@ -283,7 +283,7 @@
 //                     </div>
 //                     <div>
 //                         <h4 className="font-medium text-red-800">Error</h4>
-//                         <p className="text-red-600 text-sm mt-0.5">{error}</p>
+//                         <p className="text-red-600 text-base mt-0.5">{error}</p>
 //                     </div>
 //                 </div>
 //             )}
@@ -295,7 +295,7 @@
 //                     </div>
 //                     <div>
 //                         <h4 className="font-medium text-green-800">Success!</h4>
-//                         <p className="text-green-600 text-sm mt-0.5">{success}</p>
+//                         <p className="text-green-600 text-base mt-0.5">{success}</p>
 //                     </div>
 //                 </div>
 //             )}
@@ -307,7 +307,7 @@
 //                     <div className="p-6 space-y-6">
 //                         {/* Category Name */}
 //                         <div>
-//                             <label className="block text-sm font-medium text-gray-700 mb-1.5">
+//                             <label className="block text-base font-medium text-gray-700 mb-1.5">
 //                                 Category Name <span className="text-red-500">*</span>
 //                             </label>
 //                             <input
@@ -322,7 +322,7 @@
 
 //                         {/* Category Text/Description */}
 //                         <div>
-//                             <label className="block text-sm font-medium text-gray-700 mb-1.5">
+//                             <label className="block text-base font-medium text-gray-700 mb-1.5">
 //                                 Category Description
 //                             </label>
 //                             <textarea
@@ -336,7 +336,7 @@
 
 //                         {/* Category Image Upload */}
 //                         <div>
-//                             <label className="block text-sm font-medium text-gray-700 mb-1.5">
+//                             <label className="block text-base font-medium text-gray-700 mb-1.5">
 //                                 Category Image
 //                             </label>
 
@@ -402,7 +402,7 @@
 //                                     ) : (
 //                                         <>
 //                                             <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
-//                                             <div className="flex text-sm text-gray-600 justify-center mt-4">
+//                                             <div className="flex text-base text-gray-600 justify-center mt-4">
 //                                                 <label
 //                                                     htmlFor="file-upload"
 //                                                     className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500 px-2 py-0.5"
@@ -599,7 +599,7 @@ export default function EditCategory() {
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
                 <div className="text-center">
                     <div className="w-14 h-14 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4" />
-                    <p className="text-sm text-gray-500 font-medium">Loading category details…</p>
+                    <p className="text-base text-gray-500 font-medium">Loading category details…</p>
                 </div>
             </div>
         );
@@ -616,7 +616,7 @@ export default function EditCategory() {
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => navigate("/category")}
-                            className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-all text-sm font-medium"
+                            className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-all text-base font-medium"
                         >
                             <ArrowLeft size={16} />
                             <span className="hidden sm:inline">Back</span>
@@ -634,7 +634,7 @@ export default function EditCategory() {
                     <button
                         onClick={handleSubmit}
                         disabled={saving}
-                        className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-semibold rounded-xl shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-base font-semibold rounded-xl shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {saving ? (
                             <>
@@ -656,7 +656,7 @@ export default function EditCategory() {
 
                 {/* Error Alert */}
                 {error && (
-                    <div className="flex items-start gap-3 p-4 mb-6 bg-red-50 border border-red-200 rounded-2xl text-sm text-red-700">
+                    <div className="flex items-start gap-3 p-4 mb-6 bg-red-50 border border-red-200 rounded-2xl text-base text-red-700">
                         <AlertCircle size={18} className="mt-0.5 flex-shrink-0 text-red-500" />
                         <span>{error}</span>
                     </div>
@@ -664,7 +664,7 @@ export default function EditCategory() {
 
                 {/* Success Alert */}
                 {success && (
-                    <div className="flex items-start gap-3 p-4 mb-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-sm text-emerald-700">
+                    <div className="flex items-start gap-3 p-4 mb-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-base text-emerald-700">
                         <CheckCircle2 size={18} className="mt-0.5 flex-shrink-0 text-emerald-500" />
                         <span>{success}</span>
                     </div>
@@ -679,7 +679,7 @@ export default function EditCategory() {
                                 <Tag size={16} className="text-indigo-600" />
                             </div>
                             <div>
-                                <label htmlFor="name" className="block text-sm font-semibold text-gray-800">
+                                <label htmlFor="name" className="block text-base font-semibold text-gray-800">
                                     Category Name <span className="text-red-500">*</span>
                                 </label>
                                 <p className="text-xs text-gray-400 mt-0.5">Choose a clear, descriptive name</p>
@@ -692,7 +692,7 @@ export default function EditCategory() {
                             value={formData.name}
                             onChange={handleInputChange}
                             placeholder="e.g., Web Development, Design, Marketing…"
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
                             required
                         />
                     </div>
@@ -704,7 +704,7 @@ export default function EditCategory() {
                                 <FileText size={16} className="text-violet-600" />
                             </div>
                             <div>
-                                <label htmlFor="text" className="block text-sm font-semibold text-gray-800">
+                                <label htmlFor="text" className="block text-base font-semibold text-gray-800">
                                     Description
                                 </label>
                                 <p className="text-xs text-gray-400 mt-0.5">Optional — give context about this category</p>
@@ -717,7 +717,7 @@ export default function EditCategory() {
                             onChange={handleInputChange}
                             rows={4}
                             placeholder="Write a brief description about this category…"
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-none"
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-none"
                         />
                         <p className="text-xs text-gray-400 text-right mt-2">{formData.text.length} characters</p>
                     </div>
@@ -729,7 +729,7 @@ export default function EditCategory() {
                                 <ImagePlus size={16} className="text-pink-500" />
                             </div>
                             <div>
-                                <p className="text-sm font-semibold text-gray-800">Cover Image</p>
+                                <p className="text-base font-semibold text-gray-800">Cover Image</p>
                                 <p className="text-xs text-gray-400 mt-0.5">Optional — PNG, JPG, GIF · Max 5MB</p>
                             </div>
                         </div>
@@ -752,7 +752,7 @@ export default function EditCategory() {
                                 }`}>
                                     <Upload size={22} className={dragOver ? "text-indigo-500" : "text-gray-400"} />
                                 </div>
-                                <p className="text-sm font-semibold text-gray-700 mb-1">
+                                <p className="text-base font-semibold text-gray-700 mb-1">
                                     {dragOver ? "Drop your image here!" : "Click to upload or drag & drop"}
                                 </p>
                                 <p className="text-xs text-gray-400">
@@ -873,7 +873,7 @@ export default function EditCategory() {
                                     </div>
                                 )}
                                 <div className="min-w-0">
-                                    <p className="text-sm font-bold text-gray-800 truncate">
+                                    <p className="text-base font-bold text-gray-800 truncate">
                                         {formData.name || <span className="text-gray-400 font-normal italic">Untitled Category</span>}
                                     </p>
                                     {formData.text && (
@@ -889,7 +889,7 @@ export default function EditCategory() {
                         <button
                             type="submit"
                             disabled={saving}
-                            className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-base font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
                             {saving ? (
                                 <>

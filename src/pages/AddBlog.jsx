@@ -769,7 +769,7 @@
 //       </div>
 //       <div className="flex-1 min-w-0">
 //         <div className="flex items-center gap-2">
-//           <p className="text-sm font-bold text-gray-800">{label}</p>
+//           <p className="text-base font-bold text-gray-800">{label}</p>
 //           {badge && (
 //             <span className="text-xs text-gray-400 font-normal">{badge}</span>
 //           )}
@@ -793,7 +793,7 @@
 //           <div className="flex items-center gap-3">
 //             <button
 //               onClick={() => navigate("/blogs")}
-//               className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-all text-sm font-medium"
+//               className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-all text-base font-medium"
 //             >
 //               <ArrowLeft size={16} />
 //               <span className="hidden sm:inline">Back</span>
@@ -812,7 +812,7 @@
 //             <button
 //               onClick={handleSubmit}
 //               disabled={saving}
-//               className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-semibold rounded-xl shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+//               className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-base font-semibold rounded-xl shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
 //             >
 //               {saving ? (
 //                 <>
@@ -834,7 +834,7 @@
 //       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 pb-28 sm:pb-12">
 //         {/* Error Alert */}
 //         {error && (
-//           <div className="flex items-start gap-3 p-4 mb-6 bg-red-50 border border-red-200 rounded-2xl text-sm text-red-700">
+//           <div className="flex items-start gap-3 p-4 mb-6 bg-red-50 border border-red-200 rounded-2xl text-base text-red-700">
 //             <AlertCircle
 //               size={18}
 //               className="mt-0.5 flex-shrink-0 text-red-500"
@@ -854,7 +854,7 @@
 
 //         {/* Success Alert */}
 //         {success && (
-//           <div className="flex items-center gap-3 p-4 mb-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-sm text-emerald-700">
+//           <div className="flex items-center gap-3 p-4 mb-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-base text-emerald-700">
 //             <CheckCircle2
 //               size={18}
 //               className="flex-shrink-0 text-emerald-500"
@@ -885,7 +885,7 @@
 //               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
 //                 <label
 //                   htmlFor="title"
-//                   className="block text-sm font-semibold text-gray-800 mb-1"
+//                   className="block text-base font-semibold text-gray-800 mb-1"
 //                 >
 //                   Blog Title <span className="text-red-500">*</span>
 //                 </label>
@@ -904,7 +904,7 @@
 //                     value={formData.title}
 //                     onChange={handleInputChange}
 //                     placeholder="Enter the title of the blog post"
-//                     className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+//                     className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
 //                     required
 //                   />
 //                 </div>
@@ -914,7 +914,7 @@
 //               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
 //                 <label
 //                   htmlFor="slug"
-//                   className="block text-sm font-semibold text-gray-800 mb-1"
+//                   className="block text-base font-semibold text-gray-800 mb-1"
 //                 >
 //                   Slug / URL Path <span className="text-red-500">*</span>
 //                 </label>
@@ -937,7 +937,7 @@
 //                       setFormData((prev) => ({ ...prev, slug: val }));
 //                     }}
 //                     placeholder="how-to-learn-react"
-//                     className="flex-1 px-4 py-3 bg-gray-50 text-gray-900 text-sm placeholder-gray-400 outline-none focus:bg-white transition-all"
+//                     className="flex-1 px-4 py-3 bg-gray-50 text-gray-900 text-base placeholder-gray-400 outline-none focus:bg-white transition-all"
 //                     required
 //                   />
 //                 </div>
@@ -951,7 +951,7 @@
 //               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
 //                 <label
 //                   htmlFor="short_description"
-//                   className="block text-sm font-semibold text-gray-800 mb-1"
+//                   className="block text-base font-semibold text-gray-800 mb-1"
 //                 >
 //                   Short Description
 //                 </label>
@@ -965,7 +965,7 @@
 //                   onChange={handleInputChange}
 //                   rows={3}
 //                   placeholder="A brief summary of the blog post…"
-//                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-y"
+//                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-y"
 //                 />
 //                 <p className="text-xs text-gray-400 text-right mt-1">
 //                   {formData.short_description.length} characters
@@ -976,7 +976,7 @@
 //               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
 //                 <label
 //                   htmlFor="content"
-//                   className="block text-sm font-semibold text-gray-800 mb-1"
+//                   className="block text-base font-semibold text-gray-800 mb-1"
 //                 >
 //                   Content <span className="text-red-500">*</span>
 //                 </label>
@@ -990,7 +990,7 @@
 //                   onChange={handleInputChange}
 //                   rows={14}
 //                   placeholder="Write the full content of the blog post here…"
-//                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-y font-mono"
+//                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-y font-mono"
 //                   required
 //                 />
 //                 <p className="text-xs text-gray-400 text-right mt-1">
@@ -1015,7 +1015,7 @@
 //                     <Globe size={13} className="text-gray-400" />
 //                     <label
 //                       htmlFor="meta_title"
-//                       className="text-sm font-semibold text-gray-800"
+//                       className="text-base font-semibold text-gray-800"
 //                     >
 //                       Meta Title
 //                     </label>
@@ -1030,7 +1030,7 @@
 //                     value={formData.meta_title}
 //                     onChange={handleInputChange}
 //                     placeholder="SEO title for the blog"
-//                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+//                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
 //                   />
 //                   <p className="text-xs text-gray-400 text-right mt-1">
 //                     {formData.meta_title.length} / 60
@@ -1043,7 +1043,7 @@
 //                 <div>
 //                   <label
 //                     htmlFor="meta_descrtiption"
-//                     className="block text-sm font-semibold text-gray-800 mb-1"
+//                     className="block text-base font-semibold text-gray-800 mb-1"
 //                   >
 //                     Meta Description
 //                   </label>
@@ -1057,7 +1057,7 @@
 //                     onChange={handleInputChange}
 //                     rows={3}
 //                     placeholder="SEO description for search engines…"
-//                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-none"
+//                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-none"
 //                   />
 //                   <p className="text-xs text-gray-400 text-right mt-1">
 //                     {formData.meta_descrtiption.length} / 160
@@ -1072,7 +1072,7 @@
 //                     <Tag size={13} className="text-gray-400" />
 //                     <label
 //                       htmlFor="meta_keyword"
-//                       className="text-sm font-semibold text-gray-800"
+//                       className="text-base font-semibold text-gray-800"
 //                     >
 //                       Meta Keywords
 //                     </label>
@@ -1087,7 +1087,7 @@
 //                     value={formData.meta_keyword}
 //                     onChange={handleInputChange}
 //                     placeholder="coding, cloud, blog, tutorial"
-//                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+//                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
 //                   />
 //                 </div>
 
@@ -1099,7 +1099,7 @@
 //                     <Hash size={13} className="text-gray-400" />
 //                     <label
 //                       htmlFor="hashtag"
-//                       className="text-sm font-semibold text-gray-800"
+//                       className="text-base font-semibold text-gray-800"
 //                     >
 //                       Hashtags
 //                     </label>
@@ -1114,7 +1114,7 @@
 //                     value={formData.hashtag}
 //                     onChange={handleInputChange}
 //                     placeholder="#coding #cloud #blog"
-//                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+//                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
 //                   />
 //                 </div>
 //               </div>
@@ -1138,7 +1138,7 @@
 //                 <div>
 //                   <label
 //                     htmlFor="status"
-//                     className="block text-sm font-semibold text-gray-800 mb-1"
+//                     className="block text-base font-semibold text-gray-800 mb-1"
 //                   >
 //                     Status <span className="text-red-500">*</span>
 //                   </label>
@@ -1151,7 +1151,7 @@
 //                       name="status"
 //                       value={formData.status}
 //                       onChange={handleInputChange}
-//                       className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none cursor-pointer"
+//                       className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none cursor-pointer"
 //                     >
 //                       {statusOptions.map((status) => (
 //                         <option key={status} value={status}>
@@ -1172,7 +1172,7 @@
 //                 <div>
 //                   <label
 //                     htmlFor="publish_date"
-//                     className="block text-sm font-semibold text-gray-800 mb-1"
+//                     className="block text-base font-semibold text-gray-800 mb-1"
 //                   >
 //                     Publish Date <span className="text-red-500">*</span>
 //                   </label>
@@ -1185,7 +1185,7 @@
 //                     name="publish_date"
 //                     value={formData.publish_date}
 //                     onChange={handleInputChange}
-//                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+//                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
 //                     required
 //                   />
 //                 </div>
@@ -1248,7 +1248,7 @@
 //                         }
 //                       />
 //                     </div>
-//                     <p className="text-sm font-semibold text-gray-700 mb-1">
+//                     <p className="text-base font-semibold text-gray-700 mb-1">
 //                       {dragOver
 //                         ? "Drop your image here!"
 //                         : "Click to upload or drag & drop"}
@@ -1311,7 +1311,7 @@
 //             <button
 //               type="submit"
 //               disabled={saving}
-//               className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-2xl shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+//               className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white text-base font-semibold rounded-2xl shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
 //             >
 //               {saving ? (
 //                 <>
@@ -1502,7 +1502,7 @@ export default function AddBlog() {
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <p className="text-sm font-bold text-gray-800">{label}</p>
+          <p className="text-base font-bold text-gray-800">{label}</p>
           {badge && (
             <span className="text-xs text-gray-400 font-normal">{badge}</span>
           )}
@@ -1521,12 +1521,12 @@ export default function AddBlog() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* ── Header ── */}
-      <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+      <header className=" top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate("/blogs")}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-all text-sm font-medium"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-all text-base font-medium"
             >
               <ArrowLeft size={16} />
               <span className="hidden sm:inline">Back</span>
@@ -1545,7 +1545,7 @@ export default function AddBlog() {
             <button
               onClick={handleSubmit}
               disabled={saving}
-              className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-semibold rounded-xl shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-base font-semibold rounded-xl shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {saving ? (
                 <>
@@ -1567,7 +1567,7 @@ export default function AddBlog() {
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 pb-28 sm:pb-12">
         {/* Error Alert */}
         {error && (
-          <div className="flex items-start gap-3 p-4 mb-6 bg-red-50 border border-red-200 rounded-2xl text-sm text-red-700">
+          <div className="flex items-start gap-3 p-4 mb-6 bg-red-50 border border-red-200 rounded-2xl text-base text-red-700">
             <AlertCircle
               size={18}
               className="mt-0.5 flex-shrink-0 text-red-500"
@@ -1587,7 +1587,7 @@ export default function AddBlog() {
 
         {/* Success Alert */}
         {success && (
-          <div className="flex items-center gap-3 p-4 mb-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-sm text-emerald-700">
+          <div className="flex items-center gap-3 p-4 mb-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-base text-emerald-700">
             <CheckCircle2
               size={18}
               className="flex-shrink-0 text-emerald-500"
@@ -1618,7 +1618,7 @@ export default function AddBlog() {
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
                 <label
                   htmlFor="title"
-                  className="block text-sm font-semibold text-gray-800 mb-1"
+                  className="block text-base font-semibold text-gray-800 mb-1"
                 >
                   Blog Title <span className="text-red-500">*</span>
                 </label>
@@ -1637,7 +1637,7 @@ export default function AddBlog() {
                     value={formData.title}
                     onChange={handleInputChange}
                     placeholder="Enter the title of the blog post"
-                    className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                    className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
                     required
                   />
                 </div>
@@ -1647,7 +1647,7 @@ export default function AddBlog() {
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
                 <label
                   htmlFor="slug"
-                  className="block text-sm font-semibold text-gray-800 mb-1"
+                  className="block text-base font-semibold text-gray-800 mb-1"
                 >
                   Slug / URL Path <span className="text-red-500">*</span>
                 </label>
@@ -1670,7 +1670,7 @@ export default function AddBlog() {
                       setFormData((prev) => ({ ...prev, slug: val }));
                     }}
                     placeholder="how-to-learn-react"
-                    className="flex-1 px-4 py-3 bg-gray-50 text-gray-900 text-sm placeholder-gray-400 outline-none focus:bg-white transition-all"
+                    className="flex-1 px-4 py-3 bg-gray-50 text-gray-900 text-base placeholder-gray-400 outline-none focus:bg-white transition-all"
                     required
                   />
                 </div>
@@ -1684,7 +1684,7 @@ export default function AddBlog() {
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
                 <label
                   htmlFor="short_description"
-                  className="block text-sm font-semibold text-gray-800 mb-1"
+                  className="block text-base font-semibold text-gray-800 mb-1"
                 >
                   Short Description
                 </label>
@@ -1698,7 +1698,7 @@ export default function AddBlog() {
                   onChange={handleInputChange}
                   rows={3}
                   placeholder="A brief summary of the blog post…"
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-y"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-y"
                 />
                 <p className="text-xs text-gray-400 text-right mt-1">
                   {formData.short_description.length} characters
@@ -1709,7 +1709,7 @@ export default function AddBlog() {
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
                 <label
                   htmlFor="content"
-                  className="block text-sm font-semibold text-gray-800 mb-1"
+                  className="block text-base font-semibold text-gray-800 mb-1"
                 >
                   Content <span className="text-red-500">*</span>
                 </label>
@@ -1763,7 +1763,7 @@ export default function AddBlog() {
                     <Globe size={13} className="text-gray-400" />
                     <label
                       htmlFor="meta_title"
-                      className="text-sm font-semibold text-gray-800"
+                      className="text-base font-semibold text-gray-800"
                     >
                       Meta Title
                     </label>
@@ -1778,7 +1778,7 @@ export default function AddBlog() {
                     value={formData.meta_title}
                     onChange={handleInputChange}
                     placeholder="SEO title for the blog"
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
                   />
                   <p className="text-xs text-gray-400 text-right mt-1">
                     {formData.meta_title.length} / 60
@@ -1791,7 +1791,7 @@ export default function AddBlog() {
                 <div>
                   <label
                     htmlFor="meta_descrtiption"
-                    className="block text-sm font-semibold text-gray-800 mb-1"
+                    className="block text-base font-semibold text-gray-800 mb-1"
                   >
                     Meta Description
                   </label>
@@ -1805,7 +1805,7 @@ export default function AddBlog() {
                     onChange={handleInputChange}
                     rows={3}
                     placeholder="SEO description for search engines…"
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-none"
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-none"
                   />
                   <p className="text-xs text-gray-400 text-right mt-1">
                     {formData.meta_descrtiption.length} / 160
@@ -1820,7 +1820,7 @@ export default function AddBlog() {
                     <Tag size={13} className="text-gray-400" />
                     <label
                       htmlFor="meta_keyword"
-                      className="text-sm font-semibold text-gray-800"
+                      className="text-base font-semibold text-gray-800"
                     >
                       Meta Keywords
                     </label>
@@ -1835,7 +1835,7 @@ export default function AddBlog() {
                     value={formData.meta_keyword}
                     onChange={handleInputChange}
                     placeholder="coding, cloud, blog, tutorial"
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
                   />
                 </div>
 
@@ -1847,7 +1847,7 @@ export default function AddBlog() {
                     <Hash size={13} className="text-gray-400" />
                     <label
                       htmlFor="hashtag"
-                      className="text-sm font-semibold text-gray-800"
+                      className="text-base font-semibold text-gray-800"
                     >
                       Hashtags
                     </label>
@@ -1862,7 +1862,7 @@ export default function AddBlog() {
                     value={formData.hashtag}
                     onChange={handleInputChange}
                     placeholder="#coding #cloud #blog"
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
                   />
                 </div>
               </div>
@@ -1886,7 +1886,7 @@ export default function AddBlog() {
                 <div>
                   <label
                     htmlFor="status"
-                    className="block text-sm font-semibold text-gray-800 mb-1"
+                    className="block text-base font-semibold text-gray-800 mb-1"
                   >
                     Status <span className="text-red-500">*</span>
                   </label>
@@ -1899,7 +1899,7 @@ export default function AddBlog() {
                       name="status"
                       value={formData.status}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none cursor-pointer"
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none cursor-pointer"
                     >
                       {statusOptions.map((status) => (
                         <option key={status} value={status}>
@@ -1920,7 +1920,7 @@ export default function AddBlog() {
                 <div>
                   <label
                     htmlFor="publish_date"
-                    className="block text-sm font-semibold text-gray-800 mb-1"
+                    className="block text-base font-semibold text-gray-800 mb-1"
                   >
                     Publish Date <span className="text-red-500">*</span>
                   </label>
@@ -1933,7 +1933,7 @@ export default function AddBlog() {
                     name="publish_date"
                     value={formData.publish_date}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
                     required
                   />
                 </div>
@@ -1998,7 +1998,7 @@ export default function AddBlog() {
                         className={dragOver ? "text-indigo-500" : "text-gray-400"}
                       />
                     </div>
-                    <p className="text-sm font-semibold text-gray-700 mb-1">
+                    <p className="text-base font-semibold text-gray-700 mb-1">
                       {dragOver
                         ? "Drop your image here!"
                         : "Click to upload or drag & drop"}
@@ -2061,7 +2061,7 @@ export default function AddBlog() {
             <button
               type="submit"
               disabled={saving}
-              className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-2xl shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white text-base font-semibold rounded-2xl shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {saving ? (
                 <>

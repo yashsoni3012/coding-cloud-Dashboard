@@ -595,7 +595,7 @@ export default function AddModule() {
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => navigate("/modules")}
-                            className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-all text-sm font-medium"
+                            className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-all text-base font-medium"
                         >
                             <ArrowLeft size={16} />
                             <span className="hidden sm:inline">Back</span>
@@ -609,7 +609,7 @@ export default function AddModule() {
                     <button
                         onClick={handleSubmit}
                         disabled={loading}
-                        className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-semibold rounded-xl shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-base font-semibold rounded-xl shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {loading ? (
                             <>
@@ -631,7 +631,7 @@ export default function AddModule() {
 
                 {/* Error Alert */}
                 {error && (
-                    <div className="flex items-start gap-3 p-4 mb-6 bg-red-50 border border-red-200 rounded-2xl text-sm text-red-700">
+                    <div className="flex items-start gap-3 p-4 mb-6 bg-red-50 border border-red-200 rounded-2xl text-base text-red-700">
                         <AlertCircle size={18} className="mt-0.5 flex-shrink-0 text-red-500" />
                         <span className="flex-1">{error}</span>
                         <button onClick={() => setError("")} className="text-red-400 hover:text-red-600 transition-colors flex-shrink-0">
@@ -642,7 +642,7 @@ export default function AddModule() {
 
                 {/* Success Alert */}
                 {success && (
-                    <div className="flex items-start gap-3 p-4 mb-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-sm text-emerald-700">
+                    <div className="flex items-start gap-3 p-4 mb-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-base text-emerald-700">
                         <CheckCircle2 size={18} className="mt-0.5 flex-shrink-0 text-emerald-500" />
                         <span>{success}</span>
                     </div>
@@ -650,7 +650,7 @@ export default function AddModule() {
 
                 {/* Courses loading */}
                 {loadingCourses && (
-                    <div className="flex items-center gap-3 p-4 mb-6 bg-indigo-50 border border-indigo-100 rounded-2xl text-sm text-indigo-600">
+                    <div className="flex items-center gap-3 p-4 mb-6 bg-indigo-50 border border-indigo-100 rounded-2xl text-base text-indigo-600">
                         <div className="w-4 h-4 border-2 border-indigo-300 border-t-indigo-600 rounded-full animate-spin flex-shrink-0" />
                         Loading courses…
                     </div>
@@ -665,7 +665,7 @@ export default function AddModule() {
                                 <Tag size={16} className="text-indigo-600" />
                             </div>
                             <div>
-                                <label htmlFor="name" className="block text-sm font-semibold text-gray-800">
+                                <label htmlFor="name" className="block text-base font-semibold text-gray-800">
                                     Module Name <span className="text-red-500">*</span>
                                 </label>
                                 <p className="text-xs text-gray-400 mt-0.5">Enter a descriptive name for the module</p>
@@ -678,7 +678,7 @@ export default function AddModule() {
                             value={formData.name}
                             onChange={handleInputChange}
                             placeholder="e.g., Module 1 - Introduction to Python"
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
                             required
                         />
                         <p className="flex items-center gap-1.5 text-xs text-gray-400 mt-2">
@@ -695,7 +695,7 @@ export default function AddModule() {
                                     <BookOpen size={16} className="text-violet-600" />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-semibold text-gray-800">
+                                    <label className="block text-base font-semibold text-gray-800">
                                         Select Course <span className="text-red-500">*</span>
                                     </label>
                                     <p className="text-xs text-gray-400 mt-0.5">Choose the course this module belongs to</p>
@@ -710,7 +710,7 @@ export default function AddModule() {
                                             setFormData((prev) => ({ ...prev, course_data: e.target.value }));
                                         setError("");
                                     }}
-                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none"
+                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none"
                                 >
                                     <option value="">— Select a course —</option>
                                     {courses.map((course) => (
@@ -734,7 +734,7 @@ export default function AddModule() {
                                     <Layers size={18} className="text-indigo-500" />
                                 </div>
                                 <div className="min-w-0">
-                                    <p className="text-sm font-bold text-gray-800 truncate">
+                                    <p className="text-base font-bold text-gray-800 truncate">
                                         {formData.name || <span className="text-gray-400 font-normal italic">Untitled Module</span>}
                                     </p>
                                     {selectedCourse && (
@@ -752,7 +752,7 @@ export default function AddModule() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-base font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
                             {loading ? (
                                 <>

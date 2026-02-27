@@ -120,7 +120,7 @@ export default function Contact() {
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-violet-200 border-t-violet-600 rounded-full animate-spin mx-auto" />
-          <p className="mt-4 text-slate-500 text-sm font-medium">Loading contacts…</p>
+          <p className="mt-4 text-slate-500 text-base font-medium">Loading contacts…</p>
         </div>
       </div>
     );
@@ -134,8 +134,8 @@ export default function Contact() {
             <X size={24} className="text-red-500" />
           </div>
           <h3 className="text-lg font-semibold text-slate-900 mb-1">Something went wrong</h3>
-          <p className="text-slate-500 text-sm mb-5">{error}</p>
-          <button onClick={fetchContacts} className="px-5 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors text-sm font-medium">
+          <p className="text-slate-500 text-base mb-5">{error}</p>
+          <button onClick={fetchContacts} className="px-5 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors text-base font-medium">
             Try Again
           </button>
         </div>
@@ -156,7 +156,7 @@ export default function Contact() {
               {contacts.length}
             </span>
           </div>
-          <p className="text-slate-500 text-sm">Manage and respond to contact form submissions</p>
+          <p className="text-slate-500 text-base">Manage and respond to contact form submissions</p>
         </div>
 
         {/* ── Toolbar (single line) ── */}
@@ -171,7 +171,7 @@ export default function Contact() {
                 placeholder="Search by name, email, subject, message or ID…"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-8 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent bg-slate-50 placeholder:text-slate-400"
+                className="w-full pl-9 pr-8 py-2.5 border border-slate-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent bg-slate-50 placeholder:text-slate-400"
               />
               {searchTerm && (
                 <button onClick={() => setSearchTerm("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
@@ -183,7 +183,7 @@ export default function Contact() {
             {/* Filter toggle */}
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all whitespace-nowrap ${
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-base font-medium transition-all whitespace-nowrap ${
                 showFilters || activeFiltersCount > 0
                   ? "border-violet-400 bg-violet-50 text-violet-700"
                   : "border-slate-200 text-slate-600 hover:bg-slate-50"
@@ -208,7 +208,7 @@ export default function Contact() {
                 <select
                   value={filters.hasPhone}
                   onChange={(e) => setFilters({ ...filters, hasPhone: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 bg-slate-50"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-violet-500 bg-slate-50"
                 >
                   <option value="all">All Contacts</option>
                   <option value="yes">With Phone</option>
@@ -220,7 +220,7 @@ export default function Contact() {
                 <select
                   value={filters.hasSubject}
                   onChange={(e) => setFilters({ ...filters, hasSubject: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 bg-slate-50"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-violet-500 bg-slate-50"
                 >
                   <option value="all">All Contacts</option>
                   <option value="yes">With Subject</option>
@@ -232,7 +232,7 @@ export default function Contact() {
                 <select
                   value={itemsPerPage}
                   onChange={(e) => setItemsPerPage(Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 bg-slate-50"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-violet-500 bg-slate-50"
                 >
                   <option value={5}>5 per page</option>
                   <option value={10}>10 per page</option>
@@ -251,14 +251,14 @@ export default function Contact() {
               <User size={28} className="text-slate-400" />
             </div>
             <h3 className="text-base font-semibold text-slate-800 mb-1">No contacts found</h3>
-            <p className="text-slate-400 text-sm mb-5">
+            <p className="text-slate-400 text-base mb-5">
               {searchTerm || filters.hasPhone !== "all" || filters.hasSubject !== "all"
                 ? "Try adjusting your filters or search term."
                 : "No contact messages yet."}
             </p>
             <button
               onClick={resetFilters}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-xl hover:bg-violet-700 transition-colors text-sm font-medium"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-xl hover:bg-violet-700 transition-colors text-base font-medium"
             >
               <RefreshCw size={15} /> Clear Filters
             </button>
@@ -311,7 +311,7 @@ export default function Contact() {
                         onClick={() => { setSelectedContact(contact); setShowViewModal(true); }}
                       >
                         {/* # */}
-                        <td className="px-5 py-4 text-sm font-semibold text-slate-400">
+                        <td className="px-5 py-4 text-base font-semibold text-slate-400">
                           {indexOfFirstItem + index + 1}
                         </td>
 
@@ -325,7 +325,7 @@ export default function Contact() {
                               {getInitials(contact.full_name)}
                             </div>
                             <div>
-                              <span className="text-sm font-semibold text-slate-800 block">
+                              <span className="text-base font-semibold text-slate-800 block">
                                 {contact.full_name || "No Name"}
                               </span>
                               {/* show email under name on small screens */}
@@ -339,7 +339,7 @@ export default function Contact() {
                           <a
                             href={`mailto:${contact.email}`}
                             onClick={(e) => e.stopPropagation()}
-                            className="inline-flex items-center gap-1.5 text-sm text-violet-600 hover:text-violet-800 hover:underline"
+                            className="inline-flex items-center gap-1.5 text-base text-violet-600 hover:text-violet-800 hover:underline"
                           >
                             <Mail size={13} />
                             <span className="line-clamp-1 max-w-[160px]">{contact.email || "—"}</span>
@@ -352,13 +352,13 @@ export default function Contact() {
                             <a
                               href={`tel:${contact.mobile_no}`}
                               onClick={(e) => e.stopPropagation()}
-                              className="inline-flex items-center gap-1.5 text-sm text-slate-600 hover:text-slate-900"
+                              className="inline-flex items-center gap-1.5 text-base text-slate-600 hover:text-slate-900"
                             >
                               <Phone size={13} className="text-slate-400" />
                               {contact.mobile_no}
                             </a>
                           ) : (
-                            <span className="text-slate-300 text-sm">—</span>
+                            <span className="text-slate-300 text-base">—</span>
                           )}
                         </td>
 
@@ -370,13 +370,13 @@ export default function Contact() {
                               <span className="truncate">{contact.subject}</span>
                             </span>
                           ) : (
-                            <span className="text-slate-300 text-sm">—</span>
+                            <span className="text-slate-300 text-base">—</span>
                           )}
                         </td>
 
                         {/* Message preview */}
                         <td className="px-5 py-4 hidden xl:table-cell">
-                          <span className="text-sm text-slate-400 line-clamp-1 max-w-[200px] block">
+                          <span className="text-base text-slate-400 line-clamp-1 max-w-[200px] block">
                             {contact.message || <span className="italic">No message</span>}
                           </span>
                         </td>
@@ -474,7 +474,7 @@ export default function Contact() {
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-slate-900">{selectedContact.full_name || "No Name"}</h2>
-                  <p className="text-sm text-slate-400 mt-0.5">Contact #{selectedContact.id}</p>
+                  <p className="text-base text-slate-400 mt-0.5">Contact #{selectedContact.id}</p>
                 </div>
               </div>
 
@@ -484,7 +484,7 @@ export default function Contact() {
                   <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1 flex items-center gap-1">
                     <Mail size={11} className="text-violet-500" /> Email
                   </p>
-                  <a href={`mailto:${selectedContact.email}`} className="text-sm font-medium text-violet-600 hover:underline break-all">
+                  <a href={`mailto:${selectedContact.email}`} className="text-base font-medium text-violet-600 hover:underline break-all">
                     {selectedContact.email || "—"}
                   </a>
                 </div>
@@ -493,11 +493,11 @@ export default function Contact() {
                     <Phone size={11} className="text-emerald-500" /> Phone
                   </p>
                   {selectedContact.mobile_no ? (
-                    <a href={`tel:${selectedContact.mobile_no}`} className="text-sm font-medium text-slate-800 hover:text-slate-900">
+                    <a href={`tel:${selectedContact.mobile_no}`} className="text-base font-medium text-slate-800 hover:text-slate-900">
                       {selectedContact.mobile_no}
                     </a>
                   ) : (
-                    <span className="text-sm text-slate-400 italic">No phone provided</span>
+                    <span className="text-base text-slate-400 italic">No phone provided</span>
                   )}
                 </div>
               </div>
@@ -508,7 +508,7 @@ export default function Contact() {
                   <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1 flex items-center gap-1">
                     <Tag size={11} className="text-violet-500" /> Subject
                   </p>
-                  <p className="text-sm font-semibold text-slate-800">{selectedContact.subject}</p>
+                  <p className="text-base font-semibold text-slate-800">{selectedContact.subject}</p>
                 </div>
               )}
 
@@ -517,7 +517,7 @@ export default function Contact() {
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2 flex items-center gap-1">
                   <MessageSquare size={11} className="text-violet-500" /> Message
                 </p>
-                <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">
+                <p className="text-base text-slate-600 leading-relaxed whitespace-pre-wrap">
                   {selectedContact.message || "No message provided."}
                 </p>
               </div>
@@ -527,14 +527,14 @@ export default function Contact() {
             <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex flex-wrap items-center justify-end gap-3 flex-shrink-0">
               <button
                 onClick={() => handleCopy(selectedContact.email, `modal-${selectedContact.id}`)}
-                className="px-4 py-2 border border-slate-200 text-slate-600 text-sm font-medium rounded-xl hover:bg-slate-100 transition-colors flex items-center gap-2"
+                className="px-4 py-2 border border-slate-200 text-slate-600 text-base font-medium rounded-xl hover:bg-slate-100 transition-colors flex items-center gap-2"
               >
                 <Copy size={14} />
                 {copied === `modal-${selectedContact.id}` ? "Copied!" : "Copy Email"}
               </button>
               <button
                 onClick={() => setShowViewModal(false)}
-                className="px-4 py-2 border border-slate-200 text-slate-600 text-sm font-medium rounded-xl hover:bg-slate-100 transition-colors"
+                className="px-4 py-2 border border-slate-200 text-slate-600 text-base font-medium rounded-xl hover:bg-slate-100 transition-colors"
               >
                 Close
               </button>
@@ -542,7 +542,7 @@ export default function Contact() {
                 href={`mailto:${selectedContact.email}?subject=Re: ${selectedContact.subject || "Your inquiry"}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-5 py-2 bg-violet-600 text-white text-sm font-medium rounded-xl hover:bg-violet-700 transition-colors flex items-center gap-2 shadow-sm shadow-violet-200"
+                className="px-5 py-2 bg-violet-600 text-white text-base font-medium rounded-xl hover:bg-violet-700 transition-colors flex items-center gap-2 shadow-sm shadow-violet-200"
               >
                 <Mail size={14} />
                 Reply via Email

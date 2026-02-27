@@ -183,7 +183,7 @@ export default function EditTestimonial() {
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
                 <div className="text-center">
                     <div className="w-14 h-14 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4" />
-                    <p className="text-sm text-gray-500 font-medium">Loading testimonial…</p>
+                    <p className="text-base text-gray-500 font-medium">Loading testimonial…</p>
                 </div>
             </div>
         );
@@ -198,10 +198,10 @@ export default function EditTestimonial() {
                         <AlertCircle size={28} className="text-red-500" />
                     </div>
                     <h3 className="text-base font-bold text-gray-800 mb-2">Failed to load testimonial</h3>
-                    <p className="text-sm text-gray-500 mb-6">{fetchError}</p>
+                    <p className="text-base text-gray-500 mb-6">{fetchError}</p>
                     <button
                         onClick={() => navigate("/testimonials")}
-                        className="px-6 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 transition-all"
+                        className="px-6 py-2.5 bg-indigo-600 text-white text-base font-semibold rounded-xl hover:bg-indigo-700 transition-all"
                     >
                         Back to Testimonials
                     </button>
@@ -219,7 +219,7 @@ export default function EditTestimonial() {
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => navigate(-1)}
-                            className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-all text-sm font-medium"
+                            className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-all text-base font-medium"
                         >
                             <ArrowLeft size={16} />
                             <span className="hidden sm:inline">Back</span>
@@ -235,7 +235,7 @@ export default function EditTestimonial() {
                         <button
                             onClick={handleSubmit}
                             disabled={submitting}
-                            className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-semibold rounded-xl shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-base font-semibold rounded-xl shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {submitting ? (
                                 <>
@@ -258,7 +258,7 @@ export default function EditTestimonial() {
 
                 {/* Error Alert */}
                 {error && (
-                    <div className="flex items-start gap-3 p-4 mb-6 bg-red-50 border border-red-200 rounded-2xl text-sm text-red-700">
+                    <div className="flex items-start gap-3 p-4 mb-6 bg-red-50 border border-red-200 rounded-2xl text-base text-red-700">
                         <AlertCircle size={18} className="mt-0.5 flex-shrink-0 text-red-500" />
                         <div className="flex-1">
                             <p className="font-semibold">Error</p>
@@ -272,7 +272,7 @@ export default function EditTestimonial() {
 
                 {/* Success Alert */}
                 {success && (
-                    <div className="flex items-center gap-3 p-4 mb-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-sm text-emerald-700">
+                    <div className="flex items-center gap-3 p-4 mb-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-base text-emerald-700">
                         <CheckCircle2 size={18} className="flex-shrink-0 text-emerald-500" />
                         <span className="font-medium">{success}</span>
                     </div>
@@ -287,7 +287,7 @@ export default function EditTestimonial() {
                                 <User size={16} className="text-indigo-600" />
                             </div>
                             <div>
-                                <label htmlFor="name" className="block text-sm font-semibold text-gray-800">
+                                <label htmlFor="name" className="block text-base font-semibold text-gray-800">
                                     Customer Name <span className="text-red-500">*</span>
                                 </label>
                                 <p className="text-xs text-gray-400 mt-0.5">Full name of the person giving the testimonial</p>
@@ -300,7 +300,7 @@ export default function EditTestimonial() {
                             value={formData.name}
                             onChange={handleChange}
                             placeholder="Enter customer name"
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
                             required
                         />
                     </div>
@@ -312,7 +312,7 @@ export default function EditTestimonial() {
                                 <Star size={16} className="text-amber-500" />
                             </div>
                             <div>
-                                <p className="text-sm font-semibold text-gray-800">
+                                <p className="text-base font-semibold text-gray-800">
                                     Rating <span className="text-red-500">*</span>
                                 </p>
                                 <p className="text-xs text-gray-400 mt-0.5">Click a star to update the rating</p>
@@ -338,7 +338,7 @@ export default function EditTestimonial() {
                                     </button>
                                 ))}
                             </div>
-                            <span className="text-sm font-semibold text-gray-700 ml-1">
+                            <span className="text-base font-semibold text-gray-700 ml-1">
                                 {formData.rating} / 5
                             </span>
                             <span className={`ml-auto px-3 py-1 text-xs font-semibold rounded-full ${
@@ -359,7 +359,7 @@ export default function EditTestimonial() {
                                 <MessageSquare size={16} className="text-violet-600" />
                             </div>
                             <div>
-                                <label htmlFor="review" className="block text-sm font-semibold text-gray-800">
+                                <label htmlFor="review" className="block text-base font-semibold text-gray-800">
                                     Review <span className="text-red-500">*</span>
                                 </label>
                                 <p className="text-xs text-gray-400 mt-0.5">Customer's feedback about the course</p>
@@ -372,7 +372,7 @@ export default function EditTestimonial() {
                             onChange={handleChange}
                             placeholder="Write the customer's review…"
                             rows={4}
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-y"
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-y"
                             required
                         />
                         <p className="text-xs text-gray-400 text-right mt-1">{formData.review.length} characters</p>
@@ -385,13 +385,13 @@ export default function EditTestimonial() {
                                 <Layers size={16} className="text-pink-500" />
                             </div>
                             <div>
-                                <label className="block text-sm font-semibold text-gray-800">Course / Category</label>
+                                <label className="block text-base font-semibold text-gray-800">Course / Category</label>
                                 <p className="text-xs text-gray-400 mt-0.5">Select the associated course or category</p>
                             </div>
                         </div>
 
                         {categoriesLoading ? (
-                            <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-500">
+                            <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-base text-gray-500">
                                 <div className="w-4 h-4 border-2 border-indigo-300 border-t-indigo-600 rounded-full animate-spin flex-shrink-0" />
                                 Loading categories…
                             </div>
@@ -402,7 +402,7 @@ export default function EditTestimonial() {
                                         name="category"
                                         value={formData.category}
                                         onChange={handleChange}
-                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none cursor-pointer"
+                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none cursor-pointer"
                                     >
                                         <option value="">— Select a category —</option>
                                         {categories.map((cat) => (
@@ -433,7 +433,7 @@ export default function EditTestimonial() {
                                 <ImageIcon size={16} className="text-emerald-600" />
                             </div>
                             <div>
-                                <p className="text-sm font-semibold text-gray-800">Profile Image</p>
+                                <p className="text-base font-semibold text-gray-800">Profile Image</p>
                                 <p className="text-xs text-gray-400 mt-0.5">Optional · Change or remove existing image</p>
                             </div>
                         </div>
@@ -451,7 +451,7 @@ export default function EditTestimonial() {
                                 <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3 transition-all ${dragOver ? "bg-indigo-100" : "bg-gray-100"}`}>
                                     <Upload size={20} className={dragOver ? "text-indigo-500" : "text-gray-400"} />
                                 </div>
-                                <p className="text-sm font-semibold text-gray-700 mb-1">
+                                <p className="text-base font-semibold text-gray-700 mb-1">
                                     {dragOver ? "Drop your image here!" : "Click to upload or drag & drop"}
                                 </p>
                                 <p className="text-xs text-gray-400">
@@ -518,7 +518,7 @@ export default function EditTestimonial() {
                                         </div>
                                     )}
                                     <div className="min-w-0">
-                                        <p className="text-sm font-bold text-gray-800 truncate">
+                                        <p className="text-base font-bold text-gray-800 truncate">
                                             {formData.name || <span className="text-gray-400 font-normal italic">Customer Name</span>}
                                         </p>
                                         {selectedCategory && (
@@ -543,7 +543,7 @@ export default function EditTestimonial() {
                         <button
                             type="submit"
                             disabled={submitting}
-                            className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-base font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
                             {submitting ? (
                                 <>
