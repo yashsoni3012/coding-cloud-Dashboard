@@ -360,7 +360,7 @@ export default function Dashboard() {
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <LayoutGrid size={24} className="text-violet-600" />
-                <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
+                <h1 className="text-2xl font-bold text-slate-900">Welcome, Coding Cloud</h1>
               </div>
               <p className="text-slate-500 text-sm">
                 Welcome to your admin dashboard

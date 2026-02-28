@@ -500,23 +500,34 @@ import {
     BookOpen,
     Info,
     ChevronDown,
-    CheckCircle2,
-    AlertCircle,
     Tag,
     Layers,
 } from "lucide-react";
+import Toasts from "./Toasts"; // <-- import the toast component
 
 export default function AddModule() {
     const navigate = useNavigate();
 
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
-    const [success, setSuccess] = useState("");
-
     const [formData, setFormData] = useState({ name: "", course_data: "" });
 
     const [courses, setCourses] = useState([]);
     const [loadingCourses, setLoadingCourses] = useState(false);
+
+    // Toast state
+    const [toast, setToast] = useState({
+        show: false,
+        message: "",
+        type: "success",
+    });
+
+    const showToast = (message, type = "success") => {
+        setToast({ show: true, message, type });
+    };
+
+    const closeToast = () => {
+        setToast((prev) => ({ ...prev, show: false }));
+    };
 
     useEffect(() => {
         const fetchCourses = async () => {
@@ -540,7 +551,6 @@ export default function AddModule() {
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
-        setError("");
     };
 
     const validateForm = () => {
@@ -554,10 +564,11 @@ export default function AddModule() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         const validationError = validateForm();
-        if (validationError) { setError(validationError); return; }
+        if (validationError) {
+            showToast(validationError, "error");
+            return;
+        }
         setLoading(true);
-        setError("");
-        setSuccess("");
         try {
             const submitData = {
                 name: formData.name.trim(),
@@ -570,14 +581,14 @@ export default function AddModule() {
             });
             const data = await response.json();
             if (response.ok || response.status === 201) {
-                setSuccess("Module created successfully!");
+                showToast("Module created successfully!", "success");
                 setFormData({ name: "", course_data: "" });
                 setTimeout(() => navigate("/modules"), 2000);
             } else {
-                setError(data.message || data.detail || "Failed to create module. Please try again.");
+                showToast(data.message || data.detail || "Failed to create module. Please try again.", "error");
             }
         } catch (err) {
-            setError("Network error. Please check your connection and try again.");
+            showToast("Network error. Please check your connection and try again.", "error");
         } finally {
             setLoading(false);
         }
@@ -588,6 +599,15 @@ export default function AddModule() {
 
     return (
         <div className="min-h-screen bg-gray-50">
+
+            {/* Toast notification */}
+            {toast.show && (
+                <Toasts
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={closeToast}
+                />
+            )}
 
             {/* ── Header ── */}
             <header className=" top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
@@ -629,24 +649,7 @@ export default function AddModule() {
             {/* ── Main ── */}
             <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 pb-28 sm:pb-12">
 
-                {/* Error Alert */}
-                {error && (
-                    <div className="flex items-start gap-3 p-4 mb-6 bg-red-50 border border-red-200 rounded-2xl text-base text-red-700">
-                        <AlertCircle size={18} className="mt-0.5 flex-shrink-0 text-red-500" />
-                        <span className="flex-1">{error}</span>
-                        <button onClick={() => setError("")} className="text-red-400 hover:text-red-600 transition-colors flex-shrink-0">
-                            <X size={16} />
-                        </button>
-                    </div>
-                )}
-
-                {/* Success Alert */}
-                {success && (
-                    <div className="flex items-start gap-3 p-4 mb-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-base text-emerald-700">
-                        <CheckCircle2 size={18} className="mt-0.5 flex-shrink-0 text-emerald-500" />
-                        <span>{success}</span>
-                    </div>
-                )}
+                {/* Removed inline error/success alerts — now using toast */}
 
                 {/* Courses loading */}
                 {loadingCourses && (
@@ -708,7 +711,6 @@ export default function AddModule() {
                                     onChange={(e) => {
                                         if (e.target.value)
                                             setFormData((prev) => ({ ...prev, course_data: e.target.value }));
-                                        setError("");
                                     }}
                                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none"
                                 >

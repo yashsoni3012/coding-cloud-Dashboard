@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import Toasts from "../pages/Toasts";
 import {
   Search,
   Plus,
@@ -46,6 +47,11 @@ export default function Testimonials() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [toast, setToast] = useState({
+    show: false,
+    message: "",
+    type: "success",
+  });
 
   const fetchTestimonials = async () => {
     try {
@@ -169,13 +175,16 @@ export default function Testimonials() {
         { method: "DELETE" },
       );
       if (response.ok || response.status === 204) {
-        setDeleteSuccess("Testimonial deleted successfully!");
+        setShowDeleteModal(false);
+        setTestimonialToDelete(null);
+
+        setToast({
+          show: true,
+          message: "Testimonial deleted successfully!",
+          type: "error",
+        });
+
         fetchTestimonials();
-        setTimeout(() => {
-          setShowDeleteModal(false);
-          setTestimonialToDelete(null);
-          setDeleteSuccess("");
-        }, 1500);
       } else {
         try {
           const data = await response.json();
@@ -264,6 +273,13 @@ export default function Testimonials() {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      {toast.show && (
+        <Toasts
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast((prev) => ({ ...prev, show: false }))}
+        />
+      )}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* ── Header ── */}
         <div className="mb-6">
@@ -278,8 +294,6 @@ export default function Testimonials() {
             Manage your customer testimonials and reviews
           </p>
         </div>
-
-       
 
         {/* ── Toolbar (single line) ── */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 px-4 py-3 mb-5">
@@ -328,8 +342,6 @@ export default function Testimonials() {
                 className={`transition-transform ${showFilters ? "rotate-180" : ""}`}
               />
             </button>
-
-            
 
             {/* Add Testimonial */}
             <button
@@ -479,9 +491,6 @@ export default function Testimonials() {
                           <div>
                             <span className="text-sm font-semibold text-slate-800 block">
                               {testimonial.name}
-                            </span>
-                            <span className="text-xs text-slate-400 block mt-0.5">
-                              ID: {testimonial.id}
                             </span>
                           </div>
                         </div>
@@ -661,7 +670,6 @@ export default function Testimonials() {
                       <h2 className="text-xl font-bold text-slate-900">
                         {selectedTestimonial.name}
                       </h2>
-                      
                     </div>
                     <span
                       className={`inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full flex-shrink-0 ${getRatingColor(selectedTestimonial.rating)}`}
@@ -766,15 +774,6 @@ export default function Testimonials() {
               </div>
             </div>
 
-            {deleteSuccess && (
-              <div className="mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2">
-                <CheckCircle
-                  size={15}
-                  className="text-emerald-600 flex-shrink-0"
-                />
-                <p className="text-sm text-emerald-700">{deleteSuccess}</p>
-              </div>
-            )}
             {deleteError && (
               <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2">
                 <AlertCircle size={15} className="text-red-500 flex-shrink-0" />

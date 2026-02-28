@@ -870,7 +870,7 @@
 // }
 
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Editor } from "@tinymce/tinymce-react";
 import {
@@ -893,14 +893,24 @@ import {
   BookMarked,
   Search,
 } from "lucide-react";
+import Toasts from "../pages/Toasts"; // 👈 import toast component
 
 export default function AddCourse() {
   const navigate = useNavigate();
+  const timeoutRef = useRef(null); // for delayed navigation
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [toast, setToast] = useState({ show: false, message: "", type: "success" }); // 👈 toast state
   const [categories, setCategories] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
+
+  // Clear timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -909,8 +919,6 @@ export default function AddCourse() {
           "https://codingcloud.pythonanywhere.com/category/",
         );
         const data = await response.json();
-
-        // ✅ FIX
         setCategories(data.data || []);
       } catch (err) {
         console.error("Error fetching categories:", err);
@@ -1018,15 +1026,20 @@ export default function AddCourse() {
       setError(validationError);
       return;
     }
+
+    // Clear any pending navigation
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+
     setLoading(true);
     setError("");
-    setSuccess("");
+    setToast({ ...toast, show: false });
+
     try {
       const submitData = new FormData();
       submitData.append("name", formData.name);
       submitData.append("slug", formData.slug);
       submitData.append("category", formData.category);
-      submitData.append("text", formData.text); // rich text content
+      submitData.append("text", formData.text);
       if (formData.duration) submitData.append("duration", formData.duration);
       if (formData.lecture) submitData.append("lecture", formData.lecture);
       if (formData.students) submitData.append("students", formData.students);
@@ -1053,16 +1066,26 @@ export default function AddCourse() {
       );
       const data = await response.json();
       if (response.ok || response.status === 201) {
-        setSuccess("Course created successfully!");
-        setTimeout(() => navigate("/course"), 2000);
+        // 👇 Show success toast
+        setToast({
+          show: true,
+          message: "Course created successfully!",
+          type: "success",
+        });
+
+        // Navigate after a short delay
+        timeoutRef.current = setTimeout(() => {
+          navigate("/course");
+        }, 1500);
       } else {
         setError(data.message || data.detail || "Failed to create course.");
+        setLoading(false);
       }
     } catch (err) {
       setError("Network error. Please check your connection.");
-    } finally {
       setLoading(false);
     }
+    // On success, loading remains true → button stays disabled during navigation delay
   };
 
   // ── Reusable Image Upload Box ──
@@ -1225,8 +1248,17 @@ export default function AddCourse() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* ── Toast ── */}
+      {toast.show && (
+        <Toasts
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast({ ...toast, show: false })}
+        />
+      )}
+
       {/* ── Header ── */}
-      <header className=" top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+      <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
@@ -1268,7 +1300,7 @@ export default function AddCourse() {
 
       {/* ── Main ── */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 pb-28 sm:pb-12">
-        {/* Error Alert */}
+        {/* Error Alert (still inline) */}
         {error && (
           <div className="flex items-start gap-3 p-4 mb-6 bg-red-50 border border-red-200 rounded-2xl text-base text-red-700">
             <AlertCircle
@@ -1282,17 +1314,6 @@ export default function AddCourse() {
             >
               <X size={16} />
             </button>
-          </div>
-        )}
-
-        {/* Success Alert */}
-        {success && (
-          <div className="flex items-start gap-3 p-4 mb-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-base text-emerald-700">
-            <CheckCircle2
-              size={18}
-              className="mt-0.5 flex-shrink-0 text-emerald-500"
-            />
-            <span>{success}</span>
           </div>
         )}
 

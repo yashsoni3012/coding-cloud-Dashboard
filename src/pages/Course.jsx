@@ -787,8 +787,9 @@ import { useNavigate } from "react-router-dom";
 import {
   BookOpen, Clock, Users, Globe, Award, Search, Filter, X,
   Download, Edit, Trash2, AlertCircle, CheckCircle, ChevronDown,
-  Plus, ArrowUpRight, SortAsc, SortDesc, RefreshCw, Eye,
+  Plus, SortAsc, SortDesc, Eye,
 } from "lucide-react";
+import Toasts from "./Toasts"; // <-- import the toast component
 
 const ITEMS_PER_PAGE = 10;
 
@@ -846,7 +847,23 @@ export default function Courses() {
   const [deleteError, setDeleteError] = useState("");
   const [toastError, setToastError] = useState("");
 
+  // Toast state for success messages (delete success)
+  const [toast, setToast] = useState({
+    show: false,
+    message: "",
+    type: "success",
+  });
+
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Helper to show toast
+  const showToast = (message, type = "success") => {
+    setToast({ show: true, message, type });
+  };
+
+  const closeToast = () => {
+    setToast((prev) => ({ ...prev, show: false }));
+  };
 
   // ── Fetch ──
   const fetchCourses = async () => {
@@ -886,7 +903,7 @@ export default function Courses() {
       result = result.filter(
         (c) =>
           c.name?.toLowerCase().includes(q) ||
-          stripHtml(c.text).toLowerCase().includes(q) || // search in stripped text
+          stripHtml(c.text).toLowerCase().includes(q) ||
           c.category_details?.name?.toLowerCase().includes(q)
       );
     }
@@ -933,7 +950,6 @@ export default function Courses() {
       : <SortDesc size={13} className="text-violet-500" />;
   };
 
-  
   // ── Delete (optimistic) ──
   const handleDeleteClick = (e, course) => {
     e.stopPropagation();
@@ -954,7 +970,11 @@ export default function Courses() {
         `https://codingcloud.pythonanywhere.com/course/${courseId}/`,
         { method: "DELETE" }
       );
-      if (!response.ok && response.status !== 204) {
+      if (response.ok || response.status === 204) {
+        // Success: show toast
+        showToast("Course deleted successfully!", "error");
+      } else {
+        // Failure: restore data and show error toast
         await fetchCourses();
         setToastError("Failed to delete course. Data restored.");
         setTimeout(() => setToastError(""), 3000);
@@ -996,7 +1016,6 @@ export default function Courses() {
   // ── Stat cards ──
   const totalStudents = courses.reduce((acc, c) => acc + (parseInt(c.students) || 0), 0);
   const certCount = courses.filter(hasCert).length;
-  
 
   // ── Loading ──
   if (loading) {
@@ -1029,7 +1048,16 @@ export default function Courses() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Toast error */}
+      {/* Toast for success (delete) */}
+      {toast.show && (
+        <Toasts
+          message={toast.message}
+          type={toast.type}
+          onClose={closeToast}
+        />
+      )}
+
+      {/* Toast error (existing) */}
       {toastError && (
         <div className="fixed top-5 right-5 z-[100] bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-center gap-2 shadow-lg">
           <AlertCircle size={15} className="text-red-500 flex-shrink-0" />
@@ -1052,7 +1080,6 @@ export default function Courses() {
           <p className="text-slate-500 text-base">Manage your course catalogue</p>
         </div>
 
-        
         {/* ── Toolbar ── */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 px-4 py-3 mb-5">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
@@ -1224,7 +1251,7 @@ export default function Courses() {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {paginatedCourses.map((course, index) => {
-                    const plainText = stripHtml(course.text); // stripped for preview
+                    const plainText = stripHtml(course.text);
                     return (
                       <tr
                         key={course.id}
@@ -1447,7 +1474,7 @@ export default function Courses() {
                 ))}
               </div>
 
-              {/* Description - Rendered as HTML with proper styling */}
+              {/* Description - Rendered as HTML */}
               <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 mb-4">
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">About this course</p>
                 <div className="prose prose-sm max-w-none text-slate-600">

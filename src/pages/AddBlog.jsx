@@ -1335,6 +1335,7 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Editor } from "@tinymce/tinymce-react";
+import Toasts from "../pages/Toasts"; // adjust path if needed
 import {
   ArrowLeft,
   Save,
@@ -1380,6 +1381,11 @@ export default function AddBlog() {
   const [success, setSuccess] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
   const [dragOver, setDragOver] = useState(false);
+  const [toast, setToast] = useState({
+    show: false,
+    message: "",
+    type: "success",
+  });
 
   const statusOptions = ["Drafts", "Published", "Scheduled"];
 
@@ -1459,7 +1465,7 @@ export default function AddBlog() {
 
       const response = await fetch(
         "https://codingcloud.pythonanywhere.com/blogs/",
-        { method: "POST", body: payload }
+        { method: "POST", body: payload },
       );
       if (!response.ok) {
         let errorMessage;
@@ -1473,13 +1479,21 @@ export default function AddBlog() {
         }
         throw new Error(errorMessage);
       }
-      setSuccess("Blog created successfully!");
+      setToast({
+        show: true,
+        message: "Blog added successfully!",
+        type: "success",
+      });
+
+      setTimeout(() => navigate("/blogs"), 2000);
       setTimeout(() => navigate("/blogs"), 2000);
     } catch (err) {
       console.error("Error creating blog:", err);
-      setError(
-        err.message || "Failed to create blog. Please check your connection."
-      );
+      setToast({
+        show: true,
+        message: err.message || "Failed to create blog",
+        type: "error",
+      });
     } finally {
       setSaving(false);
     }
@@ -1520,6 +1534,13 @@ export default function AddBlog() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {toast.show && (
+        <Toasts
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast((prev) => ({ ...prev, show: false }))}
+        />
+      )}
       {/* ── Header ── */}
       <header className=" top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
@@ -1727,9 +1748,23 @@ export default function AddBlog() {
                     height: 500,
                     menubar: true,
                     plugins: [
-                      "advlist", "autolink", "lists", "link", "image", "charmap", "preview",
-                      "anchor", "searchreplace", "visualblocks", "code", "fullscreen",
-                      "insertdatetime", "media", "table", "help", "wordcount"
+                      "advlist",
+                      "autolink",
+                      "lists",
+                      "link",
+                      "image",
+                      "charmap",
+                      "preview",
+                      "anchor",
+                      "searchreplace",
+                      "visualblocks",
+                      "code",
+                      "fullscreen",
+                      "insertdatetime",
+                      "media",
+                      "table",
+                      "help",
+                      "wordcount",
                     ],
                     toolbar:
                       "undo redo | blocks | " +
@@ -1738,7 +1773,8 @@ export default function AddBlog() {
                       "removeformat | help",
                     content_style:
                       "body { font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.6; }",
-                    placeholder: "Write the full content of the blog post here…",
+                    placeholder:
+                      "Write the full content of the blog post here…",
                   }}
                 />
                 <p className="text-xs text-gray-400 text-right mt-1">
@@ -1946,7 +1982,8 @@ export default function AddBlog() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <span
                       className={`px-2.5 py-1 text-xs font-semibold rounded-full ${
-                        statusColor[formData.status] || "bg-gray-100 text-gray-600"
+                        statusColor[formData.status] ||
+                        "bg-gray-100 text-gray-600"
                       }`}
                     >
                       {formData.status}
@@ -1955,7 +1992,7 @@ export default function AddBlog() {
                       {formData.publish_date
                         ? new Date(formData.publish_date).toLocaleDateString(
                             "en-US",
-                            { year: "numeric", month: "short", day: "numeric" }
+                            { year: "numeric", month: "short", day: "numeric" },
                           )
                         : "—"}
                     </span>
@@ -1995,7 +2032,9 @@ export default function AddBlog() {
                     >
                       <Upload
                         size={20}
-                        className={dragOver ? "text-indigo-500" : "text-gray-400"}
+                        className={
+                          dragOver ? "text-indigo-500" : "text-gray-400"
+                        }
                       />
                     </div>
                     <p className="text-base font-semibold text-gray-700 mb-1">

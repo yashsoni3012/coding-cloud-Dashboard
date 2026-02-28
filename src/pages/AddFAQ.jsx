@@ -571,12 +571,12 @@ import {
     X,
     ChevronDown,
     Info,
-    CheckCircle2,
-    AlertCircle,
     Layers,
     HelpCircle,
     MessageSquare,
+    AlertCircle,
 } from "lucide-react";
+import Toasts from "./Toasts"; // <-- import toast component
 
 export default function AddFAQ() {
     const navigate = useNavigate();
@@ -585,8 +585,21 @@ export default function AddFAQ() {
     const [courses, setCourses] = useState([]);
     const [loadingCourses, setLoadingCourses] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [error, setError] = useState("");
-    const [success, setSuccess] = useState("");
+
+    // Toast state
+    const [toast, setToast] = useState({
+        show: false,
+        message: "",
+        type: "success",
+    });
+
+    const showToast = (message, type = "success") => {
+        setToast({ show: true, message, type });
+    };
+
+    const closeToast = () => {
+        setToast((prev) => ({ ...prev, show: false }));
+    };
 
     useEffect(() => {
         const fetchCourses = async () => {
@@ -596,10 +609,10 @@ export default function AddFAQ() {
                     const data = await response.json();
                     setCourses(data.data || data);
                 } else {
-                    setError("Failed to fetch available courses.");
+                    showToast("Failed to fetch available courses.", "error");
                 }
             } catch (err) {
-                setError("Network error when loading courses.");
+                showToast("Network error when loading courses.", "error");
             } finally {
                 setLoadingCourses(false);
             }
@@ -610,7 +623,6 @@ export default function AddFAQ() {
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
-        setError("");
     };
 
     const validateForm = () => {
@@ -623,10 +635,11 @@ export default function AddFAQ() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         const validationError = validateForm();
-        if (validationError) { setError(validationError); return; }
+        if (validationError) {
+            showToast(validationError, "error");
+            return;
+        }
         setSaving(true);
-        setError("");
-        setSuccess("");
         try {
             const payload = {
                 course: parseInt(formData.course),
@@ -649,11 +662,11 @@ export default function AddFAQ() {
                 }
                 throw new Error(errorMessage);
             }
-            setSuccess("FAQ created successfully!");
+            showToast("FAQ created successfully!", "success");
             setFormData({ course: "", question: "", answer: "" });
-            setTimeout(() => navigate("/faqs"), 2000);
+            setTimeout(() => navigate("/faq"), 2000);
         } catch (err) {
-            setError(err.message || "Failed to create FAQ. Please check the API endpoint.");
+            showToast(err.message || "Failed to create FAQ. Please check the API endpoint.", "error");
         } finally {
             setSaving(false);
         }
@@ -663,6 +676,15 @@ export default function AddFAQ() {
 
     return (
         <div className="min-h-screen bg-gray-50">
+
+            {/* Toast notification */}
+            {toast.show && (
+                <Toasts
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={closeToast}
+                />
+            )}
 
             {/* ── Header ── */}
             <header className=" top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
@@ -704,24 +726,7 @@ export default function AddFAQ() {
             {/* ── Main ── */}
             <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 pb-28 sm:pb-12">
 
-                {/* Error Alert */}
-                {error && (
-                    <div className="flex items-start gap-3 p-4 mb-6 bg-red-50 border border-red-200 rounded-2xl text-base text-red-700">
-                        <AlertCircle size={18} className="mt-0.5 flex-shrink-0 text-red-500" />
-                        <span className="flex-1">{error}</span>
-                        <button onClick={() => setError("")} className="text-red-400 hover:text-red-600 transition-colors flex-shrink-0">
-                            <X size={16} />
-                        </button>
-                    </div>
-                )}
-
-                {/* Success Alert */}
-                {success && (
-                    <div className="flex items-start gap-3 p-4 mb-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-base text-emerald-700">
-                        <CheckCircle2 size={18} className="mt-0.5 flex-shrink-0 text-emerald-500" />
-                        <span>{success}</span>
-                    </div>
-                )}
+                {/* Removed inline error/success alerts — now using toast */}
 
                 {/* Courses loading banner */}
                 {loadingCourses && (

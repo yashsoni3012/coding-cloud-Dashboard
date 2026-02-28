@@ -588,6 +588,7 @@ import {
   AlertCircle, CheckCircle, BookMarked, Layers, ChevronDown,
   RefreshCw, SortAsc, SortDesc, Tag, BookOpen,
 } from "lucide-react";
+import Toasts from "./Toasts"; // <-- import toast component
 
 export default function Topics() {
   const navigate = useNavigate();
@@ -612,13 +613,26 @@ export default function Topics() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [topicToDelete, setTopicToDelete] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const [deleteSuccess, setDeleteSuccess] = useState("");
-  const [deleteError, setDeleteError] = useState("");
+
+  // Toast state
+  const [toast, setToast] = useState({
+    show: false,
+    message: "",
+    type: "success",
+  });
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const isFirstLoad = useRef(true);
+
+  const showToast = (message, type = "success") => {
+    setToast({ show: true, message, type });
+  };
+
+  const closeToast = () => {
+    setToast((prev) => ({ ...prev, show: false }));
+  };
 
   const parseTopics = (data) => {
     let displayId = 1;
@@ -736,7 +750,6 @@ export default function Topics() {
       : <SortDesc size={13} className="text-violet-500" />;
   };
 
- 
   const indexOfFirstItem = (currentPage - 1) * itemsPerPage;
   const indexOfLastItem = indexOfFirstItem + itemsPerPage;
   const paginatedTopics = filteredTopics.slice(indexOfFirstItem, indexOfLastItem);
@@ -746,30 +759,27 @@ export default function Topics() {
     e.stopPropagation();
     setTopicToDelete(topic);
     setShowDeleteModal(true);
-    setDeleteError("");
-    setDeleteSuccess("");
   };
 
   const handleDeleteConfirm = async () => {
     if (!topicToDelete) return;
     setDeleteLoading(true);
-    setDeleteError("");
-    setDeleteSuccess("");
     try {
       const response = await fetch(
         `https://codingcloud.pythonanywhere.com/topics/${topicToDelete.id}/`,
         { method: "DELETE" }
       );
       if (response.ok || response.status === 204) {
-        setDeleteSuccess("Topic deleted successfully!");
+        showToast("Topic deleted successfully!", "error"); // red toast
         refreshTopicsOnly();
-        setTimeout(() => { setShowDeleteModal(false); setTopicToDelete(null); setDeleteSuccess(""); }, 1500);
+        setShowDeleteModal(false);
+        setTopicToDelete(null);
       } else {
         const data = await response.json().catch(() => ({}));
-        setDeleteError(data.message || "Failed to delete topic.");
+        showToast(data.message || "Failed to delete topic.", "error");
       }
     } catch {
-      setDeleteError("Network error. Please try again.");
+      showToast("Network error. Please try again.", "error");
     } finally {
       setDeleteLoading(false);
     }
@@ -814,6 +824,15 @@ export default function Topics() {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      {/* Toast notification */}
+      {toast.show && (
+        <Toasts
+          message={toast.message}
+          type={toast.type}
+          onClose={closeToast}
+        />
+      )}
+
       <style>{`@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }`}</style>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
 
@@ -866,8 +885,6 @@ export default function Topics() {
               )}
               <ChevronDown size={14} className={`transition-transform ${showFilters ? "rotate-180" : ""}`} />
             </button>
-
-            
 
             {/* Add Topic */}
             <button
@@ -1130,8 +1147,6 @@ export default function Topics() {
                   </p>
                   <p className="text-base font-semibold text-slate-800">{selectedTopic.module_name}</p>
                 </div>
-               
-                
               </div>
             </div>
 
@@ -1180,19 +1195,6 @@ export default function Topics() {
               </div>
             </div>
 
-            {deleteSuccess && (
-              <div className="mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2">
-                <CheckCircle size={15} className="text-emerald-600 flex-shrink-0" />
-                <p className="text-base text-emerald-700">{deleteSuccess}</p>
-              </div>
-            )}
-            {deleteError && (
-              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2">
-                <AlertCircle size={15} className="text-red-500 flex-shrink-0" />
-                <p className="text-base text-red-600">{deleteError}</p>
-              </div>
-            )}
-
             <div className="mt-6 flex gap-3 justify-end">
               <button
                 onClick={() => setShowDeleteModal(false)}
@@ -1203,7 +1205,7 @@ export default function Topics() {
               </button>
               <button
                 onClick={handleDeleteConfirm}
-                disabled={deleteLoading || !!deleteSuccess}
+                disabled={deleteLoading}
                 className="px-5 py-2 bg-red-600 text-white text-base font-medium rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center gap-2"
               >
                 {deleteLoading ? (

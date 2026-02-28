@@ -1339,16 +1339,30 @@
 // }
 
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom"; // added useLocation
 import {
-  Search, X, Filter, Plus, Edit, Trash2,
-  AlertCircle, CheckCircle, Layers, FolderOpen, Eye,
-  ChevronDown, RefreshCw, SortAsc, SortDesc,
+  Search,
+  X,
+  Filter,
+  Plus,
+  Edit,
+  Trash2,
+  AlertCircle,
+  CheckCircle,
+  Layers,
+  FolderOpen,
+  Eye,
+  ChevronDown,
+  RefreshCw,
+  SortAsc,
+  SortDesc,
   BookMarked,
 } from "lucide-react";
+import Toasts from "./Toasts"; // <-- import toast component
 
 export default function Modules() {
   const navigate = useNavigate();
+  const location = useLocation(); // to detect navigation from AddModule
 
   const [modules, setModules] = useState([]);
   const [filteredModules, setFilteredModules] = useState([]);
@@ -1357,7 +1371,10 @@ export default function Modules() {
   const [error, setError] = useState(null);
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortConfig, setSortConfig] = useState({ key: "name", direction: "asc" });
+  const [sortConfig, setSortConfig] = useState({
+    key: "name",
+    direction: "asc",
+  });
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({ course: "all" });
 
@@ -1369,13 +1386,27 @@ export default function Modules() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [moduleToDelete, setModuleToDelete] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const [deleteSuccess, setDeleteSuccess] = useState("");
-  const [deleteError, setDeleteError] = useState("");
+
+  // Toast state
+  const [toast, setToast] = useState({
+    show: false,
+    message: "",
+    type: "success",
+  });
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const isFirstLoad = useRef(true);
+
+  // Helper to show toast
+  const showToast = (message, type = "success") => {
+    setToast({ show: true, message, type });
+  };
+
+  const closeToast = () => {
+    setToast((prev) => ({ ...prev, show: false }));
+  };
 
   const fetchModules = async (silent = false) => {
     if (silent) setRefreshing(true);
@@ -1391,19 +1422,26 @@ export default function Modules() {
       const coursesData = await coursesRes.json();
 
       if (modulesData.success) {
-        const dataWithDisplayIds = modulesData.data.map((item, index) => ({
-          ...item,
-          display_id: index + 1,
-        }));
-        setModules(dataWithDisplayIds);
+        const sortedModules = [...modulesData.data].sort((a, b) => b.id - a.id);
 
-        const courses = [...new Set(modulesData.data.map((m) => m.course_data))].sort((a, b) => a - b);
+const dataWithDisplayIds = sortedModules.map((item, index) => ({
+  ...item,
+  display_id: index + 1,
+}));
+
+setModules(dataWithDisplayIds);
+
+        const courses = [
+          ...new Set(modulesData.data.map((m) => m.course_data)),
+        ].sort((a, b) => a - b);
         setUniqueCourses(courses);
 
         const courseMap = {};
         const actualCourses = coursesData.data || coursesData;
         if (Array.isArray(actualCourses)) {
-          actualCourses.forEach((course) => { courseMap[course.id] = course.name; });
+          actualCourses.forEach((course) => {
+            courseMap[course.id] = course.name;
+          });
         }
         setCoursesMap(courseMap);
       } else {
@@ -1418,7 +1456,28 @@ export default function Modules() {
     }
   };
 
-  useEffect(() => { fetchModules(false); }, []);
+  useEffect(() => {
+    fetchModules(false);
+  }, []);
+
+  // Detect if we just added a module and reset to page 1
+  useEffect(() => {
+    if (location.state?.fromAdd) {
+      setCurrentPage(1);
+      // Clear the state so it doesn't keep resetting on re-renders
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location, navigate]);
+
+  // Adjust current page if it becomes out of range
+  useEffect(() => {
+    const maxPage = Math.ceil(filteredModules.length / itemsPerPage);
+    if (currentPage > maxPage && maxPage > 0) {
+      setCurrentPage(maxPage);
+    } else if (filteredModules.length === 0) {
+      setCurrentPage(1);
+    }
+  }, [filteredModules.length, itemsPerPage, currentPage]);
 
   useEffect(() => {
     let result = [...modules];
@@ -1429,7 +1488,8 @@ export default function Modules() {
         (m) =>
           m.name.toLowerCase().includes(q) ||
           m.display_id.toString().includes(q) ||
-          (coursesMap[m.course_data] && coursesMap[m.course_data].toLowerCase().includes(q))
+          (coursesMap[m.course_data] &&
+            coursesMap[m.course_data].toLowerCase().includes(q)),
       );
     }
 
@@ -1439,11 +1499,17 @@ export default function Modules() {
 
     result.sort((a, b) => {
       let aVal, bVal;
-      if (sortConfig.key === "display_id") { aVal = a.display_id || 0; bVal = b.display_id || 0; }
-      else if (sortConfig.key === "name") { aVal = a.name?.toLowerCase() || ""; bVal = b.name?.toLowerCase() || ""; }
-      else if (sortConfig.key === "course") {
-        aVal = coursesMap[a.course_data]?.toLowerCase() || String(a.course_data);
-        bVal = coursesMap[b.course_data]?.toLowerCase() || String(b.course_data);
+      if (sortConfig.key === "display_id") {
+        aVal = a.display_id || 0;
+        bVal = b.display_id || 0;
+      } else if (sortConfig.key === "name") {
+        aVal = a.name?.toLowerCase() || "";
+        bVal = b.name?.toLowerCase() || "";
+      } else if (sortConfig.key === "course") {
+        aVal =
+          coursesMap[a.course_data]?.toLowerCase() || String(a.course_data);
+        bVal =
+          coursesMap[b.course_data]?.toLowerCase() || String(b.course_data);
       }
       if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
       if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
@@ -1451,7 +1517,6 @@ export default function Modules() {
     });
 
     setFilteredModules(result);
-    setCurrentPage(1);
   }, [searchTerm, filters, sortConfig, modules, coursesMap]);
 
   const handleSort = (key) => {
@@ -1462,46 +1527,48 @@ export default function Modules() {
   };
 
   const getSortIcon = (key) => {
-    if (sortConfig.key !== key) return <SortAsc size={13} className="text-slate-400" />;
-    return sortConfig.direction === "asc"
-      ? <SortAsc size={13} className="text-violet-500" />
-      : <SortDesc size={13} className="text-violet-500" />;
+    if (sortConfig.key !== key)
+      return <SortAsc size={13} className="text-slate-400" />;
+    return sortConfig.direction === "asc" ? (
+      <SortAsc size={13} className="text-violet-500" />
+    ) : (
+      <SortDesc size={13} className="text-violet-500" />
+    );
   };
-
-  
 
   const indexOfFirstItem = (currentPage - 1) * itemsPerPage;
   const indexOfLastItem = indexOfFirstItem + itemsPerPage;
-  const paginatedModules = filteredModules.slice(indexOfFirstItem, indexOfLastItem);
+  const paginatedModules = filteredModules.slice(
+    indexOfFirstItem,
+    indexOfLastItem,
+  );
   const totalPages = Math.ceil(filteredModules.length / itemsPerPage);
 
   const handleDeleteClick = (e, module) => {
     e.stopPropagation();
     setModuleToDelete(module);
     setShowDeleteModal(true);
-    setDeleteError("");
-    setDeleteSuccess("");
   };
 
   const handleDeleteConfirm = async () => {
     if (!moduleToDelete) return;
     setDeleteLoading(true);
-    setDeleteError("");
-    setDeleteSuccess("");
     try {
       const response = await fetch(
         `https://codingcloud.pythonanywhere.com/modules/${moduleToDelete.id}/`,
-        { method: "DELETE" }
+        { method: "DELETE" },
       );
       if (response.ok || response.status === 204) {
-        setDeleteSuccess("Module deleted successfully!");
+        // Show red toast for delete success
+        showToast("Module deleted successfully!", "error");
         fetchModules(true);
-        setTimeout(() => { setShowDeleteModal(false); setModuleToDelete(null); setDeleteSuccess(""); }, 1500);
+        setShowDeleteModal(false);
+        setModuleToDelete(null);
       } else {
-        setDeleteError("Failed to delete module.");
+        showToast("Failed to delete module.", "error");
       }
     } catch {
-      setDeleteError("Network error. Please try again.");
+      showToast("Network error. Please try again.", "error");
     } finally {
       setDeleteLoading(false);
     }
@@ -1517,7 +1584,9 @@ export default function Modules() {
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-violet-200 border-t-violet-600 rounded-full animate-spin mx-auto" />
-          <p className="mt-4 text-slate-500 text-base font-medium">Loading modules…</p>
+          <p className="mt-4 text-slate-500 text-base font-medium">
+            Loading modules…
+          </p>
         </div>
       </div>
     );
@@ -1530,10 +1599,14 @@ export default function Modules() {
           <div className="bg-red-50 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
             <X size={24} className="text-red-500" />
           </div>
-          <h3 className="text-lg font-semibold text-slate-900 mb-1">Something went wrong</h3>
+          <h3 className="text-lg font-semibold text-slate-900 mb-1">
+            Something went wrong
+          </h3>
           <p className="text-slate-500 text-base mb-5">{error}</p>
-          <button onClick={() => window.location.reload()}
-            className="px-5 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors text-base font-medium">
+          <button
+            onClick={() => window.location.reload()}
+            className="px-5 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors text-base font-medium"
+          >
             Try Again
           </button>
         </div>
@@ -1543,8 +1616,16 @@ export default function Modules() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      {/* Toast notification */}
+      {toast.show && (
+        <Toasts
+          message={toast.message}
+          type={toast.type}
+          onClose={closeToast}
+        />
+      )}
 
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* ── Header ── */}
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-1">
@@ -1554,16 +1635,20 @@ export default function Modules() {
               {modules.length}
             </span>
           </div>
-          <p className="text-slate-500 text-base">Manage your course modules and lessons</p>
+          <p className="text-slate-500 text-base">
+            Manage your course modules and lessons
+          </p>
         </div>
 
         {/* ── Toolbar (single line) ── */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 px-4 py-3 mb-5">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-
             {/* Search */}
             <div className="relative flex-1 min-w-0">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <Search
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+              />
               <input
                 type="text"
                 placeholder="Search by module name, course or ID…"
@@ -1572,7 +1657,10 @@ export default function Modules() {
                 className="w-full pl-9 pr-8 py-2.5 border border-slate-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent bg-slate-50 placeholder:text-slate-400"
               />
               {searchTerm && (
-                <button onClick={() => setSearchTerm("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                <button
+                  onClick={() => setSearchTerm("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
                   <X size={14} />
                 </button>
               )}
@@ -1590,14 +1678,15 @@ export default function Modules() {
               <Filter size={15} />
               Filters
               {activeFiltersCount > 0 && (
-                <span className="px-1.5 py-0.5 bg-violet-600 text-white text-xs rounded-full leading-none">{activeFiltersCount}</span>
+                <span className="px-1.5 py-0.5 bg-violet-600 text-white text-xs rounded-full leading-none">
+                  {activeFiltersCount}
+                </span>
               )}
-              <ChevronDown size={14} className={`transition-transform ${showFilters ? "rotate-180" : ""}`} />
+              <ChevronDown
+                size={14}
+                className={`transition-transform ${showFilters ? "rotate-180" : ""}`}
+              />
             </button>
-
-           
-
-            
 
             {/* Add Module */}
             <button
@@ -1613,7 +1702,9 @@ export default function Modules() {
           {showFilters && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 pt-4 border-t border-slate-100">
               <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Course</label>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
+                  Course
+                </label>
                 <select
                   value={filters.course}
                   onChange={(e) => setFilters({ course: e.target.value })}
@@ -1622,13 +1713,17 @@ export default function Modules() {
                   <option value="all">All Courses</option>
                   {uniqueCourses.map((courseId) => (
                     <option key={courseId} value={courseId}>
-                      {coursesMap[courseId] || `Course ${courseId}`} ({modules.filter((m) => m.course_data === courseId).length})
+                      {coursesMap[courseId] || `Course ${courseId}`} (
+                      {modules.filter((m) => m.course_data === courseId).length}
+                      )
                     </option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Items Per Page</label>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
+                  Items Per Page
+                </label>
                 <select
                   value={itemsPerPage}
                   onChange={(e) => setItemsPerPage(Number(e.target.value))}
@@ -1650,7 +1745,9 @@ export default function Modules() {
             <div className="bg-slate-100 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
               <Layers size={28} className="text-slate-400" />
             </div>
-            <h3 className="text-base font-semibold text-slate-800 mb-1">No modules found</h3>
+            <h3 className="text-base font-semibold text-slate-800 mb-1">
+              No modules found
+            </h3>
             <p className="text-slate-400 text-base mb-5">
               {searchTerm || filters.course !== "all"
                 ? "Try adjusting your filters or search term."
@@ -1669,7 +1766,15 @@ export default function Modules() {
             {refreshing && (
               <>
                 <style>{`@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }`}</style>
-                <div style={{ height: 3, background: "linear-gradient(90deg, #7c3aed, #a78bfa, #7c3aed)", backgroundSize: "200% 100%", animation: "shimmer 1.2s linear infinite" }} />
+                <div
+                  style={{
+                    height: 3,
+                    background:
+                      "linear-gradient(90deg, #7c3aed, #a78bfa, #7c3aed)",
+                    backgroundSize: "200% 100%",
+                    animation: "shimmer 1.2s linear infinite",
+                  }}
+                />
               </>
             )}
 
@@ -1681,19 +1786,25 @@ export default function Modules() {
                       className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide cursor-pointer select-none hover:text-slate-800 w-14"
                       onClick={() => handleSort("display_id")}
                     >
-                      <span className="flex items-center gap-1"># {getSortIcon("display_id")}</span>
+                      <span className="flex items-center gap-1">
+                        # {getSortIcon("display_id")}
+                      </span>
                     </th>
                     <th
                       className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide cursor-pointer select-none hover:text-slate-800"
                       onClick={() => handleSort("name")}
                     >
-                      <span className="flex items-center gap-1">Module Name {getSortIcon("name")}</span>
+                      <span className="flex items-center gap-1">
+                        Module Name {getSortIcon("name")}
+                      </span>
                     </th>
                     <th
                       className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide cursor-pointer select-none hover:text-slate-800"
                       onClick={() => handleSort("course")}
                     >
-                      <span className="flex items-center gap-1">Course {getSortIcon("course")}</span>
+                      <span className="flex items-center gap-1">
+                        Course {getSortIcon("course")}
+                      </span>
                     </th>
                     <th className="px-5 py-3.5 text-right text-xs font-semibold text-slate-500 uppercase tracking-wide">
                       Actions
@@ -1705,7 +1816,10 @@ export default function Modules() {
                     <tr
                       key={module.id}
                       className="hover:bg-slate-50/70 transition-colors cursor-pointer group"
-                      onClick={() => { setSelectedModule(module); setShowViewModal(true); }}
+                      onClick={() => {
+                        setSelectedModule(module);
+                        setShowViewModal(true);
+                      }}
                     >
                       {/* # */}
                       <td className="px-5 py-4 text-base font-semibold text-slate-400">
@@ -1718,7 +1832,9 @@ export default function Modules() {
                           <div className="w-9 h-9 bg-violet-100 rounded-xl flex items-center justify-center text-violet-600 flex-shrink-0">
                             <BookMarked size={15} />
                           </div>
-                          <span className="text-base font-semibold text-slate-800">{module.name}</span>
+                          <span className="text-base font-semibold text-slate-800">
+                            {module.name}
+                          </span>
                         </div>
                       </td>
 
@@ -1726,7 +1842,8 @@ export default function Modules() {
                       <td className="px-5 py-4">
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-violet-50 text-violet-700 border border-violet-100 text-xs font-semibold rounded-full">
                           <FolderOpen size={11} />
-                          {coursesMap[module.course_data] || `Course ${module.course_data}`}
+                          {coursesMap[module.course_data] ||
+                            `Course ${module.course_data}`}
                         </span>
                       </td>
 
@@ -1734,14 +1851,21 @@ export default function Modules() {
                       <td className="px-5 py-4">
                         <div className="flex items-center justify-end gap-1.5">
                           <button
-                            onClick={(e) => { e.stopPropagation(); setSelectedModule(module); setShowViewModal(true); }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedModule(module);
+                              setShowViewModal(true);
+                            }}
                             className="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all"
                             title="View"
                           >
                             <Eye size={15} />
                           </button>
                           <button
-                            onClick={(e) => { e.stopPropagation(); navigate(`/edit-module/${module.id}`); }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/edit-module/${module.id}`);
+                            }}
                             className="p-2 rounded-lg text-slate-400 hover:text-violet-600 hover:bg-violet-50 transition-all"
                             title="Edit"
                           >
@@ -1765,7 +1889,16 @@ export default function Modules() {
             {/* Pagination */}
             <div className="px-5 py-3.5 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
               <span className="text-xs text-slate-400 font-medium">
-                Showing <span className="text-slate-700 font-semibold">{indexOfFirstItem + 1}–{Math.min(indexOfLastItem, filteredModules.length)}</span> of <span className="text-slate-700 font-semibold">{filteredModules.length}</span> modules
+                Showing{" "}
+                <span className="text-slate-700 font-semibold">
+                  {indexOfFirstItem + 1}–
+                  {Math.min(indexOfLastItem, filteredModules.length)}
+                </span>{" "}
+                of{" "}
+                <span className="text-slate-700 font-semibold">
+                  {filteredModules.length}
+                </span>{" "}
+                modules
               </span>
               <div className="flex items-center gap-2">
                 <button
@@ -1780,7 +1913,8 @@ export default function Modules() {
                     let page = i + 1;
                     if (totalPages > 5) {
                       if (currentPage <= 3) page = i + 1;
-                      else if (currentPage >= totalPages - 2) page = totalPages - 4 + i;
+                      else if (currentPage >= totalPages - 2)
+                        page = totalPages - 4 + i;
                       else page = currentPage - 2 + i;
                     }
                     return (
@@ -1799,7 +1933,9 @@ export default function Modules() {
                   })}
                 </div>
                 <button
-                  onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(p + 1, totalPages))
+                  }
                   disabled={currentPage === totalPages}
                   className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white transition-colors"
                 >
@@ -1814,7 +1950,10 @@ export default function Modules() {
       {/* ── View Modal ── */}
       {showViewModal && selectedModule && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => setShowViewModal(false)} />
+          <div
+            className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm"
+            onClick={() => setShowViewModal(false)}
+          />
           <div className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full z-10 overflow-hidden">
             {/* Close */}
             <button
@@ -1831,18 +1970,28 @@ export default function Modules() {
                   <BookMarked size={26} />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-slate-900">{selectedModule.name}</h2>
-                  <p className="text-base text-slate-400 mt-0.5">Module #{selectedModule.display_id}</p>
+                  <h2 className="text-xl font-bold text-slate-900">
+                    {selectedModule.name}
+                  </h2>
+                  <p className="text-base text-slate-400 mt-0.5">
+                    Module #{selectedModule.display_id}
+                  </p>
                 </div>
               </div>
 
               {/* Course */}
               <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 mb-4">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Course</p>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">
+                  Course
+                </p>
                 <div className="flex items-center gap-2">
-                  <FolderOpen size={15} className="text-violet-500 flex-shrink-0" />
+                  <FolderOpen
+                    size={15}
+                    className="text-violet-500 flex-shrink-0"
+                  />
                   <p className="text-base font-semibold text-slate-800">
-                    {coursesMap[selectedModule.course_data] || `Course ${selectedModule.course_data}`}
+                    {coursesMap[selectedModule.course_data] ||
+                      `Course ${selectedModule.course_data}`}
                   </p>
                 </div>
               </div>
@@ -1850,8 +1999,12 @@ export default function Modules() {
               {/* Description */}
               {selectedModule.description && (
                 <div className="bg-slate-50 border border-slate-100 rounded-xl p-4">
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Description</p>
-                  <p className="text-base text-slate-600 leading-relaxed">{selectedModule.description}</p>
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">
+                    Description
+                  </p>
+                  <p className="text-base text-slate-600 leading-relaxed">
+                    {selectedModule.description}
+                  </p>
                 </div>
               )}
             </div>
@@ -1864,7 +2017,10 @@ export default function Modules() {
                 Close
               </button>
               <button
-                onClick={() => { setShowViewModal(false); navigate(`/edit-module/${selectedModule.id}`); }}
+                onClick={() => {
+                  setShowViewModal(false);
+                  navigate(`/edit-module/${selectedModule.id}`);
+                }}
                 className="px-5 py-2 bg-violet-600 text-white text-base font-medium rounded-xl hover:bg-violet-700 transition-colors flex items-center gap-2 shadow-sm shadow-violet-200"
               >
                 <Edit size={14} /> Edit Module
@@ -1894,25 +2050,18 @@ export default function Modules() {
                 <AlertCircle size={22} className="text-red-500" />
               </div>
               <div className="flex-1">
-                <h3 className="text-base font-semibold text-slate-900 mb-1">Delete Module</h3>
+                <h3 className="text-base font-semibold text-slate-900 mb-1">
+                  Delete Module
+                </h3>
                 <p className="text-base text-slate-500">
-                  Are you sure you want to delete <span className="font-semibold text-slate-700">"{moduleToDelete.name}"</span>? This action cannot be undone.
+                  Are you sure you want to delete{" "}
+                  <span className="font-semibold text-slate-700">
+                    "{moduleToDelete.name}"
+                  </span>
+                  ? This action cannot be undone.
                 </p>
               </div>
             </div>
-
-            {deleteSuccess && (
-              <div className="mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2">
-                <CheckCircle size={15} className="text-emerald-600 flex-shrink-0" />
-                <p className="text-base text-emerald-700">{deleteSuccess}</p>
-              </div>
-            )}
-            {deleteError && (
-              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2">
-                <AlertCircle size={15} className="text-red-500 flex-shrink-0" />
-                <p className="text-base text-red-600">{deleteError}</p>
-              </div>
-            )}
 
             <div className="mt-6 flex gap-3 justify-end">
               <button
@@ -1924,7 +2073,7 @@ export default function Modules() {
               </button>
               <button
                 onClick={handleDeleteConfirm}
-                disabled={deleteLoading || !!deleteSuccess}
+                disabled={deleteLoading}
                 className="px-5 py-2 bg-red-600 text-white text-base font-medium rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center gap-2"
               >
                 {deleteLoading ? (

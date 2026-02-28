@@ -7,11 +7,11 @@ import {
     BookOpen,
     AlertCircle,
     Layers,
-    CheckCircle2,
     Tag,
     ChevronDown,
     BookMarked,
 } from "lucide-react";
+import Toasts from "./Toasts"; // <-- import toast component
 
 export default function EditTopic() {
     const navigate = useNavigate();
@@ -25,9 +25,22 @@ export default function EditTopic() {
     const [filteredModules, setFilteredModules] = useState([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [error, setError] = useState("");
-    const [success, setSuccess] = useState("");
     const [selectedCourse, setSelectedCourse] = useState("");
+
+    // Toast state
+    const [toast, setToast] = useState({
+        show: false,
+        message: "",
+        type: "success",
+    });
+
+    const showToast = (message, type = "success") => {
+        setToast({ show: true, message, type });
+    };
+
+    const closeToast = () => {
+        setToast((prev) => ({ ...prev, show: false }));
+    };
 
     useEffect(() => {
         const fetchData = async () => {
@@ -61,7 +74,7 @@ export default function EditTopic() {
                     setModules(modulesData.data);
                     setFilteredModules(modulesData.data);
                 } else {
-                    setError("Failed to load modules");
+                    showToast("Failed to load modules", "error");
                 }
                 if (coursesData.success) setCourses(coursesData.data);
 
@@ -74,7 +87,7 @@ export default function EditTopic() {
                     }
                 }
             } catch (err) {
-                setError("Failed to load modules, courses or topic. Please try again.");
+                showToast("Failed to load modules, courses or topic. Please try again.", "error");
             } finally {
                 setLoading(false);
             }
@@ -100,7 +113,6 @@ export default function EditTopic() {
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
-        setError("");
     };
 
     const handleCourseChange = (e) => setSelectedCourse(e.target.value);
@@ -125,10 +137,11 @@ export default function EditTopic() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         const validationError = validateForm();
-        if (validationError) { setError(validationError); return; }
+        if (validationError) {
+            showToast(validationError, "error");
+            return;
+        }
         setSaving(true);
-        setError("");
-        setSuccess("");
         try {
             const response = await fetch(`https://codingcloud.pythonanywhere.com/topics/${id}/`, {
                 method: "PUT",
@@ -146,12 +159,12 @@ export default function EditTopic() {
                 }
                 throw new Error(errorMessage);
             }
-            setSuccess("Topic updated successfully!");
+            showToast("Topic updated successfully!", "success");
             setFormData({ module_id: "", name: "" });
             setSelectedCourse("");
             setTimeout(() => navigate("/topics"), 2000);
         } catch (err) {
-            setError(err.message || "Failed to update topic. Please check the API endpoint.");
+            showToast(err.message || "Failed to update topic. Please check the API endpoint.", "error");
         } finally {
             setSaving(false);
         }
@@ -174,6 +187,15 @@ export default function EditTopic() {
 
     return (
         <div className="min-h-screen bg-gray-50">
+
+            {/* Toast notification */}
+            {toast.show && (
+                <Toasts
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={closeToast}
+                />
+            )}
 
             {/* ── Header ── */}
             <header className=" top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
@@ -215,24 +237,7 @@ export default function EditTopic() {
             {/* ── Main ── */}
             <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 pb-28 sm:pb-12">
 
-                {/* Error Alert */}
-                {error && (
-                    <div className="flex items-start gap-3 p-4 mb-6 bg-red-50 border border-red-200 rounded-2xl text-base text-red-700">
-                        <AlertCircle size={18} className="mt-0.5 flex-shrink-0 text-red-500" />
-                        <span className="flex-1">{error}</span>
-                        <button onClick={() => setError("")} className="text-red-400 hover:text-red-600 transition-colors flex-shrink-0">
-                            <X size={16} />
-                        </button>
-                    </div>
-                )}
-
-                {/* Success Alert */}
-                {success && (
-                    <div className="flex items-start gap-3 p-4 mb-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-base text-emerald-700">
-                        <CheckCircle2 size={18} className="mt-0.5 flex-shrink-0 text-emerald-500" />
-                        <span>{success}</span>
-                    </div>
-                )}
+                {/* Removed inline error/success alerts — now using toast */}
 
                 <form onSubmit={handleSubmit} className="space-y-5">
 

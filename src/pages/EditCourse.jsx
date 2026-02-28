@@ -818,12 +818,11 @@ import {
     Award,
     ChevronDown,
     ImagePlus,
-    CheckCircle2,
-    AlertCircle,
     Tag,
     BookMarked,
     Search,
 } from "lucide-react";
+import Toasts from "./Toasts"; // <-- import the toast component
 
 export default function EditCourse() {
     const { id } = useParams();
@@ -831,9 +830,14 @@ export default function EditCourse() {
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [error, setError] = useState("");
-    const [success, setSuccess] = useState("");
     const [categories, setCategories] = useState([]);
+
+    // Toast state
+    const [toast, setToast] = useState({
+        show: false,
+        message: "",
+        type: "success", // 'success' or 'error'
+    });
 
     const [formData, setFormData] = useState({
         id: "",
@@ -872,6 +876,15 @@ export default function EditCourse() {
         pdf_file: false,
     });
 
+    // Helper to show toast
+    const showToast = (message, type = "success") => {
+        setToast({ show: true, message, type });
+    };
+
+    const closeToast = () => {
+        setToast((prev) => ({ ...prev, show: false }));
+    };
+
     useEffect(() => {
         const fetchCourseData = async () => {
             try {
@@ -906,7 +919,7 @@ export default function EditCourse() {
                         existing_pdf: course.pdf_file || "",
                     });
                 } else {
-                    setError("Failed to fetch course details");
+                    showToast("Failed to fetch course details", "error");
                 }
 
                 setCategories([
@@ -916,7 +929,7 @@ export default function EditCourse() {
                 ]);
             } catch (err) {
                 console.error("Error fetching course:", err);
-                setError("Network error. Please try again.");
+                showToast("Network error. Please try again.", "error");
             } finally {
                 setLoading(false);
             }
@@ -939,16 +952,24 @@ export default function EditCourse() {
         const file = files[0];
         if (file) {
             const maxSize = name === "pdf_file" ? 10 * 1024 * 1024 : 5 * 1024 * 1024;
-            if (file.size > maxSize) { setError(`File size must be less than ${maxSize / (1024 * 1024)}MB`); return; }
-            if (name === "pdf_file" && file.type !== "application/pdf") { setError("Please upload a valid PDF file"); return; }
-            if (name !== "pdf_file" && !file.type.startsWith("image/")) { setError("Please upload a valid image file"); return; }
+            if (file.size > maxSize) {
+                showToast(`File size must be less than ${maxSize / (1024 * 1024)}MB`, "error");
+                return;
+            }
+            if (name === "pdf_file" && file.type !== "application/pdf") {
+                showToast("Please upload a valid PDF file", "error");
+                return;
+            }
+            if (name !== "pdf_file" && !file.type.startsWith("image/")) {
+                showToast("Please upload a valid image file", "error");
+                return;
+            }
             setFormData((prev) => ({ ...prev, [name]: file }));
             setFilesChanged((prev) => ({ ...prev, [name]: true }));
             if (name === "image") setImagePreview(URL.createObjectURL(file));
             else if (name === "banner_img") setBannerPreview(URL.createObjectURL(file));
             else if (name === "icon") setIconPreview(URL.createObjectURL(file));
             else if (name === "pdf_file") setPdfName(file.name);
-            setError("");
         }
     };
 
@@ -977,16 +998,17 @@ export default function EditCourse() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         const validationError = validateForm();
-        if (validationError) { setError(validationError); return; }
+        if (validationError) {
+            showToast(validationError, "error");
+            return;
+        }
         setSaving(true);
-        setError("");
-        setSuccess("");
         try {
             const submitData = new FormData();
             submitData.append("name", formData.name);
             submitData.append("slug", formData.slug);
             submitData.append("category", formData.category);
-            submitData.append("text", formData.text); // rich text content
+            submitData.append("text", formData.text);
             if (formData.duration) submitData.append("duration", formData.duration);
             if (formData.lecture) submitData.append("lecture", formData.lecture);
             if (formData.students) submitData.append("students", formData.students);
@@ -1004,13 +1026,13 @@ export default function EditCourse() {
             const response = await fetch(`https://codingcloud.pythonanywhere.com/course/${id}/`, { method: "PATCH", body: submitData });
             const data = await response.json();
             if (response.ok || response.status === 200) {
-                setSuccess("Course updated successfully!");
+                showToast("Course updated successfully!", "success");
                 setTimeout(() => navigate("/course"), 2000);
             } else {
-                setError(data.message || data.detail || "Failed to update course. Please try again.");
+                showToast(data.message || data.detail || "Failed to update course. Please try again.", "error");
             }
         } catch (err) {
-            setError("Network error. Please check your connection and try again.");
+            showToast("Network error. Please check your connection and try again.", "error");
         } finally {
             setSaving(false);
         }
@@ -1181,6 +1203,15 @@ export default function EditCourse() {
     return (
         <div className="min-h-screen bg-gray-50">
 
+            {/* Toast notification */}
+            {toast.show && (
+                <Toasts
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={closeToast}
+                />
+            )}
+
             {/* ── Header ── */}
             <header className=" top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
@@ -1221,24 +1252,7 @@ export default function EditCourse() {
             {/* ── Main ── */}
             <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 pb-28 sm:pb-12">
 
-                {/* Error Alert */}
-                {error && (
-                    <div className="flex items-start gap-3 p-4 mb-6 bg-red-50 border border-red-200 rounded-2xl text-base text-red-700">
-                        <AlertCircle size={18} className="mt-0.5 flex-shrink-0 text-red-500" />
-                        <span className="flex-1">{error}</span>
-                        <button onClick={() => setError("")} className="text-red-400 hover:text-red-600 transition-colors flex-shrink-0">
-                            <X size={16} />
-                        </button>
-                    </div>
-                )}
-
-                {/* Success Alert */}
-                {success && (
-                    <div className="flex items-start gap-3 p-4 mb-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-base text-emerald-700">
-                        <CheckCircle2 size={18} className="mt-0.5 flex-shrink-0 text-emerald-500" />
-                        <span>{success}</span>
-                    </div>
-                )}
+                {/* Removed inline error/success alerts — now using toast */}
 
                 <form onSubmit={handleSubmit} className="space-y-5">
 

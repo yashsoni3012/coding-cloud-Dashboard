@@ -1,4 +1,3 @@
-
 // import { useState, useEffect } from "react";
 // import { useNavigate } from "react-router-dom";
 // import {
@@ -103,7 +102,6 @@
 //       ? <SortAsc size={13} className="text-violet-500" />
 //       : <SortDesc size={13} className="text-violet-500" />;
 //   };
-
 
 //   const indexOfLastItem = currentPage * itemsPerPage;
 //   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -234,8 +232,6 @@
 //               )}
 //               <ChevronDown size={14} className={`transition-transform ${showFilters ? "rotate-180" : ""}`} />
 //             </button>
-
-           
 
 //             {/* Add Blog */}
 //             <button
@@ -652,10 +648,24 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import Toasts from "../pages/Toasts";
 import {
-  Search, Plus, Edit, Trash2, AlertCircle, CheckCircle,
-  X, FileText, Image as ImageIcon, Calendar, Eye,
-  Filter, ChevronDown, RefreshCw, SortAsc, SortDesc,
+  Search,
+  Plus,
+  Edit,
+  Trash2,
+  AlertCircle,
+  CheckCircle,
+  X,
+  FileText,
+  Image as ImageIcon,
+  Calendar,
+  Eye,
+  Filter,
+  ChevronDown,
+  RefreshCw,
+  SortAsc,
+  SortDesc,
 } from "lucide-react";
 
 export default function Blogs() {
@@ -667,7 +677,10 @@ export default function Blogs() {
   const [error, setError] = useState(null);
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortConfig, setSortConfig] = useState({ key: "display_id", direction: "desc" });
+  const [sortConfig, setSortConfig] = useState({
+    key: "display_id",
+    direction: "desc",
+  });
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({ status: "all" });
 
@@ -681,11 +694,18 @@ export default function Blogs() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [toast, setToast] = useState({
+    show: false,
+    message: "",
+    type: "success",
+  });
 
   const fetchBlogs = async () => {
     try {
       setLoading(true);
-      const response = await fetch("https://codingcloud.pythonanywhere.com/blogs/");
+      const response = await fetch(
+        "https://codingcloud.pythonanywhere.com/blogs/",
+      );
       if (response.ok) {
         const blogsData = await response.json();
         const actualBlogs = blogsData.data || blogsData;
@@ -706,19 +726,23 @@ export default function Blogs() {
     }
   };
 
-  useEffect(() => { fetchBlogs(); }, []);
+  useEffect(() => {
+    fetchBlogs();
+  }, []);
 
   useEffect(() => {
     let result = [...blogs];
 
     if (searchTerm) {
       const q = searchTerm.toLowerCase();
-      result = result.filter((blog) =>
-        (blog.title && blog.title.toLowerCase().includes(q)) ||
-        (blog.short_description && blog.short_description.toLowerCase().includes(q)) ||
-        (blog.status && blog.status.toLowerCase().includes(q)) ||
-        (blog.content && blog.content.toLowerCase().includes(q)) ||
-        blog.display_id.toString().includes(q)
+      result = result.filter(
+        (blog) =>
+          (blog.title && blog.title.toLowerCase().includes(q)) ||
+          (blog.short_description &&
+            blog.short_description.toLowerCase().includes(q)) ||
+          (blog.status && blog.status.toLowerCase().includes(q)) ||
+          (blog.content && blog.content.toLowerCase().includes(q)) ||
+          blog.display_id.toString().includes(q),
       );
     }
 
@@ -731,10 +755,19 @@ export default function Blogs() {
 
     result.sort((a, b) => {
       let aVal, bVal;
-      if (sortConfig.key === "display_id") { aVal = a.display_id || 0; bVal = b.display_id || 0; }
-      else if (sortConfig.key === "title") { aVal = a.title?.toLowerCase() || ""; bVal = b.title?.toLowerCase() || ""; }
-      else if (sortConfig.key === "publish_date") { aVal = a.publish_date || ""; bVal = b.publish_date || ""; }
-      else if (sortConfig.key === "status") { aVal = a.status?.toLowerCase() || ""; bVal = b.status?.toLowerCase() || ""; }
+      if (sortConfig.key === "display_id") {
+        aVal = a.display_id || 0;
+        bVal = b.display_id || 0;
+      } else if (sortConfig.key === "title") {
+        aVal = a.title?.toLowerCase() || "";
+        bVal = b.title?.toLowerCase() || "";
+      } else if (sortConfig.key === "publish_date") {
+        aVal = a.publish_date || "";
+        bVal = b.publish_date || "";
+      } else if (sortConfig.key === "status") {
+        aVal = a.status?.toLowerCase() || "";
+        bVal = b.status?.toLowerCase() || "";
+      }
       if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
       if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
       return 0;
@@ -745,14 +778,20 @@ export default function Blogs() {
   }, [searchTerm, filters, sortConfig, blogs]);
 
   const handleSort = (key) => {
-    setSortConfig((cur) => ({ key, direction: cur.key === key && cur.direction === "asc" ? "desc" : "asc" }));
+    setSortConfig((cur) => ({
+      key,
+      direction: cur.key === key && cur.direction === "asc" ? "desc" : "asc",
+    }));
   };
 
   const getSortIcon = (key) => {
-    if (sortConfig.key !== key) return <SortAsc size={13} className="text-slate-400" />;
-    return sortConfig.direction === "asc"
-      ? <SortAsc size={13} className="text-violet-500" />
-      : <SortDesc size={13} className="text-violet-500" />;
+    if (sortConfig.key !== key)
+      return <SortAsc size={13} className="text-slate-400" />;
+    return sortConfig.direction === "asc" ? (
+      <SortAsc size={13} className="text-violet-500" />
+    ) : (
+      <SortDesc size={13} className="text-violet-500" />
+    );
   };
 
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -776,25 +815,47 @@ export default function Blogs() {
     try {
       const response = await fetch(
         `https://codingcloud.pythonanywhere.com/blogs/${blogToDelete.id}/`,
-        { method: "DELETE" }
+        { method: "DELETE" },
       );
       if (response.ok || response.status === 204) {
-        setDeleteSuccess("Blog deleted successfully!");
-        fetchBlogs();
-        setTimeout(() => { setShowDeleteModal(false); setBlogToDelete(null); setDeleteSuccess(""); }, 1500);
-      } else {
+
+  setShowDeleteModal(false);
+  setBlogToDelete(null);
+
+  setToast({
+    show: true,
+    message: "Blog deleted successfully!",
+    type: "error", // red background
+  });
+
+  fetchBlogs();
+} else {
         try {
           const data = await response.json();
-          setDeleteError(data.message || "Failed to delete blog.");
-        } catch { setDeleteError(`HTTP Error: ${response.status}`); }
+          setToast({
+            show: true,
+            message: data.message || "Failed to delete blog",
+            type: "error",
+          });
+        } catch {
+          setDeleteError(`HTTP Error: ${response.status}`);
+        }
       }
-    } catch { setDeleteError("Network error. Please try again."); }
-    finally { setDeleteLoading(false); }
+    } catch {
+      setToast({
+        show: true,
+        message: "Network error. Please try again.",
+        type: "error",
+      });
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   const getStatusStyles = (status) => {
     const s = status?.toLowerCase();
-    if (s === "published" || s === "active") return "bg-emerald-50 text-emerald-700 border border-emerald-200";
+    if (s === "published" || s === "active")
+      return "bg-emerald-50 text-emerald-700 border border-emerald-200";
     return "bg-amber-50 text-amber-700 border border-amber-200";
   };
 
@@ -806,9 +867,18 @@ export default function Blogs() {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        {toast.show && (
+          <Toasts
+            message={toast.message}
+            type={toast.type}
+            onClose={() => setToast((prev) => ({ ...prev, show: false }))}
+          />
+        )}
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-violet-200 border-t-violet-600 rounded-full animate-spin mx-auto" />
-          <p className="mt-4 text-slate-500 text-base font-medium">Loading blogs…</p>
+          <p className="mt-4 text-slate-500 text-base font-medium">
+            Loading blogs…
+          </p>
         </div>
       </div>
     );
@@ -821,9 +891,14 @@ export default function Blogs() {
           <div className="bg-red-50 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
             <X size={24} className="text-red-500" />
           </div>
-          <h3 className="text-lg font-semibold text-slate-900 mb-1">Something went wrong</h3>
+          <h3 className="text-lg font-semibold text-slate-900 mb-1">
+            Something went wrong
+          </h3>
           <p className="text-slate-500 text-base mb-5">{error}</p>
-          <button onClick={() => window.location.reload()} className="px-5 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors text-base font-medium">
+          <button
+            onClick={() => window.location.reload()}
+            className="px-5 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors text-base font-medium"
+          >
             Try Again
           </button>
         </div>
@@ -833,8 +908,16 @@ export default function Blogs() {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      {toast.show && (
+      <Toasts
+        message={toast.message}
+        type={toast.type}
+        onClose={() =>
+          setToast((prev) => ({ ...prev, show: false }))
+        }
+      />
+    )}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-
         {/* Header */}
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-1">
@@ -844,16 +927,20 @@ export default function Blogs() {
               {blogs.length}
             </span>
           </div>
-          <p className="text-slate-500 text-base">Manage your blog posts and articles</p>
+          <p className="text-slate-500 text-base">
+            Manage your blog posts and articles
+          </p>
         </div>
 
         {/* Toolbar */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 px-4 py-3 mb-5">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-
             {/* Search */}
             <div className="relative flex-1 min-w-0">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <Search
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+              />
               <input
                 type="text"
                 placeholder="Search by title, description, status or ID…"
@@ -862,7 +949,10 @@ export default function Blogs() {
                 className="w-full pl-9 pr-8 py-2.5 border border-slate-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent bg-slate-50 placeholder:text-slate-400"
               />
               {searchTerm && (
-                <button onClick={() => setSearchTerm("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                <button
+                  onClick={() => setSearchTerm("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
                   <X size={14} />
                 </button>
               )}
@@ -880,9 +970,14 @@ export default function Blogs() {
               <Filter size={15} />
               Filters
               {activeFiltersCount > 0 && (
-                <span className="px-1.5 py-0.5 bg-violet-600 text-white text-xs rounded-full leading-none">{activeFiltersCount}</span>
+                <span className="px-1.5 py-0.5 bg-violet-600 text-white text-xs rounded-full leading-none">
+                  {activeFiltersCount}
+                </span>
               )}
-              <ChevronDown size={14} className={`transition-transform ${showFilters ? "rotate-180" : ""}`} />
+              <ChevronDown
+                size={14}
+                className={`transition-transform ${showFilters ? "rotate-180" : ""}`}
+              />
             </button>
 
             {/* Add Blog */}
@@ -899,7 +994,9 @@ export default function Blogs() {
           {showFilters && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 pt-4 border-t border-slate-100">
               <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Status</label>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
+                  Status
+                </label>
                 <select
                   value={filters.status}
                   onChange={(e) => setFilters({ status: e.target.value })}
@@ -911,7 +1008,9 @@ export default function Blogs() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Items Per Page</label>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
+                  Items Per Page
+                </label>
                 <select
                   value={itemsPerPage}
                   onChange={(e) => setItemsPerPage(Number(e.target.value))}
@@ -933,7 +1032,9 @@ export default function Blogs() {
             <div className="bg-slate-100 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
               <FileText size={28} className="text-slate-400" />
             </div>
-            <h3 className="text-base font-semibold text-slate-800 mb-1">No blogs found</h3>
+            <h3 className="text-base font-semibold text-slate-800 mb-1">
+              No blogs found
+            </h3>
             <p className="text-slate-400 text-base mb-5">
               {searchTerm || filters.status !== "all"
                 ? "Try adjusting your filters or search term."
@@ -956,7 +1057,9 @@ export default function Blogs() {
                       className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide cursor-pointer select-none hover:text-slate-800 w-14"
                       onClick={() => handleSort("display_id")}
                     >
-                      <span className="flex items-center gap-1"># {getSortIcon("display_id")}</span>
+                      <span className="flex items-center gap-1">
+                        # {getSortIcon("display_id")}
+                      </span>
                     </th>
                     <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide w-14">
                       Image
@@ -965,7 +1068,9 @@ export default function Blogs() {
                       className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide cursor-pointer select-none hover:text-slate-800"
                       onClick={() => handleSort("title")}
                     >
-                      <span className="flex items-center gap-1">Title {getSortIcon("title")}</span>
+                      <span className="flex items-center gap-1">
+                        Title {getSortIcon("title")}
+                      </span>
                     </th>
                     <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide hidden lg:table-cell">
                       Description
@@ -974,13 +1079,17 @@ export default function Blogs() {
                       className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide cursor-pointer select-none hover:text-slate-800 hidden md:table-cell"
                       onClick={() => handleSort("publish_date")}
                     >
-                      <span className="flex items-center gap-1">Date {getSortIcon("publish_date")}</span>
+                      <span className="flex items-center gap-1">
+                        Date {getSortIcon("publish_date")}
+                      </span>
                     </th>
                     <th
                       className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide cursor-pointer select-none hover:text-slate-800"
                       onClick={() => handleSort("status")}
                     >
-                      <span className="flex items-center gap-1">Status {getSortIcon("status")}</span>
+                      <span className="flex items-center gap-1">
+                        Status {getSortIcon("status")}
+                      </span>
                     </th>
                     <th className="px-5 py-3.5 text-right text-xs font-semibold text-slate-500 uppercase tracking-wide">
                       Actions
@@ -992,7 +1101,10 @@ export default function Blogs() {
                     <tr
                       key={blog.id}
                       className="hover:bg-slate-50/70 transition-colors cursor-pointer group"
-                      onClick={() => { setSelectedBlog(blog); setShowViewModal(true); }}
+                      onClick={() => {
+                        setSelectedBlog(blog);
+                        setShowViewModal(true);
+                      }}
                     >
                       {/* # */}
                       <td className="px-5 py-4 text-base font-semibold text-slate-400">
@@ -1007,7 +1119,11 @@ export default function Blogs() {
                               src={`https://codingcloud.pythonanywhere.com${blog.featured_image}`}
                               alt={blog.title}
                               className="w-full h-full object-cover"
-                              onError={(e) => { e.target.onerror = null; e.target.src = "https://via.placeholder.com/80?text=?"; }}
+                              onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src =
+                                  "https://via.placeholder.com/80?text=?";
+                              }}
                             />
                           ) : (
                             <ImageIcon size={16} className="text-slate-400" />
@@ -1023,7 +1139,9 @@ export default function Blogs() {
                           </span>
                           {/* Show description on small screens */}
                           <span className="text-xs text-slate-400 lg:hidden line-clamp-1 max-w-[200px] block mt-0.5">
-                            {blog.short_description || blog.content?.substring(0, 80) || "No description"}
+                            {blog.short_description ||
+                              blog.content?.substring(0, 80) ||
+                              "No description"}
                           </span>
                         </div>
                       </td>
@@ -1031,9 +1149,10 @@ export default function Blogs() {
                       {/* Description */}
                       <td className="px-5 py-4 hidden lg:table-cell">
                         <span className="text-base text-slate-400 line-clamp-1 max-w-[220px] block">
-                          {blog.short_description || blog.content?.substring(0, 100) || (
-                            <span className="italic">No description</span>
-                          )}
+                          {blog.short_description ||
+                            blog.content?.substring(0, 100) || (
+                              <span className="italic">No description</span>
+                            )}
                         </span>
                       </td>
 
@@ -1041,7 +1160,10 @@ export default function Blogs() {
                       <td className="px-5 py-4 hidden md:table-cell">
                         {blog.publish_date ? (
                           <div className="inline-flex items-center gap-1.5 text-base text-slate-500">
-                            <Calendar size={13} className="text-slate-400 flex-shrink-0" />
+                            <Calendar
+                              size={13}
+                              className="text-slate-400 flex-shrink-0"
+                            />
                             {new Date(blog.publish_date).toLocaleDateString()}
                           </div>
                         ) : (
@@ -1051,7 +1173,9 @@ export default function Blogs() {
 
                       {/* Status */}
                       <td className="px-5 py-4">
-                        <span className={`inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full ${getStatusStyles(blog.status)}`}>
+                        <span
+                          className={`inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full ${getStatusStyles(blog.status)}`}
+                        >
                           {blog.status || "Draft"}
                         </span>
                       </td>
@@ -1060,14 +1184,23 @@ export default function Blogs() {
                       <td className="px-5 py-4">
                         <div className="flex items-center justify-end gap-1.5">
                           <button
-                            onClick={(e) => { e.stopPropagation(); setSelectedBlog(blog); setShowViewModal(true); }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedBlog(blog);
+                              setShowViewModal(true);
+                            }}
                             className="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all"
                             title="View"
                           >
                             <Eye size={15} />
                           </button>
                           <button
-                            onClick={(e) => { e.stopPropagation(); navigate(`/edit-blog/${blog.id}`, { state: { blog } }); }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/edit-blog/${blog.id}`, {
+                                state: { blog },
+                              });
+                            }}
                             className="p-2 rounded-lg text-slate-400 hover:text-violet-600 hover:bg-violet-50 transition-all"
                             title="Edit"
                           >
@@ -1091,7 +1224,16 @@ export default function Blogs() {
             {/* Pagination */}
             <div className="px-5 py-3.5 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
               <span className="text-xs text-slate-400 font-medium">
-                Showing <span className="text-slate-700 font-semibold">{indexOfFirstItem + 1}–{Math.min(indexOfLastItem, filteredBlogs.length)}</span> of <span className="text-slate-700 font-semibold">{filteredBlogs.length}</span> blogs
+                Showing{" "}
+                <span className="text-slate-700 font-semibold">
+                  {indexOfFirstItem + 1}–
+                  {Math.min(indexOfLastItem, filteredBlogs.length)}
+                </span>{" "}
+                of{" "}
+                <span className="text-slate-700 font-semibold">
+                  {filteredBlogs.length}
+                </span>{" "}
+                blogs
               </span>
               <div className="flex items-center gap-2">
                 <button
@@ -1106,7 +1248,8 @@ export default function Blogs() {
                     let page = i + 1;
                     if (totalPages > 5) {
                       if (currentPage <= 3) page = i + 1;
-                      else if (currentPage >= totalPages - 2) page = totalPages - 4 + i;
+                      else if (currentPage >= totalPages - 2)
+                        page = totalPages - 4 + i;
                       else page = currentPage - 2 + i;
                     }
                     return (
@@ -1125,7 +1268,9 @@ export default function Blogs() {
                   })}
                 </div>
                 <button
-                  onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(p + 1, totalPages))
+                  }
                   disabled={currentPage === totalPages}
                   className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white transition-colors"
                 >
@@ -1140,9 +1285,11 @@ export default function Blogs() {
       {/* ── View Blog Modal ── */}
       {showViewModal && selectedBlog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => setShowViewModal(false)} />
+          <div
+            className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm"
+            onClick={() => setShowViewModal(false)}
+          />
           <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full z-10 overflow-hidden max-h-[90vh] flex flex-col">
-
             <button
               onClick={() => setShowViewModal(false)}
               className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors z-10"
@@ -1157,7 +1304,11 @@ export default function Blogs() {
                   src={`https://codingcloud.pythonanywhere.com${selectedBlog.featured_image}`}
                   alt={selectedBlog.title}
                   className="w-full h-full object-cover"
-                  onError={(e) => { e.target.onerror = null; e.target.src = "https://via.placeholder.com/800x200?text=No+Image"; }}
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src =
+                      "https://via.placeholder.com/800x200?text=No+Image";
+                  }}
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
@@ -1170,9 +1321,13 @@ export default function Blogs() {
               {/* Title + status */}
               <div className="flex items-start justify-between gap-3 mb-5">
                 <div>
-                  <h2 className="text-xl font-bold text-slate-900">{selectedBlog.title}</h2>
+                  <h2 className="text-xl font-bold text-slate-900">
+                    {selectedBlog.title}
+                  </h2>
                 </div>
-                <span className={`inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full flex-shrink-0 ${getStatusStyles(selectedBlog.status)}`}>
+                <span
+                  className={`inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full flex-shrink-0 ${getStatusStyles(selectedBlog.status)}`}
+                >
                   {selectedBlog.status || "Draft"}
                 </span>
               </div>
@@ -1181,12 +1336,18 @@ export default function Blogs() {
               {selectedBlog.publish_date && (
                 <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 mb-4">
                   <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1 flex items-center gap-1">
-                    <Calendar size={11} className="text-violet-500" /> Publish Date
+                    <Calendar size={11} className="text-violet-500" /> Publish
+                    Date
                   </p>
                   <p className="text-base font-semibold text-slate-800">
-                    {new Date(selectedBlog.publish_date).toLocaleDateString("en-US", {
-                      year: "numeric", month: "long", day: "numeric",
-                    })}
+                    {new Date(selectedBlog.publish_date).toLocaleDateString(
+                      "en-US",
+                      {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      },
+                    )}
                   </p>
                 </div>
               )}
@@ -1194,19 +1355,29 @@ export default function Blogs() {
               {/* Short description */}
               {selectedBlog.short_description && (
                 <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 mb-4">
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Short Description</p>
-                  <p className="text-base text-slate-600 leading-relaxed">{selectedBlog.short_description}</p>
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">
+                    Short Description
+                  </p>
+                  <p className="text-base text-slate-600 leading-relaxed">
+                    {selectedBlog.short_description}
+                  </p>
                 </div>
               )}
 
               {/* Content – HTML rendered */}
               <div className="bg-slate-50 border border-slate-100 rounded-xl p-4">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Content</p>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">
+                  Content
+                </p>
                 <div className="max-h-52 overflow-y-auto prose prose-sm max-w-none text-slate-600">
                   {selectedBlog.content ? (
-                    <div dangerouslySetInnerHTML={{ __html: selectedBlog.content }} />
+                    <div
+                      dangerouslySetInnerHTML={{ __html: selectedBlog.content }}
+                    />
                   ) : (
-                    <p className="text-slate-400 italic">No content available.</p>
+                    <p className="text-slate-400 italic">
+                      No content available.
+                    </p>
                   )}
                 </div>
               </div>
@@ -1220,7 +1391,12 @@ export default function Blogs() {
                 Close
               </button>
               <button
-                onClick={() => { setShowViewModal(false); navigate(`/edit-blog/${selectedBlog.id}`, { state: { blog: selectedBlog } }); }}
+                onClick={() => {
+                  setShowViewModal(false);
+                  navigate(`/edit-blog/${selectedBlog.id}`, {
+                    state: { blog: selectedBlog },
+                  });
+                }}
                 className="px-5 py-2 bg-violet-600 text-white text-base font-medium rounded-xl hover:bg-violet-700 transition-colors flex items-center gap-2 shadow-sm shadow-violet-200"
               >
                 <Edit size={14} /> Edit Blog
@@ -1250,16 +1426,25 @@ export default function Blogs() {
                 <AlertCircle size={22} className="text-red-500" />
               </div>
               <div className="flex-1">
-                <h3 className="text-base font-semibold text-slate-900 mb-1">Delete Blog</h3>
+                <h3 className="text-base font-semibold text-slate-900 mb-1">
+                  Delete Blog
+                </h3>
                 <p className="text-base text-slate-500">
-                  Are you sure you want to delete <span className="font-semibold text-slate-700">"{blogToDelete.title}"</span>? This action cannot be undone.
+                  Are you sure you want to delete{" "}
+                  <span className="font-semibold text-slate-700">
+                    "{blogToDelete.title}"
+                  </span>
+                  ? This action cannot be undone.
                 </p>
               </div>
             </div>
 
             {deleteSuccess && (
               <div className="mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2">
-                <CheckCircle size={15} className="text-emerald-600 flex-shrink-0" />
+                <CheckCircle
+                  size={15}
+                  className="text-emerald-600 flex-shrink-0"
+                />
                 <p className="text-base text-emerald-700">{deleteSuccess}</p>
               </div>
             )}
@@ -1289,7 +1474,9 @@ export default function Blogs() {
                     Deleting…
                   </>
                 ) : (
-                  <><Trash2 size={14} /> Delete</>
+                  <>
+                    <Trash2 size={14} /> Delete
+                  </>
                 )}
               </button>
             </div>

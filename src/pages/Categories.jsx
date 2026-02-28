@@ -480,13 +480,14 @@ import {
   Tag,
   Link2,
 } from "lucide-react";
+import Toasts from "../pages/Toasts"; // 👈 import the toast component
 
 export default function Categories() {
   const navigate = useNavigate();
 
   const [categories, setCategories] = useState([]);
   const [filteredCategories, setFilteredCategories] = useState([]);
-  const [loading, setLoading] = useState(true); // ✅ changed from false to true
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -500,29 +501,23 @@ export default function Categories() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const [deleteSuccess, setDeleteSuccess] = useState("");
   const [deleteError, setDeleteError] = useState("");
+
+  // 👇 Toast state
+  const [toast, setToast] = useState({ show: false, message: "", type: "success" });
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const fetchCategories = async () => {
     try {
-      setLoading(true); // ensure loading is true before fetch
-
+      setLoading(true);
       const response = await fetch(
         "https://codingcloud.pythonanywhere.com/category/",
       );
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch categories");
-      }
-
+      if (!response.ok) throw new Error("Failed to fetch categories");
       const json = await response.json();
-
-      // ✅ FIX HERE
       const categoryArray = json.data || [];
-
       const dataWithDates = categoryArray.map((item) => ({
         ...item,
         created_at:
@@ -531,10 +526,8 @@ export default function Categories() {
             Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000,
           ).toISOString(),
       }));
-
       setCategories(dataWithDates);
       setFilteredCategories(dataWithDates);
-
       setError(null);
     } catch (err) {
       console.error("Fetch Error:", err);
@@ -622,27 +615,29 @@ export default function Categories() {
     setCategoryToDelete(category);
     setShowDeleteModal(true);
     setDeleteError("");
-    setDeleteSuccess("");
   };
 
   const handleDeleteConfirm = async () => {
     if (!categoryToDelete) return;
     setDeleteLoading(true);
     setDeleteError("");
-    setDeleteSuccess("");
     try {
       const response = await fetch(
         `https://codingcloud.pythonanywhere.com/category/${categoryToDelete.id}/`,
         { method: "DELETE" },
       );
       if (response.ok || response.status === 204) {
-        setDeleteSuccess("Category deleted successfully!");
+        // 👇 Show red toast
+        setToast({
+          show: true,
+          message: "Category deleted successfully!",
+          type: "error",
+        });
+
+        // Refresh the list and close modal immediately
         fetchCategories();
-        setTimeout(() => {
-          setShowDeleteModal(false);
-          setCategoryToDelete(null);
-          setDeleteSuccess("");
-        }, 1500);
+        setShowDeleteModal(false);
+        setCategoryToDelete(null);
       } else {
         try {
           const data = await response.json();
@@ -701,6 +696,15 @@ export default function Categories() {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      {/* 👇 Toast component */}
+      {toast.show && (
+        <Toasts
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast({ ...toast, show: false })}
+        />
+      )}
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* ── Header ── */}
         <div className="mb-6">
@@ -1050,15 +1054,8 @@ export default function Categories() {
               </div>
             </div>
 
-            {deleteSuccess && (
-              <div className="mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2">
-                <CheckCircle
-                  size={15}
-                  className="text-emerald-600 flex-shrink-0"
-                />
-                <p className="text-base text-emerald-700">{deleteSuccess}</p>
-              </div>
-            )}
+            {/* 👇 Removed the inline success message – now using toast */}
+
             {deleteError && (
               <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2">
                 <AlertCircle size={15} className="text-red-500 flex-shrink-0" />

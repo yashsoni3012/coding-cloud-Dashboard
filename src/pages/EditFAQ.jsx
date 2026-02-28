@@ -617,12 +617,12 @@ import {
     X,
     ChevronDown,
     Info,
-    CheckCircle2,
-    AlertCircle,
     Layers,
     HelpCircle,
     MessageSquare,
+    AlertCircle,
 } from "lucide-react";
+import Toasts from "./Toasts"; // <-- import toast component
 
 export default function EditFAQ() {
     const navigate = useNavigate();
@@ -634,15 +634,26 @@ export default function EditFAQ() {
     const [courses, setCourses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [error, setError] = useState("");
-    const [success, setSuccess] = useState("");
+
+    // Toast state
+    const [toast, setToast] = useState({
+        show: false,
+        message: "",
+        type: "success",
+    });
+
+    const showToast = (message, type = "success") => {
+        setToast({ show: true, message, type });
+    };
+
+    const closeToast = () => {
+        setToast((prev) => ({ ...prev, show: false }));
+    };
 
     useEffect(() => {
         const initializeData = async () => {
             try {
                 setLoading(true);
-                setError("");
-
                 // Fetch courses
                 let fetchedCourses = [];
                 const coursesResponse = await fetch("https://codingcloud.pythonanywhere.com/course/");
@@ -651,7 +662,7 @@ export default function EditFAQ() {
                     fetchedCourses = coursesData.data || coursesData;
                     setCourses(fetchedCourses);
                 } else {
-                    setError("Failed to fetch available courses.");
+                    showToast("Failed to fetch available courses.", "error");
                 }
 
                 // Fetch FAQ data
@@ -676,11 +687,11 @@ export default function EditFAQ() {
                         answer: faqData.answer || "",
                     });
                 } else {
-                    setError((prev) => (prev ? prev + " FAQ not found." : "FAQ not found."));
+                    showToast("FAQ not found.", "error");
                 }
             } catch (err) {
                 console.error("Error fetching data:", err);
-                setError("Failed to load details. Please try again.");
+                showToast("Failed to load details. Please try again.", "error");
             } finally {
                 setLoading(false);
             }
@@ -692,7 +703,6 @@ export default function EditFAQ() {
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
-        setError("");
     };
 
     const validateForm = () => {
@@ -705,10 +715,11 @@ export default function EditFAQ() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         const validationError = validateForm();
-        if (validationError) { setError(validationError); return; }
+        if (validationError) {
+            showToast(validationError, "error");
+            return;
+        }
         setSaving(true);
-        setError("");
-        setSuccess("");
         try {
             const payload = {
                 course: parseInt(formData.course),
@@ -731,11 +742,11 @@ export default function EditFAQ() {
                 }
                 throw new Error(errorMessage);
             }
-            setSuccess("FAQ updated successfully!");
-            setTimeout(() => navigate("/faqs"), 2000);
+            showToast("FAQ updated successfully!", "success");
+            setTimeout(() => navigate("/faq"), 2000);
         } catch (err) {
             console.error("Error updating FAQ:", err);
-            setError(err.message || "Failed to update FAQ. Please check your connection.");
+            showToast(err.message || "Failed to update FAQ. Please check your connection.", "error");
         } finally {
             setSaving(false);
         }
@@ -757,6 +768,15 @@ export default function EditFAQ() {
 
     return (
         <div className="min-h-screen bg-gray-50">
+
+            {/* Toast notification */}
+            {toast.show && (
+                <Toasts
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={closeToast}
+                />
+            )}
 
             {/* ── Header ── */}
             <header className=" top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
@@ -798,24 +818,7 @@ export default function EditFAQ() {
             {/* ── Main ── */}
             <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 pb-28 sm:pb-12">
 
-                {/* Error Alert */}
-                {error && (
-                    <div className="flex items-start gap-3 p-4 mb-6 bg-red-50 border border-red-200 rounded-2xl text-base text-red-700">
-                        <AlertCircle size={18} className="mt-0.5 flex-shrink-0 text-red-500" />
-                        <span className="flex-1">{error}</span>
-                        <button onClick={() => setError("")} className="text-red-400 hover:text-red-600 transition-colors flex-shrink-0">
-                            <X size={16} />
-                        </button>
-                    </div>
-                )}
-
-                {/* Success Alert */}
-                {success && (
-                    <div className="flex items-start gap-3 p-4 mb-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-base text-emerald-700">
-                        <CheckCircle2 size={18} className="mt-0.5 flex-shrink-0 text-emerald-500" />
-                        <span>{success}</span>
-                    </div>
-                )}
+                {/* Removed inline error/success alerts — now using toast */}
 
                 <form onSubmit={handleSubmit} className="space-y-5">
 

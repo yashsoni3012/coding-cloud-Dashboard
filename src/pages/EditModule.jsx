@@ -606,11 +606,10 @@ import {
     Layers,
     ChevronDown,
     Info,
-    CheckCircle2,
-    AlertCircle,
     Tag,
     BookOpen,
 } from "lucide-react";
+import Toasts from "./Toasts"; // <-- import the toast component
 
 export default function EditModule() {
     const { id } = useParams();
@@ -618,13 +617,26 @@ export default function EditModule() {
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [error, setError] = useState("");
-    const [success, setSuccess] = useState("");
 
     const [categories, setCategories] = useState([]);
     const [loadingCategories, setLoadingCategories] = useState(false);
 
     const [formData, setFormData] = useState({ name: "", course_data: "" });
+
+    // Toast state
+    const [toast, setToast] = useState({
+        show: false,
+        message: "",
+        type: "success",
+    });
+
+    const showToast = (message, type = "success") => {
+        setToast({ show: true, message, type });
+    };
+
+    const closeToast = () => {
+        setToast((prev) => ({ ...prev, show: false }));
+    };
 
     const fetchCategories = async () => {
         try {
@@ -660,10 +672,10 @@ export default function EditModule() {
                         course_data: module.course_data?.toString() || "",
                     });
                 } else {
-                    setError("Failed to fetch module details");
+                    showToast("Failed to fetch module details", "error");
                 }
             } catch (err) {
-                setError("Network error. Please try again.");
+                showToast("Network error. Please try again.", "error");
             } finally {
                 setLoading(false);
             }
@@ -674,7 +686,6 @@ export default function EditModule() {
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
-        setError("");
     };
 
     const validateForm = () => {
@@ -686,10 +697,11 @@ export default function EditModule() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         const validationError = validateForm();
-        if (validationError) { setError(validationError); return; }
+        if (validationError) {
+            showToast(validationError, "error");
+            return;
+        }
         setSaving(true);
-        setError("");
-        setSuccess("");
         try {
             const submitData = {
                 name: formData.name.trim(),
@@ -702,13 +714,13 @@ export default function EditModule() {
             });
             const data = await response.json();
             if (response.ok || response.status === 200) {
-                setSuccess("Module updated successfully!");
+                showToast("Module updated successfully!", "success");
                 setTimeout(() => navigate("/modules"), 2000);
             } else {
-                setError(data.message || data.detail || "Failed to update module. Please try again.");
+                showToast(data.message || data.detail || "Failed to update module. Please try again.", "error");
             }
         } catch (err) {
-            setError("Network error. Please check your connection and try again.");
+            showToast("Network error. Please check your connection and try again.", "error");
         } finally {
             setSaving(false);
         }
@@ -730,6 +742,15 @@ export default function EditModule() {
 
     return (
         <div className="min-h-screen bg-gray-50">
+
+            {/* Toast notification */}
+            {toast.show && (
+                <Toasts
+                    message={toast.message}
+                    type={toast.type}
+                    onClose={closeToast}
+                />
+            )}
 
             {/* ── Header ── */}
             <header className=" top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
@@ -771,24 +792,7 @@ export default function EditModule() {
             {/* ── Main ── */}
             <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 pb-28 sm:pb-12">
 
-                {/* Error Alert */}
-                {error && (
-                    <div className="flex items-start gap-3 p-4 mb-6 bg-red-50 border border-red-200 rounded-2xl text-base text-red-700">
-                        <AlertCircle size={18} className="mt-0.5 flex-shrink-0 text-red-500" />
-                        <span className="flex-1">{error}</span>
-                        <button onClick={() => setError("")} className="text-red-400 hover:text-red-600 transition-colors flex-shrink-0">
-                            <X size={16} />
-                        </button>
-                    </div>
-                )}
-
-                {/* Success Alert */}
-                {success && (
-                    <div className="flex items-start gap-3 p-4 mb-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-base text-emerald-700">
-                        <CheckCircle2 size={18} className="mt-0.5 flex-shrink-0 text-emerald-500" />
-                        <span>{success}</span>
-                    </div>
-                )}
+                {/* Removed inline error/success alerts — now using toast */}
 
                 <form onSubmit={handleSubmit} className="space-y-5">
 
