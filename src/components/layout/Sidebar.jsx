@@ -44,7 +44,7 @@
 //         setOpen(false);
 //       }
 //     };
-    
+
 //     checkMobile();
 //     window.addEventListener("resize", checkMobile);
 //     return () => window.removeEventListener("resize", checkMobile);
@@ -326,7 +326,7 @@
 
 //         {/* Profile & Logout */}
 //         <div style={{ padding: "10px 10px 16px", display: "flex", flexDirection: "column", gap: 4 }}>
-          
+
 //           <button onClick={handleLogout} className="sidebar-logout-btn">
 //             <LogOut size={17} style={{ flexShrink: 0, opacity: 0.6 }} />
 //             <span>Logout</span>
@@ -357,16 +357,16 @@ import {
 import { useAuth } from "../../context/AuthContext";
 
 const navItems = [
-  { to: "/",            icon: LayoutDashboard, label: "Dashboard" },
-  { to: "category",    icon: Layers,           label: "Category" },
-  { to: "/course",      icon: BookOpen,         label: "Courses" },
-  { to: "/modules",     icon: Layers,           label: "Modules" },
-  { to: "/topics",      icon: Tag,              label: "Topics" },
-  { to: "/contact",     icon: Mail,             label: "Contact" },
-  { to: "enroll",       icon: UserPlus,         label: "Enroll" },
-  { to: "faq",          icon: HelpCircle,       label: "FAQ" },
-  { to: "Blogs",        icon: FileText,         label: "Blogs" },
-  { to: "testimonials", icon: Star,             label: "Testimonials" },
+  { to: "/", icon: LayoutDashboard, label: "Dashboard" },
+  { to: "category", icon: Layers, label: "Category" },
+  { to: "/course", icon: BookOpen, label: "Courses" },
+  { to: "/modules", icon: Layers, label: "Modules" },
+  { to: "/topics", icon: Tag, label: "Topics" },
+  { to: "/contact", icon: Mail, label: "Contact" },
+  { to: "enroll", icon: UserPlus, label: "Enroll" },
+  { to: "faq", icon: HelpCircle, label: "FAQ" },
+  { to: "Blogs", icon: FileText, label: "Blogs" },
+  { to: "testimonials", icon: Star, label: "Testimonials" },
 ];
 
 function RippleNavLink({ to, icon: Icon, label, onLinkClick }) {
@@ -645,7 +645,14 @@ export default function Sidebar({ open, setOpen }) {
             borderBottom: "1px solid rgba(255,255,255,0.06)",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              minWidth: 0,
+            }}
+          >
             <div
               style={{
                 width: 34,
@@ -731,7 +738,14 @@ export default function Sidebar({ open, setOpen }) {
         />
 
         {/* Logout */}
-        <div style={{ padding: "10px 10px 16px", display: "flex", flexDirection: "column", gap: 4 }}>
+        <div
+          style={{
+            padding: "10px 10px 16px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 4,
+          }}
+        >
           <button onClick={handleLogout} className="sidebar-logout-btn">
             <LogOut size={17} style={{ flexShrink: 0, opacity: 0.6 }} />
             <span>Logout</span>

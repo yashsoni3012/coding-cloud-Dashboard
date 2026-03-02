@@ -1181,29 +1181,29 @@ export default function AddCourse() {
       {!pdfName ? (
         <div
           onClick={() => document.getElementById("pdf-upload")?.click()}
-          className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center cursor-pointer hover:border-red-200 hover:bg-red-50/40 transition-all select-none"
+          className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center cursor-pointer hover:border-indigo-300 hover:bg-indigo-50/50 transition-all select-none"
         >
-          <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center mx-auto mb-3">
-            <Upload size={20} className="text-red-400" />
+          <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center mx-auto mb-3">
+            <Upload size={20} className="text-indigo-500" />
           </div>
           <p className="text-base font-semibold text-gray-700 mb-1">
             Upload Syllabus
           </p>
           <p className="text-xs text-gray-400">
-            <span className="text-red-400 font-medium">Browse files</span> · PDF
+            <span className="text-indigo-500 font-medium">Browse files</span> · PDF
             only up to 10MB
           </p>
         </div>
       ) : (
-        <div className="relative flex items-center gap-3 p-4 bg-red-50 border border-red-100 rounded-xl">
-          <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center flex-shrink-0">
-            <FileText size={18} className="text-red-600" />
+        <div className="relative flex items-center gap-3 p-4 bg-indigo-50/50 border border-indigo-100 rounded-xl">
+          <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center flex-shrink-0">
+            <FileText size={18} className="text-indigo-600" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-base font-semibold text-gray-800 truncate">
               {pdfName}
             </p>
-            <p className="text-xs text-red-400 mt-0.5">PDF · Ready to upload</p>
+            <p className="text-xs text-indigo-500 mt-0.5">PDF · Ready to upload</p>
           </div>
           <button
             type="button"
