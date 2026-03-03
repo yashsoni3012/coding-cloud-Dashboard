@@ -94,7 +94,7 @@ export default function Topbar() {
               )}
             </button>
 
-            {showProfileMenu && (
+            {/* {showProfileMenu && (
               <>
                 <div
                   className="fixed inset-0 z-40"
@@ -125,7 +125,7 @@ export default function Topbar() {
                   </div>
                 </div>
               </>
-            )}
+            )} */}
           </div>
         </div>
       </header>
