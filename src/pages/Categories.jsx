@@ -468,19 +468,17 @@ import {
   Edit,
   Trash2,
   AlertCircle,
-  CheckCircle,
   X,
   Image as ImageIcon,
   FolderOpen,
   Filter,
   ChevronDown,
-  RefreshCw,
   SortAsc,
   SortDesc,
   Tag,
   Link2,
 } from "lucide-react";
-import Toasts from "../pages/Toasts"; // 👈 import the toast component
+import Toasts from "../pages/Toasts"; // adjust path as needed
 
 export default function Categories() {
   const navigate = useNavigate();
@@ -503,8 +501,12 @@ export default function Categories() {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState("");
 
-  // 👇 Toast state
-  const [toast, setToast] = useState({ show: false, message: "", type: "success" });
+  // Toast state
+  const [toast, setToast] = useState({
+    show: false,
+    message: "",
+    type: "success",
+  });
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -543,45 +545,62 @@ export default function Categories() {
 
   useEffect(() => {
     let result = [...categories];
-    if (searchTerm) {
+
+    // 🔍 Search
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
       result = result.filter(
         (c) =>
-          c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          c.id.toString().includes(searchTerm) ||
-          (c.slug && c.slug.toLowerCase().includes(searchTerm.toLowerCase())),
+          c.name?.toLowerCase().includes(term) ||
+          c.id?.toString().includes(term) ||
+          c.slug?.toLowerCase().includes(term),
       );
     }
+
+    // 🖼 Image Filter
     if (filters.hasImage !== "all") {
       result = result.filter((c) =>
-        filters.hasImage === "yes" ? !!c.image : !c.image,
+        filters.hasImage === "yes" ? Boolean(c.image) : !c.image,
       );
     }
+
+    // 📅 Date Filter
     if (filters.dateRange !== "all") {
-      const now = new Date();
-      const today = new Date(now.setHours(0, 0, 0, 0));
-      const weekAgo = new Date(new Date().setDate(new Date().getDate() - 7));
-      const monthAgo = new Date(new Date().setMonth(new Date().getMonth() - 1));
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+
+      const monthAgo = new Date();
+      monthAgo.setMonth(monthAgo.getMonth() - 1);
+
       result = result.filter((c) => {
-        const d = new Date(c.created_at);
-        if (filters.dateRange === "today") return d >= today;
-        if (filters.dateRange === "week") return d >= weekAgo;
-        if (filters.dateRange === "month") return d >= monthAgo;
+        if (!c.created_at) return false;
+        const createdDate = new Date(c.created_at);
+        if (isNaN(createdDate)) return false;
+        if (filters.dateRange === "today") return createdDate >= today;
+        if (filters.dateRange === "week") return createdDate >= weekAgo;
+        if (filters.dateRange === "month") return createdDate >= monthAgo;
         return true;
       });
     }
+
+    // 🔄 Sorting
     result.sort((a, b) => {
       let aVal =
         sortConfig.key === "created_at"
-          ? new Date(a[sortConfig.key])
+          ? new Date(a.created_at)
           : a[sortConfig.key];
       let bVal =
         sortConfig.key === "created_at"
-          ? new Date(b[sortConfig.key])
+          ? new Date(b.created_at)
           : b[sortConfig.key];
       if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
       if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
       return 0;
     });
+
     setFilteredCategories(result);
     setCurrentPage(1);
   }, [searchTerm, filters, sortConfig, categories]);
@@ -627,15 +646,12 @@ export default function Categories() {
         { method: "DELETE" },
       );
       if (response.ok || response.status === 204) {
-        // 👇 Show red toast
         setToast({
           show: true,
           message: "Category deleted successfully!",
-          type: "error",
+          type: "error", // red toast for delete
         });
-
-        // Refresh the list and close modal immediately
-        fetchCategories();
+        fetchCategories(); // refresh list
         setShowDeleteModal(false);
         setCategoryToDelete(null);
       } else {
@@ -696,7 +712,7 @@ export default function Categories() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* 👇 Toast component */}
+      {/* Toast component */}
       {toast.show && (
         <Toasts
           message={toast.message}
@@ -720,7 +736,7 @@ export default function Categories() {
           </p>
         </div>
 
-        {/* ── Toolbar (single line) ── */}
+        {/* ── Toolbar ── */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 px-4 py-3 mb-5">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             {/* Search */}
@@ -834,16 +850,14 @@ export default function Categories() {
         </div>
 
         {/* ── Table / Empty state ── */}
-        {categories.length === 0 ? (
+        {filteredCategories.length === 0 ? (
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-16 text-center">
             <div className="bg-slate-100 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
               <FolderOpen size={28} className="text-slate-400" />
             </div>
-
             <h3 className="text-base font-semibold text-slate-800 mb-1">
               No categories found
             </h3>
-
             <p className="text-slate-400 text-base mb-5">
               {searchTerm ||
               filters.hasImage !== "all" ||
@@ -851,7 +865,6 @@ export default function Categories() {
                 ? "Try adjusting your filters or search term."
                 : "Get started by adding your first category."}
             </p>
-
             <button
               onClick={() => navigate("/add-category")}
               className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-xl hover:bg-violet-700 transition-colors text-base font-medium"
@@ -874,11 +887,9 @@ export default function Categories() {
                         # {getSortIcon("id")}
                       </span>
                     </th>
-
                     <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide w-16">
                       Image
                     </th>
-
                     <th
                       className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide cursor-pointer hover:text-slate-800"
                       onClick={() => handleSort("name")}
@@ -887,7 +898,6 @@ export default function Categories() {
                         Name {getSortIcon("name")}
                       </span>
                     </th>
-
                     <th
                       className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide cursor-pointer hover:text-slate-800"
                       onClick={() => handleSort("slug")}
@@ -897,13 +907,11 @@ export default function Categories() {
                         Slug {getSortIcon("slug")}
                       </span>
                     </th>
-
                     <th className="px-5 py-3.5 text-right text-xs font-semibold text-slate-500 uppercase tracking-wide">
                       Actions
                     </th>
                   </tr>
                 </thead>
-
                 <tbody className="divide-y divide-slate-100">
                   {paginatedCategories.map((category, index) => (
                     <tr
@@ -914,7 +922,6 @@ export default function Categories() {
                       <td className="px-5 py-4 text-base font-semibold text-slate-400">
                         {indexOfFirstItem + index + 1}
                       </td>
-
                       {/* Image */}
                       <td className="px-5 py-4">
                         <div className="w-11 h-11 bg-slate-100 rounded-xl overflow-hidden border border-slate-200 flex items-center justify-center">
@@ -934,32 +941,27 @@ export default function Categories() {
                           )}
                         </div>
                       </td>
-
                       {/* Name */}
                       <td className="px-5 py-4">
                         <div className="flex flex-col gap-0.5">
                           <span className="text-base font-semibold text-slate-800">
                             {category.name}
                           </span>
-
                           <span className="text-xs text-amber-600 md:hidden flex items-center gap-1">
                             <Link2 size={10} />
                             {category.slug || "No slug"}
                           </span>
                         </div>
                       </td>
-
                       {/* Slug */}
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-1.5">
                           <Link2 size={12} className="text-amber-500" />
-
                           <span className="text-base text-slate-600 font-mono">
                             {category.slug ? `/${category.slug}` : "No slug"}
                           </span>
                         </div>
                       </td>
-
                       {/* Actions */}
                       <td className="px-5 py-4">
                         <div className="flex justify-end gap-1.5">
@@ -973,7 +975,6 @@ export default function Categories() {
                           >
                             <Edit size={15} />
                           </button>
-
                           <button
                             onClick={() => handleDeleteClick(category)}
                             className="p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50"
@@ -988,29 +989,56 @@ export default function Categories() {
               </table>
             </div>
 
-            {/* Pagination */}
-            <div className="px-5 py-3.5 bg-slate-50 border-t border-slate-100 flex justify-between items-center">
+            {/* Advanced Pagination (copied from Topics component) */}
+            <div className="px-5 py-3.5 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
               <span className="text-xs text-slate-400 font-medium">
-                Showing {indexOfFirstItem + 1}–
-                {Math.min(indexOfLastItem, filteredCategories.length)} of{" "}
-                {filteredCategories.length}
+                Showing{" "}
+                <span className="text-slate-700 font-semibold">
+                  {indexOfFirstItem + 1}–
+                  {Math.min(indexOfLastItem, filteredCategories.length)}
+                </span>{" "}
+                of{" "}
+                <span className="text-slate-700 font-semibold">
+                  {filteredCategories.length}
+                </span>{" "}
+                categories
               </span>
-
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
                 <button
                   onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
                   disabled={currentPage === 1}
-                  className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs"
+                  className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white transition-colors"
                 >
                   ← Prev
                 </button>
-
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                    let page = i + 1;
+                    if (totalPages > 5) {
+                      if (currentPage <= 3) page = i + 1;
+                      else if (currentPage >= totalPages - 2)
+                        page = totalPages - 4 + i;
+                      else page = currentPage - 2 + i;
+                    }
+                    return (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`w-8 h-8 rounded-lg text-xs font-semibold transition-colors ${
+                          currentPage === page
+                            ? "bg-violet-600 text-white shadow-sm"
+                            : "text-slate-500 hover:bg-slate-200"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    );
+                  })}
+                </div>
                 <button
-                  onClick={() =>
-                    setCurrentPage((p) => Math.min(p + 1, totalPages))
-                  }
+                  onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
                   disabled={currentPage === totalPages}
-                  className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs"
+                  className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white transition-colors"
                 >
                   Next →
                 </button>
@@ -1028,14 +1056,12 @@ export default function Categories() {
             onClick={() => !deleteLoading && setShowDeleteModal(false)}
           />
           <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 z-10">
-            {/* Close button */}
             <button
               onClick={() => !deleteLoading && setShowDeleteModal(false)}
               className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors"
             >
               <X size={16} />
             </button>
-
             <div className="flex items-start gap-4">
               <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-red-50 flex items-center justify-center">
                 <AlertCircle size={22} className="text-red-500" />
@@ -1053,16 +1079,12 @@ export default function Categories() {
                 </p>
               </div>
             </div>
-
-            {/* 👇 Removed the inline success message – now using toast */}
-
             {deleteError && (
               <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2">
                 <AlertCircle size={15} className="text-red-500 flex-shrink-0" />
                 <p className="text-base text-red-600">{deleteError}</p>
               </div>
             )}
-
             <div className="mt-6 flex gap-3 justify-end">
               <button
                 onClick={() => setShowDeleteModal(false)}

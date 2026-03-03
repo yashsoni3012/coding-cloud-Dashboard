@@ -352,28 +352,13 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <LayoutGrid size={24} className="text-violet-600" />
-                <h1 className="text-2xl font-bold text-slate-900">Welcome, Coding Cloud</h1>
-              </div>
-              <p className="text-slate-500 text-sm">
-                Welcome to your admin dashboard
-              </p>
-            </div>
-          </div>
-        </div>
-
+    <div className="min-h-screen">
+      <div className="max-w-7xl mx-auto">
         {/* Welcome Banner */}
         <div className="bg-gradient-to-r from-violet-600 to-purple-600 rounded-2xl shadow-lg mb-8 overflow-hidden">
           <div className="px-6 py-6 sm:px-8 sm:py-8 text-white">
-            <h2 className="text-xl sm:text-2xl font-bold mb-2">
-              Admin Dashboard
+            <h2 className="text-xl sm:text-3xl font-bold mb-2">
+              Welcome, Coding Cloud
             </h2>
             <p className="text-violet-100 text-sm sm:text-base max-w-2xl">
               Manage all your content from one central location. Track

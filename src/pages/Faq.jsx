@@ -1127,8 +1127,7 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-// Assuming Toasts.js is in the same directory or a components folder
-import Toasts from "./Toasts"; 
+import Toasts from "./Toasts";
 import {
   Search,
   Plus,
@@ -1154,7 +1153,7 @@ export default function FAQs() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // --- Toast State ---
+  // Toast state
   const [toastConfig, setToastConfig] = useState({
     show: false,
     message: "",
@@ -1175,6 +1174,10 @@ export default function FAQs() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [faqToDelete, setFaqToDelete] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const fetchData = async () => {
     try {
@@ -1286,8 +1289,7 @@ export default function FAQs() {
     });
   };
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  // Pagination calculations
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const paginatedFaqs = filteredFaqs.slice(indexOfFirstItem, indexOfLastItem);
@@ -1305,16 +1307,14 @@ export default function FAQs() {
     try {
       const response = await fetch(
         `https://codingcloud.pythonanywhere.com/faqs/${faqToDelete.id}/`,
-        { method: "DELETE" }
+        { method: "DELETE" },
       );
       if (response.ok || response.status === 204) {
-        // Trigger RED toast on successful deletion
         setToastConfig({
           show: true,
           message: "FAQ deleted successfully!",
-          type: "error", // This triggers your bg-red-600 style
+          type: "error",
         });
-        
         setShowDeleteModal(false);
         setFaqToDelete(null);
         fetchData();
@@ -1351,7 +1351,31 @@ export default function FAQs() {
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-violet-200 border-t-violet-600 rounded-full animate-spin mx-auto" />
-          <p className="mt-4 text-slate-500 text-base font-medium">Loading FAQs…</p>
+          <p className="mt-4 text-slate-500 text-base font-medium">
+            Loading FAQs…
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-lg p-8 max-w-sm w-full text-center">
+          <div className="bg-red-50 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+            <X size={24} className="text-red-500" />
+          </div>
+          <h3 className="text-lg font-semibold text-slate-900 mb-1">
+            Something went wrong
+          </h3>
+          <p className="text-slate-500 text-base mb-5">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-5 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors text-base font-medium"
+          >
+            Try Again
+          </button>
         </div>
       </div>
     );
@@ -1359,7 +1383,7 @@ export default function FAQs() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* --- Custom Toast Component --- */}
+      {/* Toast component */}
       {toastConfig.show && (
         <Toasts
           message={toastConfig.message}
@@ -1369,7 +1393,7 @@ export default function FAQs() {
       )}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        {/* ── Header ── */}
+        {/* Header */}
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-1">
             <MessageCircleQuestion size={20} className="text-violet-600" />
@@ -1378,48 +1402,130 @@ export default function FAQs() {
               {faqs.length}
             </span>
           </div>
-          <p className="text-slate-500 text-base">Manage frequently asked questions across courses</p>
+          <p className="text-slate-500 text-base">
+            Manage frequently asked questions across courses
+          </p>
         </div>
 
-        {/* ── Toolbar ── */}
+        {/* Toolbar */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 px-4 py-3 mb-5">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            {/* Search */}
             <div className="relative flex-1 min-w-0">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <Search
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+              />
               <input
                 type="text"
-                placeholder="Search..."
+                placeholder="Search questions, answers or course…"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-8 py-2.5 border border-slate-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-violet-500 bg-slate-50 placeholder:text-slate-400"
+                className="w-full pl-9 pr-8 py-2.5 border border-slate-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent bg-slate-50 placeholder:text-slate-400"
               />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
+                  <X size={14} />
+                </button>
+              )}
             </div>
 
+            {/* Filter toggle */}
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-base font-medium transition-all ${
-                showFilters || activeFiltersCount > 0 ? "border-violet-400 bg-violet-50 text-violet-700" : "border-slate-200 text-slate-600 hover:bg-slate-50"
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-base font-medium transition-all whitespace-nowrap ${
+                showFilters || activeFiltersCount > 0
+                  ? "border-violet-400 bg-violet-50 text-violet-700"
+                  : "border-slate-200 text-slate-600 hover:bg-slate-50"
               }`}
             >
               <Filter size={15} />
-              Filters {activeFiltersCount > 0 && <span className="px-1.5 py-0.5 bg-violet-600 text-white text-xs rounded-full">{activeFiltersCount}</span>}
+              Filters
+              {activeFiltersCount > 0 && (
+                <span className="px-1.5 py-0.5 bg-violet-600 text-white text-xs rounded-full leading-none">
+                  {activeFiltersCount}
+                </span>
+              )}
+              <ChevronDown
+                size={14}
+                className={`transition-transform ${showFilters ? "rotate-180" : ""}`}
+              />
             </button>
 
+            {/* Add FAQ */}
             <button
               onClick={() => navigate("/add-faq")}
-              className="flex items-center gap-2 px-4 py-2.5 bg-violet-600 text-white rounded-xl hover:bg-violet-700 transition-colors text-base font-medium shadow-sm shadow-violet-200"
+              className="flex items-center gap-2 px-4 py-2.5 bg-violet-600 text-white rounded-xl hover:bg-violet-700 transition-colors text-base font-medium whitespace-nowrap shadow-sm shadow-violet-200"
             >
-              <Plus size={16} /> Add FAQ
+              <Plus size={16} />
+              Add FAQ
             </button>
           </div>
+
+          {/* Expandable filter panel */}
+          {showFilters && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 pt-4 border-t border-slate-100">
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
+                  Course
+                </label>
+                <select
+                  value={filters.course}
+                  onChange={(e) =>
+                    setFilters({ ...filters, course: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-violet-500 bg-slate-50"
+                >
+                  <option value="all">All Courses</option>
+                  {uniqueCourses.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
+                  Items Per Page
+                </label>
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-violet-500 bg-slate-50"
+                >
+                  <option value={5}>5 per page</option>
+                  <option value={10}>10 per page</option>
+                  <option value={25}>25 per page</option>
+                  <option value={50}>50 per page</option>
+                </select>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* ── Table Content ── */}
+        {/* Table / Empty state */}
         {filteredFaqs.length === 0 ? (
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-16 text-center">
-            <h3 className="text-base font-semibold text-slate-800 mb-1">No FAQs found</h3>
-            <button onClick={() => navigate("/add-faq")} className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-xl">
-              <Plus size={15} /> Add FAQ
+            <div className="bg-slate-100 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+              <MessageCircleQuestion size={28} className="text-slate-400" />
+            </div>
+            <h3 className="text-base font-semibold text-slate-800 mb-1">
+              No FAQs found
+            </h3>
+            <p className="text-slate-400 text-base mb-5">
+              {searchTerm || filters.course !== "all"
+                ? "Try adjusting your filters or search term."
+                : "Get started by adding your first FAQ."}
+            </p>
+            <button
+              onClick={() => navigate("/add-faq")}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-xl hover:bg-violet-700 transition-colors text-base font-medium"
+            >
+              <Plus size={15} />
+              Add FAQ
             </button>
           </div>
         ) : (
@@ -1428,46 +1534,119 @@ export default function FAQs() {
               <table className="w-full min-w-[560px]">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200">
-                    <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase cursor-pointer" onClick={() => handleSort("display_id")}>
-                      # {getSortIcon("display_id")}
+                    <th
+                      className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide cursor-pointer select-none hover:text-slate-800 w-14"
+                      onClick={() => handleSort("display_id")}
+                    >
+                      <span className="flex items-center gap-1">
+                        # {getSortIcon("display_id")}
+                      </span>
                     </th>
-                    <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase cursor-pointer" onClick={() => handleSort("question")}>
-                      Question {getSortIcon("question")}
+                    <th
+                      className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide cursor-pointer select-none hover:text-slate-800"
+                      onClick={() => handleSort("question")}
+                    >
+                      <span className="flex items-center gap-1">
+                        Question {getSortIcon("question")}
+                      </span>
                     </th>
-                    <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase hidden md:table-cell cursor-pointer" onClick={() => handleSort("course")}>
-                      Course {getSortIcon("course")}
+                    <th
+                      className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide hidden md:table-cell cursor-pointer select-none hover:text-slate-800"
+                      onClick={() => handleSort("course")}
+                    >
+                      <span className="flex items-center gap-1">
+                        Course {getSortIcon("course")}
+                      </span>
                     </th>
-                    <th className="px-5 py-3.5 text-right text-xs font-semibold text-slate-500 uppercase">Actions</th>
+                    <th className="px-5 py-3.5 text-right text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {paginatedFaqs.map((faq, index) => {
                     const isExpanded = expandedFaqs.has(faq.id);
                     return (
-                      <tr key={faq.id} className="hover:bg-slate-50/70 transition-colors">
-                        <td className="px-5 py-4 text-base font-semibold text-slate-400 align-top">{indexOfFirstItem + index + 1}</td>
+                      <tr
+                        key={faq.id}
+                        className="hover:bg-slate-50/70 transition-colors cursor-pointer group"
+                      >
+                        {/* # */}
+                        <td className="px-5 py-4 text-base font-semibold text-slate-400 align-top">
+                          {indexOfFirstItem + index + 1}
+                        </td>
+
+                        {/* Question column with expandable answer */}
                         <td className="px-5 py-4">
-                          <button onClick={() => toggleFaq(faq.id)} className="flex items-start gap-2 w-full text-left group">
-                            <div className="w-7 h-7 rounded-lg bg-violet-100 flex items-center justify-center text-violet-600 mt-0.5"><MessageCircleQuestion size={13} /></div>
-                            <div className="flex-1">
-                              <span className="text-base font-semibold text-slate-800 group-hover:text-violet-600 block">{faq.question}</span>
+                          <button
+                            onClick={() => toggleFaq(faq.id)}
+                            className="flex items-start gap-2 w-full text-left group"
+                          >
+                            <div className="w-7 h-7 rounded-lg bg-violet-100 flex items-center justify-center text-violet-600 mt-0.5 flex-shrink-0">
+                              <MessageCircleQuestion size={13} />
                             </div>
-                            <ChevronDown size={15} className={`transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                            <div className="flex-1">
+                              <span className="text-base font-semibold text-slate-800 group-hover:text-violet-600 block">
+                                {faq.question}
+                              </span>
+                            </div>
+                            <ChevronDown
+                              size={15}
+                              className={`text-slate-400 transition-transform flex-shrink-0 ${
+                                isExpanded ? "rotate-180" : ""
+                              }`}
+                            />
                           </button>
                           {isExpanded && (
                             <div className="mt-3 ml-9 pl-3 border-l-2 border-violet-200">
-                              <p className="text-base text-slate-600 whitespace-pre-wrap">{faq.answer}</p>
+                              <p className="text-base text-slate-600 whitespace-pre-wrap">
+                                {faq.answer}
+                              </p>
                             </div>
                           )}
                         </td>
+
+                        {/* Course badge */}
                         <td className="px-5 py-4 align-top hidden md:table-cell">
-                          <span className="px-2.5 py-1 bg-violet-50 text-violet-700 border border-violet-100 text-xs font-semibold rounded-full">{courses[faq.course] || `Course ${faq.course}`}</span>
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-violet-50 text-violet-700 border border-violet-100 text-xs font-semibold rounded-full">
+                            <BookOpen size={11} />
+                            {courses[faq.course] || `Course ${faq.course}`}
+                          </span>
                         </td>
+
+                        {/* Actions */}
                         <td className="px-5 py-4 align-top text-right">
                           <div className="flex items-center justify-end gap-1.5">
-                            <button onClick={() => { setSelectedFaq(faq); setShowViewModal(true); }} className="p-2 text-slate-400 hover:text-slate-700"><Eye size={15} /></button>
-                            <button onClick={() => navigate(`/edit-faq/${faq.id}`, { state: { faq } })} className="p-2 text-slate-400 hover:text-violet-600"><Edit size={15} /></button>
-                            <button onClick={(e) => handleDeleteClick(e, faq)} className="p-2 text-slate-400 hover:text-red-600"><Trash2 size={15} /></button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedFaq(faq);
+                                setShowViewModal(true);
+                              }}
+                              className="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all"
+                              title="View"
+                            >
+                              <Eye size={15} />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/edit-faq/${faq.id}`, {
+                                  state: { faq },
+                                });
+                              }}
+                              className="p-2 rounded-lg text-slate-400 hover:text-violet-600 hover:bg-violet-50 transition-all"
+                              title="Edit"
+                            >
+                              <Edit size={15} />
+                            </button>
+                            <button
+                              onClick={(e) => handleDeleteClick(e, faq)}
+                              className="p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all"
+                              title="Delete"
+                            >
+                              <Trash2 size={15} />
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -1476,43 +1655,181 @@ export default function FAQs() {
                 </tbody>
               </table>
             </div>
+
+            {/* Advanced Pagination */}
+            <div className="px-5 py-3.5 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <span className="text-xs text-slate-400 font-medium">
+                Showing{" "}
+                <span className="text-slate-700 font-semibold">
+                  {indexOfFirstItem + 1}–
+                  {Math.min(indexOfLastItem, filteredFaqs.length)}
+                </span>{" "}
+                of{" "}
+                <span className="text-slate-700 font-semibold">
+                  {filteredFaqs.length}
+                </span>{" "}
+                FAQs
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white transition-colors"
+                >
+                  ← Prev
+                </button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                    let page = i + 1;
+                    if (totalPages > 5) {
+                      if (currentPage <= 3) page = i + 1;
+                      else if (currentPage >= totalPages - 2)
+                        page = totalPages - 4 + i;
+                      else page = currentPage - 2 + i;
+                    }
+                    return (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`w-8 h-8 rounded-lg text-xs font-semibold transition-colors ${
+                          currentPage === page
+                            ? "bg-violet-600 text-white shadow-sm"
+                            : "text-slate-500 hover:bg-slate-200"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    );
+                  })}
+                </div>
+                <button
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(p + 1, totalPages))
+                  }
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white transition-colors"
+                >
+                  Next →
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
 
-      {/* ── View Modal ── */}
+      {/* View Modal */}
       {showViewModal && selectedFaq && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => setShowViewModal(false)} />
+          <div
+            className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm"
+            onClick={() => setShowViewModal(false)}
+          />
           <div className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full z-10 p-6 overflow-hidden">
-            <h2 className="text-lg font-bold mb-4">{selectedFaq.question}</h2>
-            <div className="bg-slate-50 p-4 rounded-xl mb-4">
-              <p className="text-xs font-semibold text-slate-400 uppercase mb-2">Answer</p>
-              <p className="text-base text-slate-600 whitespace-pre-wrap">{selectedFaq.answer}</p>
+            <button
+              onClick={() => setShowViewModal(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+            >
+              <X size={16} />
+            </button>
+
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 bg-violet-100 rounded-xl flex items-center justify-center text-violet-600">
+                <MessageCircleQuestion size={22} />
+              </div>
+              <h2 className="text-lg font-bold text-slate-900 flex-1 pr-6">
+                {selectedFaq.question}
+              </h2>
             </div>
+
+            <div className="bg-slate-50 p-4 rounded-xl mb-4">
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">
+                Answer
+              </p>
+              <p className="text-base text-slate-600 whitespace-pre-wrap">
+                {selectedFaq.answer}
+              </p>
+            </div>
+
             <div className="flex justify-end gap-3">
-              <button onClick={() => setShowViewModal(false)} className="px-4 py-2 border rounded-xl">Close</button>
+              <button
+                onClick={() => setShowViewModal(false)}
+                className="px-4 py-2 border border-slate-200 text-slate-600 text-base font-medium rounded-xl hover:bg-slate-100 transition-colors"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => {
+                  setShowViewModal(false);
+                  navigate(`/edit-faq/${selectedFaq.id}`, {
+                    state: { faq: selectedFaq },
+                  });
+                }}
+                className="px-5 py-2 bg-violet-600 text-white text-base font-medium rounded-xl hover:bg-violet-700 transition-colors flex items-center gap-2 shadow-sm shadow-violet-200"
+              >
+                <Edit size={14} /> Edit FAQ
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ── Delete Modal ── */}
+      {/* Delete Modal */}
       {showDeleteModal && faqToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => !deleteLoading && setShowDeleteModal(false)} />
+          <div
+            className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm"
+            onClick={() => !deleteLoading && setShowDeleteModal(false)}
+          />
           <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 z-10">
+            <button
+              onClick={() => !deleteLoading && setShowDeleteModal(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors"
+            >
+              <X size={16} />
+            </button>
+
             <div className="flex items-start gap-4">
-              <div className="w-11 h-11 bg-red-50 rounded-xl flex items-center justify-center"><AlertCircle size={22} className="text-red-500" /></div>
+              <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-red-50 flex items-center justify-center">
+                <AlertCircle size={22} className="text-red-500" />
+              </div>
               <div className="flex-1">
-                <h3 className="text-base font-semibold text-slate-900 mb-1">Delete FAQ</h3>
-                <p className="text-base text-slate-500">Are you sure you want to delete <span className="font-semibold text-slate-700">"{faqToDelete.question}"</span>?</p>
+                <h3 className="text-base font-semibold text-slate-900 mb-1">
+                  Delete FAQ
+                </h3>
+                <p className="text-base text-slate-500">
+                  Are you sure you want to delete{" "}
+                  <span className="font-semibold text-slate-700">
+                    "{faqToDelete.question}"
+                  </span>
+                  ? This action cannot be undone.
+                </p>
               </div>
             </div>
+
             <div className="mt-6 flex gap-3 justify-end">
-              <button onClick={() => setShowDeleteModal(false)} disabled={deleteLoading} className="px-4 py-2 border rounded-xl disabled:opacity-50">Cancel</button>
-              <button onClick={handleDeleteConfirm} disabled={deleteLoading} className="px-5 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 disabled:opacity-50 flex items-center gap-2">
-                {deleteLoading ? "Deleting..." : "Delete"}
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                disabled={deleteLoading}
+                className="px-4 py-2 border border-slate-200 text-slate-600 text-base font-medium rounded-xl hover:bg-slate-50 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                disabled={deleteLoading}
+                className="px-5 py-2 bg-red-600 text-white text-base font-medium rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                {deleteLoading ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Deleting…
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={14} />
+                    Delete
+                  </>
+                )}
               </button>
             </div>
           </div>

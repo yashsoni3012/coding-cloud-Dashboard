@@ -922,33 +922,7 @@ export default function EditFAQ() {
                         </p>
                     </div>
 
-                    {/* ── Live Preview Card ── */}
-                    {(formData.question || formData.answer || selectedCourse) && (
-                        <div className="bg-gradient-to-br from-indigo-50 to-violet-50 border border-indigo-100 rounded-2xl p-5">
-                            <p className="text-xs font-semibold text-indigo-500 uppercase tracking-wider mb-3">Preview</p>
-                            <div className="space-y-3">
-                                {selectedCourse && (
-                                    <p className="text-xs text-indigo-500 font-medium">
-                                        Course: {selectedCourse.name}
-                                    </p>
-                                )}
-                                <div className="flex items-start gap-2">
-                                    <div className="w-5 h-5 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                        <HelpCircle size={11} className="text-indigo-600" />
-                                    </div>
-                                    <p className="text-base font-semibold text-gray-800">
-                                        {formData.question || <span className="text-gray-400 font-normal italic">No question entered…</span>}
-                                    </p>
-                                </div>
-                                {formData.answer && (
-                                    <div className="pl-7">
-                                        <p className="text-xs text-gray-600 leading-relaxed line-clamp-3">{formData.answer}</p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    )}
-
+                  
                     {/* ── Mobile Submit ── */}
                     <div className="sm:hidden">
                         <button

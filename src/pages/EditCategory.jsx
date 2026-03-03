@@ -961,45 +961,6 @@ export default function EditCategory() {
             )}
           </div>
 
-          {/* ── Live Preview Summary ── */}
-          {(formData.name || formData.text || imagePreview) && (
-            <div className="bg-gradient-to-br from-indigo-50 to-violet-50 border border-indigo-100 rounded-2xl p-5">
-              <p className="text-xs font-semibold text-indigo-500 uppercase tracking-wider mb-3">
-                Preview
-              </p>
-              <div className="flex items-center gap-3">
-                {imagePreview ? (
-                  <img
-                    src={imagePreview}
-                    alt=""
-                    className="w-12 h-12 rounded-xl object-cover flex-shrink-0 border border-white shadow-sm"
-                    onError={(e) => {
-                      e.target.style.display = "none";
-                    }}
-                  />
-                ) : (
-                  <div className="w-12 h-12 rounded-xl bg-indigo-100 flex items-center justify-center flex-shrink-0">
-                    <Tag size={18} className="text-indigo-400" />
-                  </div>
-                )}
-                <div className="min-w-0">
-                  <p className="text-base font-bold text-gray-800 truncate">
-                    {formData.name || (
-                      <span className="text-gray-400 font-normal italic">
-                        Untitled Category
-                      </span>
-                    )}
-                  </p>
-                  {formData.text && (
-                    <p className="text-xs text-gray-500 truncate mt-0.5">
-                      {formData.text}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* ── Mobile Submit Button ── */}
           <div className="sm:hidden">
             <button

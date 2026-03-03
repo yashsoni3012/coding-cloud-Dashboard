@@ -640,64 +640,7 @@ export default function EditTestimonial() {
             />
           </div>
 
-          {/* ── Live Preview Card ── */}
-          {(formData.name || formData.review) && (
-            <div className="bg-gradient-to-br from-indigo-50 to-violet-50 border border-indigo-100 rounded-2xl p-5">
-              <p className="text-xs font-semibold text-indigo-500 uppercase tracking-wider mb-4">
-                Preview
-              </p>
-              <div className="bg-white rounded-xl p-4 shadow-sm border border-indigo-100">
-                <div className="flex items-center gap-3 mb-3">
-                  {imagePreview ? (
-                    <img
-                      src={imagePreview}
-                      alt="avatar"
-                      className="w-10 h-10 rounded-full object-cover border border-gray-200"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                      }}
-                    />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
-                      <User size={16} className="text-indigo-500" />
-                    </div>
-                  )}
-                  <div className="min-w-0">
-                    <p className="text-base font-bold text-gray-800 truncate">
-                      {formData.name || (
-                        <span className="text-gray-400 font-normal italic">
-                          Customer Name
-                        </span>
-                      )}
-                    </p>
-                    {selectedCategory && (
-                      <p className="text-xs text-gray-400 truncate">
-                        {selectedCategory.name}
-                      </p>
-                    )}
-                  </div>
-                  <div className="ml-auto flex items-center gap-0.5 flex-shrink-0">
-                    {[1, 2, 3, 4, 5].map((s) => (
-                      <Star
-                        key={s}
-                        size={12}
-                        fill={s <= formData.rating ? "#fbbf24" : "none"}
-                        color={s <= formData.rating ? "#fbbf24" : "#d1d5db"}
-                      />
-                    ))}
-                  </div>
-                </div>
-                <p className="text-xs text-gray-600 leading-relaxed line-clamp-3">
-                  {formData.review || (
-                    <span className="italic text-gray-400">
-                      No review written yet…
-                    </span>
-                  )}
-                </p>
-              </div>
-            </div>
-          )}
-
+      
           {/* ── Mobile Submit ── */}
           <div className="sm:hidden">
             <button
