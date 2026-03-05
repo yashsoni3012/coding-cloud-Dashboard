@@ -53,35 +53,71 @@ export default function Testimonials() {
     type: "success",
   });
 
+  // --- FIXED FETCH FUNCTION ---
   const fetchTestimonials = async () => {
     try {
       setLoading(true);
+      setError(null);
       const response = await fetch(
         "https://codingcloud.pythonanywhere.com/testimonials/",
       );
-      if (response.ok) {
-        const testimonialsData = await response.json();
-        const actualTestimonials = testimonialsData.data || testimonialsData;
-        const testimonialsList = Array.isArray(actualTestimonials)
-          ? actualTestimonials
-          : [];
-        const testimonialsWithDisplayIds = testimonialsList.map(
-          (testimonial, index) => ({
-            ...testimonial,
-            display_id: index + 1,
-          }),
-        );
-        setTestimonials(testimonialsWithDisplayIds);
-        setFilteredTestimonials(testimonialsWithDisplayIds);
-      } else {
-        setError("Failed to fetch testimonials data.");
+
+      if (!response.ok) {
+        throw new Error(`HTTP error ${response.status}`);
       }
+
+      const data = await response.json();
+      console.log("API Response:", data); // Debug log – remove in production
+
+      // Try to extract the array from the response
+      let testimonialsArray = [];
+
+      if (Array.isArray(data)) {
+        // Case 1: response is directly an array
+        testimonialsArray = data;
+      } else if (data && typeof data === "object") {
+        // Case 2: response is an object – look for common array keys
+        const possibleKeys = ["data", "testimonials", "results", "items"];
+        for (const key of possibleKeys) {
+          if (Array.isArray(data[key])) {
+            testimonialsArray = data[key];
+            break;
+          }
+        }
+        // If still not found, maybe it's a single object? (unlikely)
+        if (testimonialsArray.length === 0) {
+          // Check if the whole object is a testimonial (if ID exists)
+          if (data.id || data.name) {
+            testimonialsArray = [data];
+          } else {
+            console.warn("No array found in response", data);
+          }
+        }
+      }
+
+      if (testimonialsArray.length === 0) {
+        setError("No testimonials found in the response.");
+        setTestimonials([]);
+        setFilteredTestimonials([]);
+        return;
+      }
+
+      // Add a local display ID for each item
+      const withDisplayIds = testimonialsArray.map((testimonial, index) => ({
+        ...testimonial,
+        display_id: index + 1,
+      }));
+
+      setTestimonials(withDisplayIds);
+      setFilteredTestimonials(withDisplayIds);
     } catch (err) {
-      setError("Network error. Please try again.");
+      console.error("Fetch error:", err);
+      setError(err.message || "Network error. Please try again.");
     } finally {
       setLoading(false);
     }
   };
+  // --- END OF FIX ---
 
   useEffect(() => {
     fetchTestimonials();
