@@ -666,7 +666,13 @@ import {
   RefreshCw,
   SortAsc,
   SortDesc,
+  User,
+  Tag,
+  Layers,
+  Globe,
 } from "lucide-react";
+
+const BASE_URL = "https://codingcloud.pythonanywhere.com";
 
 export default function Blogs() {
   const navigate = useNavigate();
@@ -689,7 +695,6 @@ export default function Blogs() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [blogToDelete, setBlogToDelete] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const [deleteSuccess, setDeleteSuccess] = useState("");
   const [deleteError, setDeleteError] = useState("");
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -703,9 +708,7 @@ export default function Blogs() {
   const fetchBlogs = async () => {
     try {
       setLoading(true);
-      const response = await fetch(
-        "https://codingcloud.pythonanywhere.com/blogs/",
-      );
+      const response = await fetch(`${BASE_URL}/blogs/`);
       if (response.ok) {
         const blogsData = await response.json();
         const actualBlogs = blogsData.data || blogsData;
@@ -804,32 +807,27 @@ export default function Blogs() {
     setBlogToDelete(blog);
     setShowDeleteModal(true);
     setDeleteError("");
-    setDeleteSuccess("");
   };
 
   const handleDeleteConfirm = async () => {
     if (!blogToDelete) return;
     setDeleteLoading(true);
     setDeleteError("");
-    setDeleteSuccess("");
     try {
       const response = await fetch(
-        `https://codingcloud.pythonanywhere.com/blogs/${blogToDelete.id}/`,
+        `${BASE_URL}/blogs/${blogToDelete.id}/`,
         { method: "DELETE" },
       );
       if (response.ok || response.status === 204) {
-
-  setShowDeleteModal(false);
-  setBlogToDelete(null);
-
-  setToast({
-    show: true,
-    message: "Blog deleted successfully!",
-    type: "error", // red background
-  });
-
-  fetchBlogs();
-} else {
+        setShowDeleteModal(false);
+        setBlogToDelete(null);
+        setToast({
+          show: true,
+          message: "Blog deleted successfully!",
+          type: "error", // red background
+        });
+        fetchBlogs();
+      } else {
         try {
           const data = await response.json();
           setToast({
@@ -909,14 +907,12 @@ export default function Blogs() {
   return (
     <div className="min-h-screen bg-slate-50">
       {toast.show && (
-      <Toasts
-        message={toast.message}
-        type={toast.type}
-        onClose={() =>
-          setToast((prev) => ({ ...prev, show: false }))
-        }
-      />
-    )}
+        <Toasts
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast((prev) => ({ ...prev, show: false }))}
+        />
+      )}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Header */}
         <div className="mb-6">
@@ -1116,7 +1112,7 @@ export default function Blogs() {
                         <div className="w-11 h-11 bg-slate-100 rounded-xl overflow-hidden border border-slate-200 flex items-center justify-center flex-shrink-0">
                           {blog.featured_image ? (
                             <img
-                              src={`https://codingcloud.pythonanywhere.com${blog.featured_image}`}
+                              src={`${BASE_URL}${blog.featured_image}`}
                               alt={blog.title}
                               className="w-full h-full object-cover"
                               onError={(e) => {
@@ -1137,7 +1133,6 @@ export default function Blogs() {
                           <span className="text-base font-semibold text-slate-800 line-clamp-1 block max-w-[200px]">
                             {blog.title}
                           </span>
-                          {/* Show description on small screens */}
                           <span className="text-xs text-slate-400 lg:hidden line-clamp-1 max-w-[200px] block mt-0.5">
                             {blog.short_description ||
                               blog.content?.substring(0, 80) ||
@@ -1282,14 +1277,14 @@ export default function Blogs() {
         )}
       </div>
 
-      {/* ── View Blog Modal ── */}
+      {/* ── View Blog Modal (Enhanced) ── */}
       {showViewModal && selectedBlog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
             className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm"
             onClick={() => setShowViewModal(false)}
           />
-          <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full z-10 overflow-hidden max-h-[90vh] flex flex-col">
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-3xl w-full z-10 overflow-hidden max-h-[90vh] flex flex-col">
             <button
               onClick={() => setShowViewModal(false)}
               className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors z-10"
@@ -1298,10 +1293,10 @@ export default function Blogs() {
             </button>
 
             {/* Featured Image banner */}
-            <div className="w-full h-44 bg-slate-100 flex-shrink-0 overflow-hidden">
+            <div className="w-full h-48 bg-slate-100 flex-shrink-0 overflow-hidden">
               {selectedBlog.featured_image ? (
                 <img
-                  src={`https://codingcloud.pythonanywhere.com${selectedBlog.featured_image}`}
+                  src={`${BASE_URL}${selectedBlog.featured_image}`}
                   alt={selectedBlog.title}
                   className="w-full h-full object-cover"
                   onError={(e) => {
@@ -1312,49 +1307,86 @@ export default function Blogs() {
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
-                  <ImageIcon size={40} className="text-slate-300" />
+                  <ImageIcon size={48} className="text-slate-300" />
                 </div>
               )}
             </div>
 
-            <div className="p-6 overflow-y-auto flex-1">
+            <div className="p-6 overflow-y-auto flex-1 space-y-5">
               {/* Title + status */}
-              <div className="flex items-start justify-between gap-3 mb-5">
-                <div>
-                  <h2 className="text-xl font-bold text-slate-900">
-                    {selectedBlog.title}
-                  </h2>
-                </div>
+              <div className="flex items-start justify-between gap-3">
+                <h2 className="text-2xl font-bold text-slate-900">
+                  {selectedBlog.title}
+                </h2>
                 <span
-                  className={`inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full flex-shrink-0 ${getStatusStyles(selectedBlog.status)}`}
+                  className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full flex-shrink-0 ${getStatusStyles(selectedBlog.status)}`}
                 >
                   {selectedBlog.status || "Draft"}
                 </span>
               </div>
 
-              {/* Publish date */}
-              {selectedBlog.publish_date && (
-                <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 mb-4">
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1 flex items-center gap-1">
-                    <Calendar size={11} className="text-violet-500" /> Publish
-                    Date
+              {/* Author & Date row */}
+              <div className="flex flex-wrap items-center gap-4 text-sm text-slate-500">
+                {selectedBlog.author && (
+                  <div className="flex items-center gap-1.5">
+                    <User size={14} className="text-slate-400" />
+                    <span>{selectedBlog.author}</span>
+                  </div>
+                )}
+                {selectedBlog.publish_date && (
+                  <div className="flex items-center gap-1.5">
+                    <Calendar size={14} className="text-slate-400" />
+                    <span>
+                      {new Date(selectedBlog.publish_date).toLocaleDateString(
+                        "en-US",
+                        { year: "numeric", month: "long", day: "numeric" }
+                      )}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Categories */}
+              {selectedBlog.categories && selectedBlog.categories.length > 0 && (
+                <div className="bg-slate-50 border border-slate-100 rounded-xl p-4">
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2 flex items-center gap-1">
+                    <Layers size={12} className="text-violet-500" /> Categories
                   </p>
-                  <p className="text-base font-semibold text-slate-800">
-                    {new Date(selectedBlog.publish_date).toLocaleDateString(
-                      "en-US",
-                      {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      },
-                    )}
+                  <div className="flex flex-wrap gap-2">
+                    {selectedBlog.categories.map((cat, idx) => (
+                      <span
+                        key={idx}
+                        className="px-2 py-1 bg-violet-100 text-violet-700 text-xs rounded-full"
+                      >
+                        {cat.name || cat}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Tags */}
+              {selectedBlog.tags && selectedBlog.tags.length > 0 && (
+                <div className="bg-slate-50 border border-slate-100 rounded-xl p-4">
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2 flex items-center gap-1">
+                    <Tag size={12} className="text-emerald-500" /> Tags
                   </p>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedBlog.tags.map((tag, idx) => (
+                      <span
+                        key={idx}
+                        className="px-2 py-1 bg-emerald-100 text-emerald-700 text-xs rounded-full"
+                      >
+                        #{tag.name || tag}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               )}
 
               {/* Short description */}
               {selectedBlog.short_description && (
-                <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 mb-4">
+                <div className="bg-slate-50 border border-slate-100 rounded-xl p-4">
                   <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">
                     Short Description
                   </p>
@@ -1364,12 +1396,12 @@ export default function Blogs() {
                 </div>
               )}
 
-              {/* Content – HTML rendered */}
+              {/* Full content */}
               <div className="bg-slate-50 border border-slate-100 rounded-xl p-4">
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">
                   Content
                 </p>
-                <div className="max-h-52 overflow-y-auto prose prose-sm max-w-none text-slate-600">
+                <div className="max-h-60 overflow-y-auto prose prose-sm max-w-none text-slate-600">
                   {selectedBlog.content ? (
                     <div
                       dangerouslySetInnerHTML={{ __html: selectedBlog.content }}
@@ -1381,6 +1413,35 @@ export default function Blogs() {
                   )}
                 </div>
               </div>
+
+              {/* Meta information */}
+              {(selectedBlog.meta_title ||
+                selectedBlog.meta_description ||
+                selectedBlog.meta_keywords) && (
+                <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 space-y-3">
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide flex items-center gap-1">
+                    <Globe size={12} className="text-indigo-500" /> SEO & Meta
+                  </p>
+                  {selectedBlog.meta_title && (
+                    <div>
+                      <p className="text-xs font-medium text-slate-500">Meta Title</p>
+                      <p className="text-sm text-slate-700">{selectedBlog.meta_title}</p>
+                    </div>
+                  )}
+                  {selectedBlog.meta_description && (
+                    <div>
+                      <p className="text-xs font-medium text-slate-500">Meta Description</p>
+                      <p className="text-sm text-slate-700">{selectedBlog.meta_description}</p>
+                    </div>
+                  )}
+                  {selectedBlog.meta_keywords && (
+                    <div>
+                      <p className="text-xs font-medium text-slate-500">Meta Keywords</p>
+                      <p className="text-sm text-slate-700">{selectedBlog.meta_keywords}</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3 flex-shrink-0">
@@ -1439,15 +1500,6 @@ export default function Blogs() {
               </div>
             </div>
 
-            {deleteSuccess && (
-              <div className="mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2">
-                <CheckCircle
-                  size={15}
-                  className="text-emerald-600 flex-shrink-0"
-                />
-                <p className="text-base text-emerald-700">{deleteSuccess}</p>
-              </div>
-            )}
             {deleteError && (
               <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2">
                 <AlertCircle size={15} className="text-red-500 flex-shrink-0" />
