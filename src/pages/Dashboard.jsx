@@ -154,12 +154,20 @@ export default function Dashboard() {
       }
 
       // Process topics
-      if (topicsRes.status === "fulfilled" && topicsRes.value.ok) {
-        const data = await topicsRes.value.json();
-        stats.topics = Array.isArray(data)
-          ? data.length
-          : data.data?.length || 0;
-      }
+if (topicsRes.status === "fulfilled" && topicsRes.value.ok) {
+  const data = await topicsRes.value.json();
+
+  if (typeof data.count === "number") {
+    stats.topics = data.count;
+  } else if (Array.isArray(data.data)) {
+    stats.topics = data.data.reduce(
+      (total, module) => total + (module.topics?.length || 0),
+      0
+    );
+  } else {
+    stats.topics = 0;
+  }
+}
 
       // Process contacts
       if (contactsRes.status === "fulfilled" && contactsRes.value.ok) {
@@ -191,12 +199,17 @@ export default function Dashboard() {
       }
 
       // Process testimonials
+      // Process testimonials
       if (testimonialsRes.status === "fulfilled" && testimonialsRes.value.ok) {
         const data = await testimonialsRes.value.json();
-        const testimonialsData = data.data || data;
-        stats.testimonials = Array.isArray(testimonialsData)
-          ? testimonialsData.length
-          : 0;
+
+        console.log("Testimonials API:", data);
+
+        if (Array.isArray(data.testimonials)) {
+          stats.testimonials = data.testimonials.length;
+        } else {
+          stats.testimonials = 0;
+        }
       }
 
       setStats({ ...stats });

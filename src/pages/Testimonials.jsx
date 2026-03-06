@@ -7,7 +7,6 @@ import {
   Edit,
   Trash2,
   AlertCircle,
-  CheckCircle,
   X,
   Star,
   User,
@@ -15,11 +14,13 @@ import {
   ChevronDown,
   MessageSquare,
   Filter,
-  RefreshCw,
   SortAsc,
   SortDesc,
   Eye,
 } from "lucide-react";
+
+// API base URL – change this if your endpoint moves
+const BASE_URL = "https://codingcloud.pythonanywhere.com";
 
 export default function Testimonials() {
   const navigate = useNavigate();
@@ -53,30 +54,26 @@ export default function Testimonials() {
     type: "success",
   });
 
-  // --- FIXED FETCH FUNCTION ---
+  // Fetch all testimonials
   const fetchTestimonials = async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch(
-        "https://codingcloud.pythonanywhere.com/testimonials/",
-      );
+      const response = await fetch(`${BASE_URL}/testimonials/`);
 
       if (!response.ok) {
         throw new Error(`HTTP error ${response.status}`);
       }
 
       const data = await response.json();
-      console.log("API Response:", data); // Debug log – remove in production
+      console.log("API Response:", data); // Debug – remove in production
 
-      // Try to extract the array from the response
+      // Extract the array from various possible response structures
       let testimonialsArray = [];
-
       if (Array.isArray(data)) {
-        // Case 1: response is directly an array
         testimonialsArray = data;
       } else if (data && typeof data === "object") {
-        // Case 2: response is an object – look for common array keys
+        // Common keys where the array might be nested
         const possibleKeys = ["data", "testimonials", "results", "items"];
         for (const key of possibleKeys) {
           if (Array.isArray(data[key])) {
@@ -84,9 +81,8 @@ export default function Testimonials() {
             break;
           }
         }
-        // If still not found, maybe it's a single object? (unlikely)
+        // If still not found, maybe it's a single object (unlikely)
         if (testimonialsArray.length === 0) {
-          // Check if the whole object is a testimonial (if ID exists)
           if (data.id || data.name) {
             testimonialsArray = [data];
           } else {
@@ -96,13 +92,13 @@ export default function Testimonials() {
       }
 
       if (testimonialsArray.length === 0) {
-        setError("No testimonials found in the response.");
+        setError("No testimonials found.");
         setTestimonials([]);
         setFilteredTestimonials([]);
         return;
       }
 
-      // Add a local display ID for each item
+      // Add a local display ID for each item (for table numbering)
       const withDisplayIds = testimonialsArray.map((testimonial, index) => ({
         ...testimonial,
         display_id: index + 1,
@@ -117,12 +113,12 @@ export default function Testimonials() {
       setLoading(false);
     }
   };
-  // --- END OF FIX ---
 
   useEffect(() => {
     fetchTestimonials();
   }, []);
 
+  // Filtering and sorting logic
   useEffect(() => {
     let result = [...testimonials];
 
@@ -133,13 +129,13 @@ export default function Testimonials() {
           (testimonial.name && testimonial.name.toLowerCase().includes(q)) ||
           (testimonial.review &&
             testimonial.review.toLowerCase().includes(q)) ||
-          testimonial.display_id.toString().includes(q),
+          testimonial.display_id.toString().includes(q)
       );
     }
 
     if (filters.rating !== "all") {
       result = result.filter(
-        (testimonial) => testimonial.rating === parseInt(filters.rating),
+        (testimonial) => testimonial.rating === parseInt(filters.rating)
       );
     }
 
@@ -157,6 +153,9 @@ export default function Testimonials() {
       } else if (sortConfig.key === "created_at") {
         aVal = a.created_at || "";
         bVal = b.created_at || "";
+      } else {
+        aVal = a[sortConfig.key] || "";
+        bVal = b[sortConfig.key] || "";
       }
       if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
       if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
@@ -188,7 +187,7 @@ export default function Testimonials() {
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const paginatedTestimonials = filteredTestimonials.slice(
     indexOfFirstItem,
-    indexOfLastItem,
+    indexOfLastItem
   );
   const totalPages = Math.ceil(filteredTestimonials.length / itemsPerPage);
 
@@ -207,19 +206,17 @@ export default function Testimonials() {
     setDeleteSuccess("");
     try {
       const response = await fetch(
-        `https://codingcloud.pythonanywhere.com/testimonials/${testimonialToDelete.id}/`,
-        { method: "DELETE" },
+        `${BASE_URL}/testimonials/${testimonialToDelete.id}/`,
+        { method: "DELETE" }
       );
       if (response.ok || response.status === 204) {
         setShowDeleteModal(false);
         setTestimonialToDelete(null);
-
         setToast({
           show: true,
           message: "Testimonial deleted successfully!",
-          type: "error",
+          type: "error", // using error type for red background, you can change to "success"
         });
-
         fetchTestimonials();
       } else {
         try {
@@ -297,7 +294,7 @@ export default function Testimonials() {
           </h3>
           <p className="text-slate-500 text-sm mb-5">{error}</p>
           <button
-            onClick={() => window.location.reload()}
+            onClick={fetchTestimonials}
             className="px-5 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors text-sm font-medium"
           >
             Try Again
@@ -317,7 +314,7 @@ export default function Testimonials() {
         />
       )}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        {/* ── Header ── */}
+        {/* Header */}
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-1">
             <MessageSquare size={20} className="text-violet-600" />
@@ -331,7 +328,7 @@ export default function Testimonials() {
           </p>
         </div>
 
-        {/* ── Toolbar (single line) ── */}
+        {/* Toolbar */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 px-4 py-3 mb-5">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             {/* Search */}
@@ -428,7 +425,7 @@ export default function Testimonials() {
           )}
         </div>
 
-        {/* ── Table / Empty state ── */}
+        {/* Table / Empty state */}
         {filteredTestimonials.length === 0 ? (
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-16 text-center">
             <div className="bg-slate-100 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
@@ -670,7 +667,7 @@ export default function Testimonials() {
         )}
       </div>
 
-      {/* ── View Testimonial Modal ── */}
+      {/* View Testimonial Modal */}
       {showViewModal && selectedTestimonial && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
@@ -730,7 +727,7 @@ export default function Testimonials() {
                   </p>
                   <p className="text-sm font-semibold text-slate-800">
                     {new Date(
-                      selectedTestimonial.created_at,
+                      selectedTestimonial.created_at
                     ).toLocaleDateString("en-US", {
                       year: "numeric",
                       month: "long",
@@ -777,7 +774,7 @@ export default function Testimonials() {
         </div>
       )}
 
-      {/* ── Delete Modal ── */}
+      {/* Delete Modal */}
       {showDeleteModal && testimonialToDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div

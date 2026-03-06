@@ -16,6 +16,8 @@ import {
   ChevronDown,
 } from "lucide-react";
 
+const BASE_URL = "https://codingcloud.pythonanywhere.com";
+
 export default function EditTestimonial() {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -25,11 +27,12 @@ export default function EditTestimonial() {
     name: "",
     review: "",
     rating: 5,
-    image: null,
-    category: "",
-    existingImage: null,
+    image: null, // new File object (if changed)
+    category: "", // ID of selected category/course
+    existingImage: null, // URL of current image (if any)
   });
 
+  // UI states
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [fetchError, setFetchError] = useState("");
@@ -42,8 +45,10 @@ export default function EditTestimonial() {
   const [hoveredRating, setHoveredRating] = useState(0);
   const [imagePreview, setImagePreview] = useState(null);
   const [imageChanged, setImageChanged] = useState(false);
+  const [imageRemoved, setImageRemoved] = useState(false); // true if user removed image without uploading new one
   const [dragOver, setDragOver] = useState(false);
 
+  // Categories
   const [categories, setCategories] = useState([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
 
@@ -52,32 +57,26 @@ export default function EditTestimonial() {
     fetchCategories();
   }, [id]);
 
-  // Fetch testimonial with robust error handling
+  // ----- Fetch testimonial (robust extraction) -----
   const fetchTestimonial = async () => {
     try {
       setLoading(true);
-      const response = await fetch(
-        `https://codingcloud.pythonanywhere.com/testimonials/${id}/`,
-      );
-
+      const response = await fetch(`${BASE_URL}/testimonials/${id}/`);
       if (!response.ok) {
-        if (response.status === 500) {
+        if (response.status === 500)
           throw new Error("Server error (500). Please try again later.");
-        }
         throw new Error(`HTTP error ${response.status}`);
       }
 
       const data = await response.json();
       console.log("Testimonial API response:", data);
 
-      // Extract testimonial object
+      // Navigate through possible wrapper objects
       let testimonial = data;
       if (data && typeof data === "object") {
-        if (data.data && typeof data.data === "object") {
-          testimonial = data.data;
-        } else if (data.testimonial && typeof data.testimonial === "object") {
+        if (data.data && typeof data.data === "object") testimonial = data.data;
+        else if (data.testimonial && typeof data.testimonial === "object")
           testimonial = data.testimonial;
-        }
       }
 
       setFormData({
@@ -85,15 +84,20 @@ export default function EditTestimonial() {
         review: testimonial.review || "",
         rating: testimonial.rating || 5,
         image: null,
-        category: testimonial.category || testimonial.category_id || "",
+        // Accept category, course, or category_id – adjust field name as needed
+        category:
+          testimonial.category ||
+          testimonial.course ||
+          testimonial.category_id ||
+          "",
         existingImage: testimonial.image || null,
       });
 
-      // Set image preview if exists
+      // Set preview for existing image
       if (testimonial.image && !testimonial.image.includes("default.jpg")) {
         const imageUrl = testimonial.image.startsWith("http")
           ? testimonial.image
-          : `https://codingcloud.pythonanywhere.com${testimonial.image}`;
+          : `${BASE_URL}${testimonial.image}`;
         setImagePreview(imageUrl);
       } else {
         setImagePreview(null);
@@ -106,16 +110,12 @@ export default function EditTestimonial() {
     }
   };
 
-  // Fetch categories with robust extraction
+  // ----- Fetch categories (robust extraction) -----
   const fetchCategories = async () => {
     try {
       setCategoriesLoading(true);
-      const response = await fetch(
-        "https://codingcloud.pythonanywhere.com/category/",
-      );
-      if (!response.ok) {
-        throw new Error(`HTTP error ${response.status}`);
-      }
+      const response = await fetch(`${BASE_URL}/category/`);
+      if (!response.ok) throw new Error(`HTTP error ${response.status}`);
       const data = await response.json();
       console.log("Categories API response:", data);
 
@@ -139,12 +139,19 @@ export default function EditTestimonial() {
     }
   };
 
+  // ----- Handlers -----
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]:
-        name === "rating" || name === "category" ? parseInt(value) || 0 : value,
+        name === "rating"
+          ? parseInt(value) || 0
+          : name === "category"
+            ? value === ""
+              ? ""
+              : parseInt(value) // keep empty string if none selected
+            : value,
     }));
     setError("");
   };
@@ -163,6 +170,7 @@ export default function EditTestimonial() {
       }
       setFormData((prev) => ({ ...prev, image: file }));
       setImageChanged(true);
+      setImageRemoved(false); // we are replacing, not removing
       const reader = new FileReader();
       reader.onloadend = () => setImagePreview(reader.result);
       reader.readAsDataURL(file);
@@ -181,6 +189,7 @@ export default function EditTestimonial() {
     setFormData((prev) => ({ ...prev, image: null, existingImage: null }));
     setImagePreview(null);
     setImageChanged(true);
+    setImageRemoved(true); // user explicitly removed image
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -203,7 +212,7 @@ export default function EditTestimonial() {
   const handleRatingClick = (rating) =>
     setFormData((prev) => ({ ...prev, rating }));
 
-  // --- FIXED SUBMIT HANDLER ---
+  // ----- Submit handler (handles JSON / FormData and image removal) -----
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
@@ -212,49 +221,51 @@ export default function EditTestimonial() {
 
     try {
       let response;
+      const commonPayload = {
+        name: formData.name.trim(),
+        review: formData.review.trim(),
+        rating: formData.rating,
+        // Use 'course' as field name – adjust if your API expects 'category'
+        course: formData.category ? Number(formData.category) : undefined,
+      };
 
-      if (!imageChanged) {
-        // No image change → send JSON
-       const payload = {
-  name: formData.name.trim(),
-  review: formData.review.trim(),
-  rating: formData.rating,
-  course: formData.category,
-};
-
-        response = await fetch(
-          `https://codingcloud.pythonanywhere.com/testimonials/${id}/`,
-          {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(payload),
-          },
-        );
-      } else {
-        // Image changed → send FormData
+      // CASE 1: Image was changed AND we have a new file → use FormData
+      if (imageChanged && formData.image instanceof File) {
         const formDataToSend = new FormData();
-        formDataToSend.append("name", formData.name.trim());
-        formDataToSend.append("review", formData.review.trim());
-        formDataToSend.append("rating", formData.rating.toString());
-        formDataToSend.append("course", formData.category.toString());
-
-        if (formData.image) {
-          // New image selected
-          formDataToSend.append("image", formData.image);
+        formDataToSend.append("name", commonPayload.name);
+        formDataToSend.append("review", commonPayload.review);
+        formDataToSend.append("rating", commonPayload.rating.toString());
+        if (commonPayload.course) {
+          formDataToSend.append("course", commonPayload.course);
         }
-        // If image was removed, we simply do NOT append an image field.
-        // The server should interpret the absence as "remove image".
+        formDataToSend.append("image", formData.image); // new file
 
-        response = await fetch(
-          `https://codingcloud.pythonanywhere.com/testimonials/${id}/`,
-          {
-            method: "PATCH",
-            body: formDataToSend,
-            // No Content-Type header; browser sets it with boundary
-          },
-        );
+        response = await fetch(`${BASE_URL}/testimonials/${id}/`, {
+          method: "PATCH",
+          body: formDataToSend,
+        });
+      }
+      // CASE 2: Image was changed but user removed it (no new file) → send JSON with image: null
+      else if (imageChanged && imageRemoved) {
+        const payload = {
+          ...commonPayload,
+          image: null, // explicitly tell API to delete the image
+        };
+        response = await fetch(`${BASE_URL}/testimonials/${id}/`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      }
+      // CASE 3: No image change at all → send JSON without image field
+      else {
+        const payload = { ...commonPayload };
+        // Do NOT include image field – API should leave existing image untouched
+        response = await fetch(`${BASE_URL}/testimonials/${id}/`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
       }
 
       const responseText = await response.text();
@@ -265,7 +276,6 @@ export default function EditTestimonial() {
       try {
         data = JSON.parse(responseText);
       } catch {
-        // If response is not JSON, throw with the raw text
         throw new Error(responseText || "Server returned an invalid response");
       }
 
@@ -279,7 +289,6 @@ export default function EditTestimonial() {
           navigate("/testimonials");
         }, 2000);
       } else {
-        // Use error message from server or default
         setError(
           data.message ||
             data.error ||
@@ -297,12 +306,11 @@ export default function EditTestimonial() {
       setSubmitting(false);
     }
   };
-  // --- END OF FIX ---
 
   const isNewImage = formData.image instanceof File;
   const selectedCategory = categories.find((c) => c.id === formData.category);
 
-  // Loading state
+  // ----- Loading & error states -----
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -316,7 +324,6 @@ export default function EditTestimonial() {
     );
   }
 
-  // Fetch error state
   if (fetchError) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
@@ -350,7 +357,7 @@ export default function EditTestimonial() {
       )}
 
       {/* Header */}
-      <header className="top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+      <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
@@ -393,9 +400,8 @@ export default function EditTestimonial() {
         </div>
       </header>
 
-      {/* Main */}
+      {/* Main Form */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 pb-28 sm:pb-12">
-        {/* Error Alert */}
         {error && (
           <div className="flex items-start gap-3 p-4 mb-6 bg-red-50 border border-red-200 rounded-2xl text-base text-red-700">
             <AlertCircle
@@ -416,7 +422,7 @@ export default function EditTestimonial() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Name Card */}
+          {/* Name */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-9 h-9 bg-indigo-50 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -446,7 +452,7 @@ export default function EditTestimonial() {
             />
           </div>
 
-          {/* Rating Card */}
+          {/* Rating */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-9 h-9 bg-amber-50 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -516,7 +522,7 @@ export default function EditTestimonial() {
             </div>
           </div>
 
-          {/* Review Card */}
+          {/* Review */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-9 h-9 bg-violet-50 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -549,7 +555,7 @@ export default function EditTestimonial() {
             </p>
           </div>
 
-          {/* Category Selection Card */}
+          {/* Category */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-9 h-9 bg-pink-50 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -607,7 +613,7 @@ export default function EditTestimonial() {
             )}
           </div>
 
-          {/* Profile Image Card */}
+          {/* Profile Image */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-9 h-9 bg-emerald-50 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -639,7 +645,9 @@ export default function EditTestimonial() {
                 }`}
               >
                 <div
-                  className={`w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3 transition-all ${dragOver ? "bg-indigo-100" : "bg-gray-100"}`}
+                  className={`w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3 transition-all ${
+                    dragOver ? "bg-indigo-100" : "bg-gray-100"
+                  }`}
                 >
                   <Upload
                     size={20}
@@ -718,7 +726,7 @@ export default function EditTestimonial() {
             />
           </div>
 
-          {/* Mobile Submit */}
+          {/* Mobile Submit Button */}
           <div className="sm:hidden">
             <button
               type="submit"

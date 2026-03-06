@@ -869,7 +869,6 @@
 //   );
 // }
 
-
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Editor } from "@tinymce/tinymce-react";
@@ -887,21 +886,27 @@ import {
   Award,
   ChevronDown,
   ImagePlus,
-  CheckCircle2,
   AlertCircle,
   Tag,
   BookMarked,
   Search,
 } from "lucide-react";
-import Toasts from "../pages/Toasts"; // 👈 import toast component
+import Toasts from "../pages/Toasts";
 
 export default function AddCourse() {
   const navigate = useNavigate();
-  const timeoutRef = useRef(null); // for delayed navigation
+  const timeoutRef = useRef(null);
+
+  // ⚙️ Adjust this constant based on your backend limit (if known)
+  const MAX_DESCRIPTION_LENGTH = 10000; // guess – change as needed
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [toast, setToast] = useState({ show: false, message: "", type: "success" }); // 👈 toast state
+  const [toast, setToast] = useState({
+    show: false,
+    message: "",
+    type: "success",
+  });
   const [categories, setCategories] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
 
@@ -912,6 +917,7 @@ export default function AddCourse() {
     };
   }, []);
 
+  // Fetch categories
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -1016,9 +1022,14 @@ export default function AddCourse() {
     if (!formData.slug.trim()) return "Course slug is required";
     if (!formData.category) return "Category is required";
     if (!formData.text.trim()) return "Description is required";
+    // Optional: client-side length check
+    if (formData.text.length > MAX_DESCRIPTION_LENGTH) {
+      return `Description is too long (max ${MAX_DESCRIPTION_LENGTH} characters)`;
+    }
     return "";
   };
 
+  // ---------- IMPROVED HANDLE SUBMIT ----------
   const handleSubmit = async (e) => {
     e.preventDefault();
     const validationError = validateForm();
@@ -1027,7 +1038,6 @@ export default function AddCourse() {
       return;
     }
 
-    // Clear any pending navigation
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
 
     setLoading(true);
@@ -1064,28 +1074,41 @@ export default function AddCourse() {
           body: submitData,
         },
       );
-      const data = await response.json();
+
+      // Try to parse JSON, but fallback to text if it fails
+      let data;
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        data = { message: await response.text() };
+      }
+
       if (response.ok || response.status === 201) {
-        // 👇 Show success toast
         setToast({
           show: true,
           message: "Course created successfully!",
           type: "success",
         });
-
-        // Navigate after a short delay
         timeoutRef.current = setTimeout(() => {
           navigate("/course");
         }, 1500);
       } else {
-        setError(data.message || data.detail || "Failed to create course.");
+        // Extract error message from various possible fields
+        const errorMsg =
+          data.message ||
+          data.detail ||
+          data.error ||
+          data.non_field_errors?.[0] ||
+          JSON.stringify(data);
+        setError(errorMsg || "Failed to create course.");
         setLoading(false);
       }
     } catch (err) {
+      console.error("Submission error:", err);
       setError("Network error. Please check your connection.");
       setLoading(false);
     }
-    // On success, loading remains true → button stays disabled during navigation delay
   };
 
   // ── Reusable Image Upload Box ──
@@ -1190,8 +1213,8 @@ export default function AddCourse() {
             Upload Syllabus
           </p>
           <p className="text-xs text-gray-400">
-            <span className="text-indigo-500 font-medium">Browse files</span> · PDF
-            only up to 10MB
+            <span className="text-indigo-500 font-medium">Browse files</span> ·
+            PDF only up to 10MB
           </p>
         </div>
       ) : (
@@ -1203,7 +1226,9 @@ export default function AddCourse() {
             <p className="text-base font-semibold text-gray-800 truncate">
               {pdfName}
             </p>
-            <p className="text-xs text-indigo-500 mt-0.5">PDF · Ready to upload</p>
+            <p className="text-xs text-indigo-500 mt-0.5">
+              PDF · Ready to upload
+            </p>
           </div>
           <button
             type="button"
@@ -1248,7 +1273,7 @@ export default function AddCourse() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* ── Toast ── */}
+      {/* Toast */}
       {toast.show && (
         <Toasts
           message={toast.message}
@@ -1257,7 +1282,7 @@ export default function AddCourse() {
         />
       )}
 
-      {/* ── Header ── */}
+      {/* Header */}
       <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -1298,9 +1323,9 @@ export default function AddCourse() {
         </div>
       </header>
 
-      {/* ── Main ── */}
+      {/* Main */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 pb-28 sm:pb-12">
-        {/* Error Alert (still inline) */}
+        {/* Error Alert */}
         {error && (
           <div className="flex items-start gap-3 p-4 mb-6 bg-red-50 border border-red-200 rounded-2xl text-base text-red-700">
             <AlertCircle
@@ -1326,9 +1351,7 @@ export default function AddCourse() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* ════════════════════════════════
-                        SECTION 1 — Basic Information
-                    ════════════════════════════════ */}
+          {/* SECTION 1 — Basic Information */}
           <SectionHeader
             icon={Tag}
             label="Basic Information"
@@ -1444,9 +1467,23 @@ export default function AddCourse() {
                 height: 400,
                 menubar: true,
                 plugins: [
-                  "advlist", "autolink", "lists", "link", "image", "charmap", "preview",
-                  "anchor", "searchreplace", "visualblocks", "code", "fullscreen",
-                  "insertdatetime", "media", "table", "help", "wordcount"
+                  "advlist",
+                  "autolink",
+                  "lists",
+                  "link",
+                  "image",
+                  "charmap",
+                  "preview",
+                  "anchor",
+                  "searchreplace",
+                  "visualblocks",
+                  "code",
+                  "fullscreen",
+                  "insertdatetime",
+                  "media",
+                  "table",
+                  "help",
+                  "wordcount",
                 ],
                 toolbar:
                   "undo redo | blocks | " +
@@ -1458,14 +1495,25 @@ export default function AddCourse() {
                 placeholder: "Write a detailed description of your course…",
               }}
             />
-            <p className="text-xs text-gray-400 text-right mt-2">
-              {formData.text.length} characters
-            </p>
+            <div className="flex justify-between text-xs mt-2">
+              <span
+                className={
+                  formData.text.length > MAX_DESCRIPTION_LENGTH
+                    ? "text-red-500"
+                    : "text-gray-400"
+                }
+              >
+                {formData.text.length} characters
+              </span>
+              {formData.text.length > MAX_DESCRIPTION_LENGTH && (
+                <span className="text-red-500 font-medium">
+                  Exceeds recommended limit ({MAX_DESCRIPTION_LENGTH})
+                </span>
+              )}
+            </div>
           </div>
 
-          {/* ════════════════════════════════
-                        SECTION 2 — Course Details
-                    ════════════════════════════════ */}
+          {/* SECTION 2 — Course Details */}
           <SectionHeader
             icon={BookMarked}
             label="Course Details"
@@ -1617,9 +1665,7 @@ export default function AddCourse() {
             </div>
           </div>
 
-          {/* ════════════════════════════════
-                        SECTION 3 — Media Files
-                    ════════════════════════════════ */}
+          {/* SECTION 3 — Media Files */}
           <SectionHeader
             icon={ImagePlus}
             label="Media Files"
@@ -1662,9 +1708,7 @@ export default function AddCourse() {
             <PdfUploadBox />
           </div>
 
-          {/* ════════════════════════════════
-                        SECTION 4 — SEO & Metadata
-                    ════════════════════════════════ */}
+          {/* SECTION 4 — SEO & Metadata */}
           <SectionHeader
             icon={Search}
             label="SEO & Metadata"
@@ -1751,7 +1795,7 @@ export default function AddCourse() {
             </div>
           </div>
 
-          {/* ── Mobile Submit ── */}
+          {/* Mobile Submit */}
           <div className="sm:hidden">
             <button
               type="submit"
