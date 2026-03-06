@@ -200,18 +200,25 @@ if (topicsRes.status === "fulfilled" && topicsRes.value.ok) {
 
       // Process testimonials
       // Process testimonials
-      if (testimonialsRes.status === "fulfilled" && testimonialsRes.value.ok) {
-        const data = await testimonialsRes.value.json();
+     // Process testimonials
+if (testimonialsRes.status === "fulfilled" && testimonialsRes.value.ok) {
+  const data = await testimonialsRes.value.json();
 
-        console.log("Testimonials API:", data);
+  console.log("Testimonials API:", data);
 
-        if (Array.isArray(data.testimonials)) {
-          stats.testimonials = data.testimonials.length;
-        } else {
-          stats.testimonials = 0;
-        }
-      }
-
+  if (Array.isArray(data.testimonials)) {
+    stats.testimonials = data.testimonials.length;
+  } 
+  else if (Array.isArray(data.data)) {
+    stats.testimonials = data.data.length;
+  } 
+  else if (Array.isArray(data)) {
+    stats.testimonials = data.length;
+  } 
+  else {
+    stats.testimonials = 0;
+  }
+}
       setStats({ ...stats });
     } catch (err) {
       setError("Failed to load dashboard statistics. Please try again.");
