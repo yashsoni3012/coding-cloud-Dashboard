@@ -821,8 +821,9 @@ import {
     Tag,
     BookMarked,
     Search,
+    Sparkles,
 } from "lucide-react";
-import Toasts from "./Toasts"; // <-- import the toast component
+import Toasts from "./Toasts";
 
 export default function EditCourse() {
     const { id } = useParams();
@@ -836,7 +837,7 @@ export default function EditCourse() {
     const [toast, setToast] = useState({
         show: false,
         message: "",
-        type: "success", // 'success' or 'error'
+        type: "success",
     });
 
     const [formData, setFormData] = useState({
@@ -851,6 +852,8 @@ export default function EditCourse() {
         level: "",
         language: "",
         certificate: "No",
+        featured: false,          // new field
+        kids_course: false,       // new field
         meta_title: "",
         meta_description: "",
         keywords: "",
@@ -906,6 +909,8 @@ export default function EditCourse() {
                         level: course.level || "",
                         language: course.language || "",
                         certificate: course.certificate || "No",
+                        featured: course.featured || false,          // set from API
+                        kids_course: course.kids_course || false,    // set from API
                         meta_title: course.meta_title || "",
                         meta_description: course.meta_description || "",
                         keywords: course.keywords || "",
@@ -922,6 +927,7 @@ export default function EditCourse() {
                     showToast("Failed to fetch course details", "error");
                 }
 
+                // Mock categories – replace with actual API call if needed
                 setCategories([
                     { id: 40, name: "IT and Software" },
                     { id: 43, name: "Mobile Application" },
@@ -945,6 +951,11 @@ export default function EditCourse() {
             const generatedSlug = value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
             setFormData((prev) => ({ ...prev, slug: generatedSlug }));
         }
+    };
+
+    // Handle toggle changes for boolean fields
+    const handleToggleChange = (name, checked) => {
+        setFormData((prev) => ({ ...prev, [name]: checked }));
     };
 
     const handleFileChange = (e) => {
@@ -1015,6 +1026,9 @@ export default function EditCourse() {
             if (formData.level) submitData.append("level", formData.level);
             if (formData.language) submitData.append("language", formData.language);
             submitData.append("certificate", formData.certificate === "Yes" ? "Yes" : "No");
+            // Append new boolean fields as strings
+            submitData.append("featured", formData.featured.toString());
+            submitData.append("kids_course", formData.kids_course.toString());
             if (formData.meta_title) submitData.append("meta_title", formData.meta_title);
             if (formData.meta_description) submitData.append("meta_description", formData.meta_description);
             if (formData.keywords) submitData.append("keywords", formData.keywords);
@@ -1037,6 +1051,31 @@ export default function EditCourse() {
             setSaving(false);
         }
     };
+
+    // ── Toggle Switch Component ──
+    const ToggleSwitch = ({ label, description, name, checked, onChange }) => (
+        <div className="flex items-center justify-between py-2">
+            <div>
+                <p className="text-sm font-semibold text-gray-700">{label}</p>
+                {description && <p className="text-xs text-gray-400">{description}</p>}
+            </div>
+            <button
+                type="button"
+                role="switch"
+                aria-checked={checked}
+                onClick={() => onChange(name, !checked)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
+                    checked ? "bg-indigo-600" : "bg-gray-200"
+                }`}
+            >
+                <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        checked ? "translate-x-6" : "translate-x-1"
+                    }`}
+                />
+            </button>
+        </div>
+    );
 
     // ── Reusable Image Upload Box ──
     const ImageUploadBox = ({ preview, existingUrl, onRemove, inputId, inputName, label, hint, iconBg, iconColor }) => {
@@ -1213,7 +1252,7 @@ export default function EditCourse() {
             )}
 
             {/* ── Header ── */}
-            <header className=" top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+            <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <button
@@ -1251,8 +1290,6 @@ export default function EditCourse() {
 
             {/* ── Main ── */}
             <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 pb-28 sm:pb-12">
-
-                {/* Removed inline error/success alerts — now using toast */}
 
                 <form onSubmit={handleSubmit} className="space-y-5">
 
@@ -1484,6 +1521,35 @@ export default function EditCourse() {
                                     ))}
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    {/* Additional Options: Featured & Kids Course */}
+                    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-9 h-9 bg-amber-50 rounded-xl flex items-center justify-center">
+                                <Sparkles size={16} className="text-amber-500" />
+                            </div>
+                            <div>
+                                <p className="text-base font-semibold text-gray-800">Additional Options</p>
+                                <p className="text-xs text-gray-400">Mark this course as featured or for kids</p>
+                            </div>
+                        </div>
+                        <div className="space-y-3 divide-y divide-gray-100">
+                            <ToggleSwitch
+                                label="Featured Course"
+                                description="Show this course in featured sections"
+                                name="featured"
+                                checked={formData.featured}
+                                onChange={handleToggleChange}
+                            />
+                            <ToggleSwitch
+                                label="Kids Course"
+                                description="Suitable for younger audiences"
+                                name="kids_course"
+                                checked={formData.kids_course}
+                                onChange={handleToggleChange}
+                            />
                         </div>
                     </div>
 
