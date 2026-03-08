@@ -2245,25 +2245,33 @@ export default function AddCourse() {
   );
 
   // ── Section Header ──
-  const SectionHeader = ({
-    icon: Icon,
-    label,
-    iconBg,
-    iconColor,
-    description,
-  }) => (
-    <div className="flex items-center gap-3 pt-2">
-      <div
-        className={`w-9 h-9 ${iconBg} rounded-xl flex items-center justify-center flex-shrink-0`}
-      >
-        <Icon size={16} className={iconColor} />
-      </div>
-      <div>
-        <p className="text-base font-bold text-gray-800">{label}</p>
-        {description && <p className="text-xs text-gray-400">{description}</p>}
-      </div>
+const SectionHeader = ({
+  icon: Icon,
+  label,
+  iconBg,
+  iconColor,
+  description,
+  required = false,
+}) => (
+  <div className="flex items-center gap-3 pt-2">
+    <div
+      className={`w-9 h-9 ${iconBg} rounded-xl flex items-center justify-center flex-shrink-0`}
+    >
+      <Icon size={16} className={iconColor} />
     </div>
-  );
+
+    <div>
+      <p className="text-base font-bold text-gray-800">
+        {label}
+        {required && <span className="text-red-400 ml-1">*</span>}
+      </p>
+
+      {description && (
+        <p className="text-xs text-gray-400">{description}</p>
+      )}
+    </div>
+  </div>
+);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -2359,6 +2367,7 @@ export default function AddCourse() {
             <label
               htmlFor="name"
               className="block text-base font-semibold text-gray-800 mb-1"
+              required
             >
               Course Name <span className="text-red-500">*</span>
             </label>
@@ -2382,6 +2391,7 @@ export default function AddCourse() {
             <label
               htmlFor="slug"
               className="block text-base font-semibold text-gray-800 mb-1"
+              required
             >
               Course Slug <span className="text-red-500">*</span>
             </label>
@@ -2410,6 +2420,7 @@ export default function AddCourse() {
             <label
               htmlFor="category"
               className="block text-base font-semibold text-gray-800 mb-1"
+              required
             >
               Category <span className="text-red-500">*</span>
             </label>
@@ -2445,6 +2456,7 @@ export default function AddCourse() {
             <label
               htmlFor="text"
               className="block text-base font-semibold text-gray-800 mb-1"
+              required
             >
               Description <span className="text-red-500">*</span>
             </label>
@@ -2512,9 +2524,12 @@ export default function AddCourse() {
             <label
               htmlFor="short_description"
               className="block text-base font-semibold text-gray-800 mb-1"
+              required
             >
               Short Description
+              <span className="text-red-400 ml-1">*</span>
             </label>
+            
             <p className="text-xs text-gray-400 mb-3">
               A brief summary of the course (optional)
             </p>
@@ -2532,11 +2547,13 @@ export default function AddCourse() {
           {/* SECTION 2 — Course Details */}
           <SectionHeader
             icon={BookMarked}
-            label="Course Details"
+            label="Course Details" 
             description="Duration, lectures, audience and difficulty"
             iconBg="bg-violet-50"
             iconColor="text-violet-600"
+            required={true}
           />
+          
 
           {/* Duration / Lectures / Students */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
@@ -2721,6 +2738,7 @@ export default function AddCourse() {
             description="Images, icons, and course syllabus"
             iconBg="bg-pink-50"
             iconColor="text-pink-500"
+            required={true}
           />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -2785,6 +2803,7 @@ export default function AddCourse() {
                 className="block text-base font-semibold text-gray-800 mb-1"
               >
                 Meta Title
+                <span className="text-red-400 ml-1">*</span>
               </label>
               <p className="text-xs text-gray-400 mb-2">
                 Recommended: 50–60 characters
@@ -2810,8 +2829,10 @@ export default function AddCourse() {
               <label
                 htmlFor="meta_description"
                 className="block text-base font-semibold text-gray-800 mb-1"
+                required
               >
                 Meta Description
+                <span className="text-red-400 ml-1">*</span>
               </label>
               <p className="text-xs text-gray-400 mb-2">
                 Recommended: 150–160 characters
@@ -2837,8 +2858,10 @@ export default function AddCourse() {
               <label
                 htmlFor="keywords"
                 className="block text-base font-semibold text-gray-800 mb-1"
+                required
               >
                 Keywords
+                <span className="text-red-400 ml-1">*</span>
               </label>
               <p className="text-xs text-gray-400 mb-2">
                 Comma-separated keywords for better searchability
