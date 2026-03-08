@@ -1843,7 +1843,6 @@ import {
   Tag,
   BookMarked,
   Search,
-  Star,
   Sparkles,
 } from "lucide-react";
 import Toasts from "../pages/Toasts";
@@ -1853,7 +1852,7 @@ export default function AddCourse() {
   const timeoutRef = useRef(null);
 
   // ⚙️ Adjust this constant based on your backend limit (if known)
-  const MAX_DESCRIPTION_LENGTH = 10000; // guess – change as needed
+  const MAX_DESCRIPTION_LENGTH = 10000;
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -1896,14 +1895,15 @@ export default function AddCourse() {
     slug: "",
     category: "",
     text: "",
+    short_description: "",          // ✨ NEW FIELD
     duration: "",
     lecture: "",
     students: "",
     level: "",
     language: "",
     certificate: "No",
-    featured: false,          // new field
-    kids_course: false,       // new field
+    featured: false,
+    kids_course: false,
     meta_title: "",
     meta_description: "",
     keywords: "",
@@ -1911,11 +1911,13 @@ export default function AddCourse() {
     banner_img: null,
     pdf_file: null,
     icon: null,
+    image2: null,                    // ✨ NEW FIELD
   });
 
   const [imagePreview, setImagePreview] = useState("");
   const [bannerPreview, setBannerPreview] = useState("");
   const [iconPreview, setIconPreview] = useState("");
+  const [image2Preview, setImage2Preview] = useState(""); // ✨ NEW PREVIEW
   const [pdfName, setPdfName] = useState("");
 
   const handleInputChange = (e) => {
@@ -1957,6 +1959,7 @@ export default function AddCourse() {
       else if (name === "banner_img")
         setBannerPreview(URL.createObjectURL(file));
       else if (name === "icon") setIconPreview(URL.createObjectURL(file));
+      else if (name === "image2") setImage2Preview(URL.createObjectURL(file)); // ✨
       else if (name === "pdf_file") setPdfName(file.name);
       setError("");
     }
@@ -1973,6 +1976,9 @@ export default function AddCourse() {
     } else if (field === "icon") {
       setIconPreview("");
       document.getElementById("icon-upload").value = "";
+    } else if (field === "image2") {                     // ✨
+      setImage2Preview("");
+      document.getElementById("image2-upload").value = "";
     } else if (field === "pdf_file") {
       setPdfName("");
       document.getElementById("pdf-upload").value = "";
@@ -1984,14 +1990,12 @@ export default function AddCourse() {
     if (!formData.slug.trim()) return "Course slug is required";
     if (!formData.category) return "Category is required";
     if (!formData.text.trim()) return "Description is required";
-    // Optional: client-side length check
     if (formData.text.length > MAX_DESCRIPTION_LENGTH) {
       return `Description is too long (max ${MAX_DESCRIPTION_LENGTH} characters)`;
     }
     return "";
   };
 
-  // ---------- IMPROVED HANDLE SUBMIT ----------
   const handleSubmit = async (e) => {
     e.preventDefault();
     const validationError = validateForm();
@@ -2012,13 +2016,14 @@ export default function AddCourse() {
       submitData.append("slug", formData.slug);
       submitData.append("category", formData.category);
       submitData.append("text", formData.text);
+      if (formData.short_description)                     // ✨
+        submitData.append("short_description", formData.short_description);
       if (formData.duration) submitData.append("duration", formData.duration);
       if (formData.lecture) submitData.append("lecture", formData.lecture);
       if (formData.students) submitData.append("students", formData.students);
       if (formData.level) submitData.append("level", formData.level);
       if (formData.language) submitData.append("language", formData.language);
       submitData.append("certificate", formData.certificate);
-      // Append new boolean fields as strings
       submitData.append("featured", formData.featured.toString());
       submitData.append("kids_course", formData.kids_course.toString());
       if (formData.meta_title)
@@ -2031,6 +2036,7 @@ export default function AddCourse() {
         submitData.append("banner_img", formData.banner_img);
       if (formData.pdf_file) submitData.append("pdf_file", formData.pdf_file);
       if (formData.icon) submitData.append("icon", formData.icon);
+      if (formData.image2) submitData.append("image2", formData.image2); // ✨
 
       const response = await fetch(
         "https://codingcloud.pythonanywhere.com/course/",
@@ -2040,7 +2046,6 @@ export default function AddCourse() {
         },
       );
 
-      // Try to parse JSON, but fallback to text if it fails
       let data;
       const contentType = response.headers.get("content-type");
       if (contentType && contentType.includes("application/json")) {
@@ -2059,7 +2064,6 @@ export default function AddCourse() {
           navigate("/course");
         }, 1500);
       } else {
-        // Extract error message from various possible fields
         const errorMsg =
           data.message ||
           data.detail ||
@@ -2503,6 +2507,28 @@ export default function AddCourse() {
             </div>
           </div>
 
+          {/* ✨ Short Description — NEW FIELD */}
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+            <label
+              htmlFor="short_description"
+              className="block text-base font-semibold text-gray-800 mb-1"
+            >
+              Short Description
+            </label>
+            <p className="text-xs text-gray-400 mb-3">
+              A brief summary of the course (optional)
+            </p>
+            <input
+              id="short_description"
+              type="text"
+              name="short_description"
+              value={formData.short_description}
+              onChange={handleInputChange}
+              placeholder="e.g., Learn React from scratch in 40 hours"
+              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+            />
+          </div>
+
           {/* SECTION 2 — Course Details */}
           <SectionHeader
             icon={BookMarked}
@@ -2727,6 +2753,17 @@ export default function AddCourse() {
               hint="Optional — PNG, JPG · Max 2MB"
               iconBg="bg-violet-50"
               iconColor="text-violet-500"
+            />
+            {/* ✨ NEW IMAGE2 FIELD */}
+            <ImageUploadBox
+              preview={image2Preview}
+              onRemove={() => removeFile("image2")}
+              inputId="image2-upload"
+              inputName="image2"
+              label="Additional Image"
+              hint="Optional — PNG, JPG · Max 5MB"
+              iconBg="bg-orange-50"
+              iconColor="text-orange-500"
             />
             <PdfUploadBox />
           </div>

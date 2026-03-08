@@ -846,14 +846,15 @@ export default function EditCourse() {
         slug: "",
         category: "",
         text: "",
+        short_description: "",          // ✨ NEW FIELD
         duration: "",
         lecture: "",
         students: "",
         level: "",
         language: "",
         certificate: "No",
-        featured: false,          // new field
-        kids_course: false,       // new field
+        featured: false,
+        kids_course: false,
         meta_title: "",
         meta_description: "",
         keywords: "",
@@ -861,15 +862,18 @@ export default function EditCourse() {
         banner_img: null,
         pdf_file: null,
         icon: null,
+        image2: null,                    // ✨ NEW FIELD
         existing_image: "",
         existing_banner: "",
         existing_icon: "",
         existing_pdf: "",
+        existing_image2: "",             // ✨ NEW FIELD
     });
 
     const [imagePreview, setImagePreview] = useState("");
     const [bannerPreview, setBannerPreview] = useState("");
     const [iconPreview, setIconPreview] = useState("");
+    const [image2Preview, setImage2Preview] = useState(""); // ✨ NEW PREVIEW
     const [pdfName, setPdfName] = useState("");
 
     const [filesChanged, setFilesChanged] = useState({
@@ -877,6 +881,7 @@ export default function EditCourse() {
         banner_img: false,
         icon: false,
         pdf_file: false,
+        image2: false,                   // ✨ NEW
     });
 
     // Helper to show toast
@@ -903,14 +908,15 @@ export default function EditCourse() {
                         slug: course.slug || "",
                         category: course.category || "",
                         text: course.text || "",
+                        short_description: course.short_description || "",   // ✨
                         duration: course.duration || "",
                         lecture: course.lecture || "",
                         students: course.students || "",
                         level: course.level || "",
                         language: course.language || "",
                         certificate: course.certificate || "No",
-                        featured: course.featured || false,          // set from API
-                        kids_course: course.kids_course || false,    // set from API
+                        featured: course.featured || false,
+                        kids_course: course.kids_course || false,
                         meta_title: course.meta_title || "",
                         meta_description: course.meta_description || "",
                         keywords: course.keywords || "",
@@ -918,10 +924,12 @@ export default function EditCourse() {
                         banner_img: null,
                         pdf_file: null,
                         icon: null,
+                        image2: null,                                       // ✨
                         existing_image: course.image || "",
                         existing_banner: course.banner_img || "",
                         existing_icon: course.icon || "",
                         existing_pdf: course.pdf_file || "",
+                        existing_image2: course.image2 || "",               // ✨
                     });
                 } else {
                     showToast("Failed to fetch course details", "error");
@@ -980,6 +988,7 @@ export default function EditCourse() {
             if (name === "image") setImagePreview(URL.createObjectURL(file));
             else if (name === "banner_img") setBannerPreview(URL.createObjectURL(file));
             else if (name === "icon") setIconPreview(URL.createObjectURL(file));
+            else if (name === "image2") setImage2Preview(URL.createObjectURL(file)); // ✨
             else if (name === "pdf_file") setPdfName(file.name);
         }
     };
@@ -994,6 +1003,7 @@ export default function EditCourse() {
             if (field === "image") { setImagePreview(""); document.getElementById("image-upload").value = ""; }
             else if (field === "banner_img") { setBannerPreview(""); document.getElementById("banner-upload").value = ""; }
             else if (field === "icon") { setIconPreview(""); document.getElementById("icon-upload").value = ""; }
+            else if (field === "image2") { setImage2Preview(""); document.getElementById("image2-upload").value = ""; } // ✨
             else if (field === "pdf_file") { setPdfName(""); document.getElementById("pdf-upload").value = ""; }
         }
     };
@@ -1020,13 +1030,14 @@ export default function EditCourse() {
             submitData.append("slug", formData.slug);
             submitData.append("category", formData.category);
             submitData.append("text", formData.text);
+            if (formData.short_description)                                  // ✨
+                submitData.append("short_description", formData.short_description);
             if (formData.duration) submitData.append("duration", formData.duration);
             if (formData.lecture) submitData.append("lecture", formData.lecture);
             if (formData.students) submitData.append("students", formData.students);
             if (formData.level) submitData.append("level", formData.level);
             if (formData.language) submitData.append("language", formData.language);
             submitData.append("certificate", formData.certificate === "Yes" ? "Yes" : "No");
-            // Append new boolean fields as strings
             submitData.append("featured", formData.featured.toString());
             submitData.append("kids_course", formData.kids_course.toString());
             if (formData.meta_title) submitData.append("meta_title", formData.meta_title);
@@ -1036,6 +1047,7 @@ export default function EditCourse() {
             if (formData.banner_img) submitData.append("banner_img", formData.banner_img);
             if (formData.pdf_file) submitData.append("pdf_file", formData.pdf_file);
             if (formData.icon) submitData.append("icon", formData.icon);
+            if (formData.image2) submitData.append("image2", formData.image2); // ✨
 
             const response = await fetch(`https://codingcloud.pythonanywhere.com/course/${id}/`, { method: "PATCH", body: submitData });
             const data = await response.json();
@@ -1402,6 +1414,23 @@ export default function EditCourse() {
                         <p className="text-xs text-gray-400 text-right mt-2">{formData.text.length} characters</p>
                     </div>
 
+                    {/* ✨ Short Description — NEW FIELD */}
+                    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+                        <label htmlFor="short_description" className="block text-base font-semibold text-gray-800 mb-1">
+                            Short Description
+                        </label>
+                        <p className="text-xs text-gray-400 mb-3">A brief summary of the course (optional)</p>
+                        <input
+                            id="short_description"
+                            type="text"
+                            name="short_description"
+                            value={formData.short_description}
+                            onChange={handleInputChange}
+                            placeholder="e.g., Learn React from scratch in 40 hours"
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                        />
+                    </div>
+
                     {/* ════════════════════════════════
                         SECTION 2 — Course Details
                     ════════════════════════════════ */}
@@ -1597,6 +1626,18 @@ export default function EditCourse() {
                             hint="Optional — PNG, JPG · Max 2MB"
                             iconBg="bg-violet-50"
                             iconColor="text-violet-500"
+                        />
+                        {/* ✨ NEW IMAGE2 FIELD */}
+                        <ImageUploadBox
+                            preview={image2Preview}
+                            existingUrl={formData.existing_image2}
+                            onRemove={() => removeFile("image2", !image2Preview)}
+                            inputId="image2-upload"
+                            inputName="image2"
+                            label="Additional Image"
+                            hint="Optional — PNG, JPG · Max 5MB"
+                            iconBg="bg-orange-50"
+                            iconColor="text-orange-500"
                         />
                         <PdfUploadBox />
                     </div>
