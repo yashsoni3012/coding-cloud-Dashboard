@@ -684,7 +684,7 @@ import {
     ChevronDown,
     BookMarked,
 } from "lucide-react";
-import Toasts from "./Toasts"; // <-- import toast component
+import Toasts from "./Toasts";
 
 export default function AddTopic() {
     const navigate = useNavigate();
@@ -716,19 +716,36 @@ export default function AddTopic() {
         const fetchData = async () => {
             try {
                 setLoading(true);
-                const modulesResponse = await fetch("https://codingcloud.pythonanywhere.com/modules/");
-                const modulesData = await modulesResponse.json();
-                const coursesResponse = await fetch("https://codingcloud.pythonanywhere.com/course/");
-                const coursesData = await coursesResponse.json();
+                const [modulesRes, coursesRes] = await Promise.all([
+                    fetch("https://codingcloud.pythonanywhere.com/modules/"),
+                    fetch("https://codingcloud.pythonanywhere.com/course/")
+                ]);
 
-                if (modulesData.success) {
+                const modulesData = await modulesRes.json();
+                const coursesData = await coursesRes.json();
+
+                // Handle modules
+                if (modulesData.success && Array.isArray(modulesData.data)) {
                     setModules(modulesData.data);
                     setFilteredModules(modulesData.data);
                 } else {
+                    console.error("Unexpected modules response:", modulesData);
                     showToast("Failed to load modules", "error");
                 }
-                if (coursesData.success) setCourses(coursesData.data);
+
+                // Handle courses – support both wrapped and unwrapped responses
+                let coursesArray = [];
+                if (coursesData.success && Array.isArray(coursesData.data)) {
+                    coursesArray = coursesData.data;
+                } else if (Array.isArray(coursesData)) {
+                    coursesArray = coursesData;
+                } else {
+                    console.error("Unexpected courses response:", coursesData);
+                    showToast("Failed to load courses", "error");
+                }
+                setCourses(coursesArray);
             } catch (err) {
+                console.error("Fetch error:", err);
                 showToast("Failed to load modules or courses. Please try again.", "error");
             } finally {
                 setLoading(false);
@@ -929,12 +946,18 @@ export default function AddTopic() {
                                 <option value="">— First select a course —</option>
                                 {courses.map((course) => (
                                     <option key={course.id} value={course.id}>
-                                        {course.name} ({course.category_details?.name || "No Category"})
+                                        {course.name} {course.category_details ? `(${course.category_details.name})` : ""}
                                     </option>
                                 ))}
                             </select>
                             <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                         </div>
+                        {courses.length === 0 && (
+                            <p className="flex items-center gap-1.5 text-xs text-amber-600 mt-2">
+                                <AlertCircle size={12} />
+                                No courses available. Please add courses first.
+                            </p>
+                        )}
                     </div>
 
                     {/* ── Module Selection Card ── */}

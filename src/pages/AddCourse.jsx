@@ -1863,6 +1863,11 @@ export default function AddCourse() {
   const [categories, setCategories] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
 
+  // ------------------------------------------------------------------------
+  // Editor mode: "tinymce" or "html"
+  // ------------------------------------------------------------------------
+  const [editorMode, setEditorMode] = useState("tinymce");
+
   // Clear timeout on unmount
   useEffect(() => {
     return () => {
@@ -1875,7 +1880,7 @@ export default function AddCourse() {
     const fetchCategories = async () => {
       try {
         const response = await fetch(
-          "https://codingcloud.pythonanywhere.com/category/",
+          "https://codingcloud.pythonanywhere.com/category/"
         );
         const data = await response.json();
         setCategories(data.data || []);
@@ -1893,8 +1898,8 @@ export default function AddCourse() {
     name: "",
     slug: "",
     category: "",
-    text: "",
-    short_description: "", // ✨ NEW FIELD
+    text: "", // Will be populated with default example
+    short_description: "",
     duration: "",
     lecture: "",
     students: "",
@@ -1910,13 +1915,29 @@ export default function AddCourse() {
     banner_img: null,
     pdf_file: null,
     icon: null,
-    image2: null, // ✨ NEW FIELD
+    image2: null,
   });
+
+  // ------------------------------------------------------------------------
+  // Default HTML content (from the image)
+  // ------------------------------------------------------------------------
+  useEffect(() => {
+    // Only set default if text is empty (first load)
+    if (!formData.text) {
+      setFormData((prev) => ({
+        ...prev,
+        text: `<p><img style="float: right;" title="Tiny Logo" src="https://www.tiny.cloud/docs/tinymce/latest/images/tiny-logo.png" alt="Tiny Logo" /></p>
+<h2>The world’s first rich text editor in the cloud</h2>
+<p>Have you heard about Tiny Cloud? It’s the first step in our journey to help you deliver great content creation experiences, no matter your level of expertise. 50,000 developers already agree. They get free access to our global CDN, image proxy services and auto updates to the TinyMCE editor. They’re also ready for some exciting updates coming soon.</p>
+<p>One of these enhancements is <strong>Tiny Drive</strong>: imagine file management for TinyMCE, in the cloud, made super easy.</p>`,
+      }));
+    }
+  }, []);
 
   const [imagePreview, setImagePreview] = useState("");
   const [bannerPreview, setBannerPreview] = useState("");
   const [iconPreview, setIconPreview] = useState("");
-  const [image2Preview, setImage2Preview] = useState(""); // ✨ NEW PREVIEW
+  const [image2Preview, setImage2Preview] = useState("");
   const [pdfName, setPdfName] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
 
@@ -1959,8 +1980,7 @@ export default function AddCourse() {
       else if (name === "banner_img")
         setBannerPreview(URL.createObjectURL(file));
       else if (name === "icon") setIconPreview(URL.createObjectURL(file));
-      else if (name === "image2")
-        setImage2Preview(URL.createObjectURL(file)); // ✨
+      else if (name === "image2") setImage2Preview(URL.createObjectURL(file));
       else if (name === "pdf_file") setPdfName(file.name);
       setError("");
     }
@@ -1978,7 +1998,6 @@ export default function AddCourse() {
       setIconPreview("");
       document.getElementById("icon-upload").value = "";
     } else if (field === "image2") {
-      // ✨
       setImage2Preview("");
       document.getElementById("image2-upload").value = "";
     } else if (field === "pdf_file") {
@@ -1986,6 +2005,7 @@ export default function AddCourse() {
       document.getElementById("pdf-upload").value = "";
     }
   };
+
   const validateForm = () => {
     const errors = {};
 
@@ -2033,10 +2053,10 @@ export default function AddCourse() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const isValid = validateForm();
-if (!isValid) {
-  setError("Please fix the highlighted fields.");
-  return;
-}
+    if (!isValid) {
+      setError("Please fix the highlighted fields.");
+      return;
+    }
 
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
 
@@ -2051,7 +2071,6 @@ if (!isValid) {
       submitData.append("category", formData.category);
       submitData.append("text", formData.text);
       if (formData.short_description)
-        // ✨
         submitData.append("short_description", formData.short_description);
       if (formData.duration) submitData.append("duration", formData.duration);
       if (formData.lecture) submitData.append("lecture", formData.lecture);
@@ -2071,14 +2090,14 @@ if (!isValid) {
         submitData.append("banner_img", formData.banner_img);
       if (formData.pdf_file) submitData.append("pdf_file", formData.pdf_file);
       if (formData.icon) submitData.append("icon", formData.icon);
-      if (formData.image2) submitData.append("image2", formData.image2); // ✨
+      if (formData.image2) submitData.append("image2", formData.image2);
 
       const response = await fetch(
         "https://codingcloud.pythonanywhere.com/course/",
         {
           method: "POST",
           body: submitData,
-        },
+        }
       );
 
       let data;
@@ -2113,6 +2132,21 @@ if (!isValid) {
       setError("Network error. Please check your connection.");
       setLoading(false);
     }
+  };
+
+  // ------------------------------------------------------------------------
+  // Generate short description from main description (plain text)
+  // ------------------------------------------------------------------------
+  const generateShortDescription = () => {
+    // Simple HTML-to-text conversion (strip tags)
+    const plainText = formData.text.replace(/<[^>]*>/g, "");
+    const truncated = plainText.slice(0, 200);
+    setFormData((prev) => ({ ...prev, short_description: truncated }));
+    setToast({
+      show: true,
+      message: "Short description generated from main description",
+      type: "success",
+    });
   };
 
   // ── Reusable Image Upload Box ──
@@ -2151,9 +2185,7 @@ if (!isValid) {
             Click to upload
           </p>
           <p className="text-xs text-gray-400">
-            <span className="text-indigo-500 font-medium">
-              Browse files
-            </span>{" "}
+            <span className="text-indigo-500 font-medium">Browse files</span>
           </p>
         </div>
       ) : (
@@ -2397,9 +2429,11 @@ if (!isValid) {
           />
 
           {/* Course Name */}
-          <div className={`bg-white rounded-2xl border shadow-sm p-6 ${
-  error ? "border-red-400 bg-red-50/30" : "border-gray-200"
-}`}>
+          <div
+            className={`bg-white rounded-2xl border shadow-sm p-6 ${
+              error ? "border-red-400 bg-red-50/30" : "border-gray-200"
+            }`}
+          >
             <label
               htmlFor="name"
               className="block text-base font-semibold text-gray-800 mb-1"
@@ -2487,56 +2521,101 @@ if (!isValid) {
             </div>
           </div>
 
-          {/* Description with TinyMCE */}
+          {/* Description with tabs */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-            <label
-              htmlFor="text"
-              className="block text-base font-semibold text-gray-800 mb-1"
-              required
-            >
-              Description <span className="text-red-500">*</span>
-            </label>
+            <div className="flex items-center justify-between mb-4">
+              <label
+                htmlFor="text"
+                className="block text-base font-semibold text-gray-800"
+              >
+                Description <span className="text-red-500">*</span>
+              </label>
+
+              {/* Tab Switcher */}
+              <div className="flex gap-1 p-1 bg-gray-100 rounded-lg">
+                <button
+                  type="button"
+                  onClick={() => setEditorMode("tinymce")}
+                  className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
+                    editorMode === "tinymce"
+                      ? "bg-white text-indigo-600 shadow-sm"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  TinyMCE
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditorMode("html")}
+                  className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
+                    editorMode === "html"
+                      ? "bg-white text-indigo-600 shadow-sm"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  HTML
+                </button>
+              </div>
+            </div>
+
             <p className="text-xs text-gray-400 mb-3">
-              Minimum 50 characters recommended for better SEO
+              {editorMode === "tinymce"
+                ? "Rich text editor with formatting tools"
+                : "Edit raw HTML source code"}
             </p>
-            <Editor
-              apiKey="x5ikrjt2xexo2x73y0uzybqhbjq29owf8drai57qhtew5e0j"
-              value={formData.text}
-              onEditorChange={(content) =>
-                setFormData((prev) => ({ ...prev, text: content }))
-              }
-              init={{
-                height: 400,
-                menubar: true,
-                plugins: [
-                  "advlist",
-                  "autolink",
-                  "lists",
-                  "link",
-                  "image",
-                  "charmap",
-                  "preview",
-                  "anchor",
-                  "searchreplace",
-                  "visualblocks",
-                  "code",
-                  "fullscreen",
-                  "insertdatetime",
-                  "media",
-                  "table",
-                  "help",
-                  "wordcount",
-                ],
-                toolbar:
-                  "undo redo | blocks | " +
-                  "bold italic forecolor | alignleft aligncenter " +
-                  "alignright alignjustify | bullist numlist outdent indent | " +
-                  "removeformat | help",
-                content_style:
-                  "body { font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.6; }",
-                placeholder: "Write a detailed description of your course…",
-              }}
-            />
+
+            {/* Conditional Editor */}
+            {editorMode === "tinymce" ? (
+              <Editor
+                apiKey="x5ikrjt2xexo2x73y0uzybqhbjq29owf8drai57qhtew5e0j"
+                value={formData.text}
+                onEditorChange={(content) =>
+                  setFormData((prev) => ({ ...prev, text: content }))
+                }
+                init={{
+                  height: 400,
+                  menubar: true,
+                  plugins: [
+                    "advlist",
+                    "autolink",
+                    "lists",
+                    "link",
+                    "image",
+                    "charmap",
+                    "preview",
+                    "anchor",
+                    "searchreplace",
+                    "visualblocks",
+                    "code",
+                    "fullscreen",
+                    "insertdatetime",
+                    "media",
+                    "table",
+                    "help",
+                    "wordcount",
+                  ],
+                  toolbar:
+                    "undo redo | blocks | " +
+                    "bold italic forecolor | alignleft aligncenter " +
+                    "alignright alignjustify | bullist numlist outdent indent | " +
+                    "removeformat | code | help",
+                  content_style:
+                    "body { font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.6; }",
+                  placeholder: "Write a detailed description of your course…",
+                }}
+              />
+            ) : (
+              <textarea
+                value={formData.text}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, text: e.target.value }))
+                }
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base font-mono placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                rows={12}
+                placeholder="<!-- Write HTML here -->"
+              />
+            )}
+
             <div className="flex justify-between text-xs mt-2">
               <span
                 className={
@@ -2555,19 +2634,28 @@ if (!isValid) {
             </div>
           </div>
 
-          {/* ✨ Short Description — NEW FIELD */}
+          {/* Short Description with auto‑generate button */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-            <label
-              htmlFor="short_description"
-              className="block text-base font-semibold text-gray-800 mb-1"
-              required
-            >
-              Short Description
-              <span className="text-red-400 ml-1">*</span>
-            </label>
-
+            <div className="flex items-center justify-between mb-1">
+              <label
+                htmlFor="short_description"
+                className="block text-base font-semibold text-gray-800"
+              >
+                Short Description
+                <span className="text-red-400 ml-1">*</span>
+              </label>
+              <button
+                type="button"
+                onClick={generateShortDescription}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-lg transition-all"
+                title="Generate from main description"
+              >
+                <Sparkles size={14} />
+                Generate from Description
+              </button>
+            </div>
             <p className="text-xs text-gray-400 mb-3">
-              A brief summary of the course
+              A brief summary of the course (auto‑generated from description)
             </p>
             <input
               id="short_description"
@@ -2807,7 +2895,6 @@ if (!isValid) {
               iconBg="bg-violet-50"
               iconColor="text-violet-500"
             />
-            {/* ✨ NEW IMAGE2 FIELD */}
             <ImageUploadBox
               preview={image2Preview}
               onRemove={() => removeFile("image2")}

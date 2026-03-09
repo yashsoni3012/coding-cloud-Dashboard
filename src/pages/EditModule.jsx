@@ -609,6 +609,7 @@ import {
     Info,
     Tag,
     BookOpen,
+    Sparkles,
 } from "lucide-react";
 import Toasts from "./Toasts";
 
@@ -619,6 +620,11 @@ export default function EditModule() {
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+
+    // ------------------------------------------------------------------------
+    // Editor mode: "tinymce" or "html"
+    // ------------------------------------------------------------------------
+    const [editorMode, setEditorMode] = useState("tinymce");
 
     const [categories, setCategories] = useState([]);
     const [loadingCategories, setLoadingCategories] = useState(false);
@@ -840,54 +846,104 @@ export default function EditModule() {
                             />
                         </div>
 
-                        {/* Description - Rich Text Editor */}
+                        {/* Description - with tabs */}
                         <div>
-                            <label htmlFor="descriptions" className="block text-sm font-medium text-gray-700 mb-1">
-                                Description <span className="text-gray-400 text-xs">(optional)</span>
-                            </label>
-                            <Editor
-                                apiKey="x5ikrjt2xexo2x73y0uzybqhbjq29owf8drai57qhtew5e0j" // Replace with your actual TinyMCE API key
-                                onInit={(evt, editor) => (editorRef.current = editor)}
-                                value={formData.descriptions}
-                                onEditorChange={(content) =>
-                                    setFormData((prev) => ({ ...prev, descriptions: content }))
-                                }
-                                init={{
-                                    height: 400,
-                                    menubar: true,
-                                    plugins: [
-                                        "advlist",
-                                        "autolink",
-                                        "lists",
-                                        "link",
-                                        "image",
-                                        "charmap",
-                                        "preview",
-                                        "anchor",
-                                        "searchreplace",
-                                        "visualblocks",
-                                        "code",
-                                        "fullscreen",
-                                        "insertdatetime",
-                                        "media",
-                                        "table",
-                                        "help",
-                                        "wordcount",
-                                    ],
-                                    toolbar:
-                                        "undo redo | blocks | " +
-                                        "bold italic forecolor | alignleft aligncenter " +
-                                        "alignright alignjustify | bullist numlist outdent indent | " +
-                                        "removeformat | help",
-                                    content_style:
-                                        "body { font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.6; }",
-                                    placeholder:
-                                        "Provide a brief overview of what this module covers…",
-                                }}
-                            />
+                            <div className="flex items-center justify-between mb-2">
+                                <label htmlFor="descriptions" className="block text-sm font-medium text-gray-700">
+                                    Description <span className="text-gray-400 text-xs">(optional)</span>
+                                </label>
+
+                                {/* Tab Switcher */}
+                                <div className="flex gap-1 p-1 bg-gray-100 rounded-lg">
+                                    <button
+                                        type="button"
+                                        onClick={() => setEditorMode("tinymce")}
+                                        className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
+                                            editorMode === "tinymce"
+                                                ? "bg-white text-indigo-600 shadow-sm"
+                                                : "text-gray-600 hover:text-gray-900"
+                                        }`}
+                                    >
+                                        TinyMCE
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setEditorMode("html")}
+                                        className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
+                                            editorMode === "html"
+                                                ? "bg-white text-indigo-600 shadow-sm"
+                                                : "text-gray-600 hover:text-gray-900"
+                                        }`}
+                                    >
+                                        HTML
+                                    </button>
+                                </div>
+                            </div>
+
+                            <p className="text-xs text-gray-400 mb-3">
+                                {editorMode === "tinymce"
+                                    ? "Rich text editor with formatting tools"
+                                    : "Edit raw HTML source code"}
+                            </p>
+
+                            {/* Conditional Editor */}
+                            {editorMode === "tinymce" ? (
+                                <Editor
+                                    apiKey="x5ikrjt2xexo2x73y0uzybqhbjq29owf8drai57qhtew5e0j"
+                                    onInit={(evt, editor) => (editorRef.current = editor)}
+                                    value={formData.descriptions}
+                                    onEditorChange={(content) =>
+                                        setFormData((prev) => ({ ...prev, descriptions: content }))
+                                    }
+                                    init={{
+                                        height: 400,
+                                        menubar: true,
+                                        plugins: [
+                                            "advlist",
+                                            "autolink",
+                                            "lists",
+                                            "link",
+                                            "image",
+                                            "charmap",
+                                            "preview",
+                                            "anchor",
+                                            "searchreplace",
+                                            "visualblocks",
+                                            "code",
+                                            "fullscreen",
+                                            "insertdatetime",
+                                            "media",
+                                            "table",
+                                            "help",
+                                            "wordcount",
+                                        ],
+                                        toolbar:
+                                            "undo redo | blocks | " +
+                                            "bold italic forecolor | alignleft aligncenter " +
+                                            "alignright alignjustify | bullist numlist outdent indent | " +
+                                            "removeformat | code | help",
+                                        content_style:
+                                            "body { font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.6; }",
+                                        placeholder:
+                                            "Provide a brief overview of what this module covers…",
+                                    }}
+                                />
+                            ) : (
+                                <textarea
+                                    value={formData.descriptions}
+                                    onChange={(e) =>
+                                        setFormData((prev) => ({ ...prev, descriptions: e.target.value }))
+                                    }
+                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base font-mono placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                                    rows={12}
+                                    placeholder="<!-- Write HTML here -->"
+                                />
+                            )}
+
+                            {/* Character count */}
                             <p className="flex items-center gap-1.5 text-xs text-gray-400 mt-2">
                                 <Info size={11} />
-                                You can format the description with rich text (optional).
+                                {formData.descriptions.length} characters · You can format the description with rich text (optional).
                             </p>
                         </div>
                     </div>
