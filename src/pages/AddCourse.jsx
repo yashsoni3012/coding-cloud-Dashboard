@@ -1880,7 +1880,7 @@ export default function AddCourse() {
     const fetchCategories = async () => {
       try {
         const response = await fetch(
-          "https://codingcloud.pythonanywhere.com/category/"
+          "https://codingcloud.pythonanywhere.com/category/",
         );
         const data = await response.json();
         setCategories(data.data || []);
@@ -2105,12 +2105,10 @@ export default function AddCourse() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const isValid = validateForm();
-    if (!isValid) {
-      // 🟥 Show a detailed error message listing missing fields
-      const emptyFields = getEmptyFieldsList(fieldErrors);
-      setError(`Please fill in the following required fields: ${emptyFields}`);
-      return;
-    }
+if (!isValid) {
+  setError("Please fill the required fields.");
+  return;
+}
 
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
 
@@ -2151,7 +2149,7 @@ export default function AddCourse() {
         {
           method: "POST",
           body: submitData,
-        }
+        },
       );
 
       let data;
@@ -2999,7 +2997,8 @@ export default function AddCourse() {
               iconColor="text-orange-500"
               // image2 is not required
             />
-            <PdfUploadBox error={!!fieldErrors.pdf_file} /> {/* 🟥 pass error prop */}
+            <PdfUploadBox error={!!fieldErrors.pdf_file} />{" "}
+            {/* 🟥 pass error prop */}
           </div>
 
           {/* SECTION 4 — SEO & Metadata */}
