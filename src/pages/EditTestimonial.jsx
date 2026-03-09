@@ -23,41 +23,42 @@ export default function EditTestimonial() {
   const { id } = useParams();
   const fileInputRef = useRef(null);
 
+  const [courses, setCourses] = useState([]);
+  const [coursesLoading, setCoursesLoading] = useState(true);
+  const [coursesError, setCoursesError] = useState("");
+
   const [formData, setFormData] = useState({
     name: "",
     review: "",
     rating: 5,
-    image: null, // new File object (if changed)
-    category: "", // ID of selected category/course
-    existingImage: null, // URL of current image (if any)
+    image: null,               // new File object (if changed)
+    course: "",                // ID of selected course
+    existingImage: null,       // URL of current image (if any)
   });
 
-  // UI states
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [fetchError, setFetchError] = useState("");
+  const [error, setError] = useState("");
+  const [hoveredRating, setHoveredRating] = useState(0);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [imageChanged, setImageChanged] = useState(false);
+  const [imageRemoved, setImageRemoved] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+
   const [toast, setToast] = useState({
     show: false,
     message: "",
     type: "success",
   });
-  const [error, setError] = useState("");
-  const [hoveredRating, setHoveredRating] = useState(0);
-  const [imagePreview, setImagePreview] = useState(null);
-  const [imageChanged, setImageChanged] = useState(false);
-  const [imageRemoved, setImageRemoved] = useState(false); // true if user removed image without uploading new one
-  const [dragOver, setDragOver] = useState(false);
 
-  // Categories
-  const [categories, setCategories] = useState([]);
-  const [categoriesLoading, setCategoriesLoading] = useState(true);
-
+  // Fetch testimonial and courses on mount
   useEffect(() => {
     fetchTestimonial();
-    fetchCategories();
+    fetchCourses();
   }, [id]);
 
-  // ----- Fetch testimonial (robust extraction) -----
+  // ----- Fetch testimonial (returns object directly, no wrapper) -----
   const fetchTestimonial = async () => {
     try {
       setLoading(true);
@@ -68,28 +69,15 @@ export default function EditTestimonial() {
         throw new Error(`HTTP error ${response.status}`);
       }
 
-      const data = await response.json();
-      console.log("Testimonial API response:", data);
-
-      // Navigate through possible wrapper objects
-      let testimonial = data;
-      if (data && typeof data === "object") {
-        if (data.data && typeof data.data === "object") testimonial = data.data;
-        else if (data.testimonial && typeof data.testimonial === "object")
-          testimonial = data.testimonial;
-      }
+      const testimonial = await response.json();
+      console.log("Testimonial API response:", testimonial);
 
       setFormData({
         name: testimonial.name || "",
         review: testimonial.review || "",
         rating: testimonial.rating || 5,
         image: null,
-        // Accept category, course, or category_id – adjust field name as needed
-        category:
-          testimonial.category ||
-          testimonial.course ||
-          testimonial.category_id ||
-          "",
+        course: testimonial.course || "", // course ID
         existingImage: testimonial.image || null,
       });
 
@@ -110,32 +98,25 @@ export default function EditTestimonial() {
     }
   };
 
-  // ----- Fetch categories (robust extraction) -----
-  const fetchCategories = async () => {
+  // ----- Fetch courses (handles { success: true, data: [...] }) -----
+  const fetchCourses = async () => {
     try {
-      setCategoriesLoading(true);
-      const response = await fetch(`${BASE_URL}/category/`);
-      if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+      setCoursesLoading(true);
+      const response = await fetch(`${BASE_URL}/course/`);
+      if (!response.ok) throw new Error("Failed to fetch courses");
       const data = await response.json();
-      console.log("Categories API response:", data);
+      console.log("Courses API response:", data);
 
-      let categoriesArray = [];
-      if (Array.isArray(data)) {
-        categoriesArray = data;
-      } else if (data && typeof data === "object") {
-        const possibleKeys = ["data", "categories", "results", "items"];
-        for (const key of possibleKeys) {
-          if (Array.isArray(data[key])) {
-            categoriesArray = data[key];
-            break;
-          }
-        }
+      if (data.success && Array.isArray(data.data)) {
+        setCourses(data.data);
+      } else {
+        throw new Error("Invalid courses format");
       }
-      setCategories(categoriesArray);
     } catch (err) {
-      console.error("Category fetch error:", err);
+      console.error("Error fetching courses:", err);
+      setCoursesError("Failed to load courses. Please refresh the page.");
     } finally {
-      setCategoriesLoading(false);
+      setCoursesLoading(false);
     }
   };
 
@@ -145,13 +126,11 @@ export default function EditTestimonial() {
     setFormData((prev) => ({
       ...prev,
       [name]:
-        name === "rating"
-          ? parseInt(value) || 0
-          : name === "category"
-            ? value === ""
-              ? ""
-              : parseInt(value) // keep empty string if none selected
-            : value,
+        name === "rating" || name === "course"
+          ? value === ""
+            ? ""
+            : parseInt(value)
+          : value,
     }));
     setError("");
   };
@@ -170,7 +149,7 @@ export default function EditTestimonial() {
       }
       setFormData((prev) => ({ ...prev, image: file }));
       setImageChanged(true);
-      setImageRemoved(false); // we are replacing, not removing
+      setImageRemoved(false);
       const reader = new FileReader();
       reader.onloadend = () => setImagePreview(reader.result);
       reader.readAsDataURL(file);
@@ -189,7 +168,7 @@ export default function EditTestimonial() {
     setFormData((prev) => ({ ...prev, image: null, existingImage: null }));
     setImagePreview(null);
     setImageChanged(true);
-    setImageRemoved(true); // user explicitly removed image
+    setImageRemoved(true);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -206,13 +185,17 @@ export default function EditTestimonial() {
       setError("Rating must be between 1 and 5");
       return false;
     }
+    if (!formData.course) {
+      setError("Please select a course");
+      return false;
+    }
     return true;
   };
 
   const handleRatingClick = (rating) =>
     setFormData((prev) => ({ ...prev, rating }));
 
-  // ----- Submit handler (handles JSON / FormData and image removal) -----
+  // ----- Submit handler -----
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
@@ -225,8 +208,7 @@ export default function EditTestimonial() {
         name: formData.name.trim(),
         review: formData.review.trim(),
         rating: formData.rating,
-        // Use 'course' as field name – adjust if your API expects 'category'
-        course: formData.category ? Number(formData.category) : undefined,
+        course: formData.course ? Number(formData.course) : undefined, // send as 'course'
       };
 
       // CASE 1: Image was changed AND we have a new file → use FormData
@@ -238,7 +220,7 @@ export default function EditTestimonial() {
         if (commonPayload.course) {
           formDataToSend.append("course", commonPayload.course);
         }
-        formDataToSend.append("image", formData.image); // new file
+        formDataToSend.append("image", formData.image);
 
         response = await fetch(`${BASE_URL}/testimonials/${id}/`, {
           method: "PATCH",
@@ -249,7 +231,7 @@ export default function EditTestimonial() {
       else if (imageChanged && imageRemoved) {
         const payload = {
           ...commonPayload,
-          image: null, // explicitly tell API to delete the image
+          image: null,
         };
         response = await fetch(`${BASE_URL}/testimonials/${id}/`, {
           method: "PATCH",
@@ -260,7 +242,6 @@ export default function EditTestimonial() {
       // CASE 3: No image change at all → send JSON without image field
       else {
         const payload = { ...commonPayload };
-        // Do NOT include image field – API should leave existing image untouched
         response = await fetch(`${BASE_URL}/testimonials/${id}/`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -308,10 +289,10 @@ export default function EditTestimonial() {
   };
 
   const isNewImage = formData.image instanceof File;
-  const selectedCategory = categories.find((c) => c.id === formData.category);
+  const selectedCourse = courses.find((c) => c.id === formData.course);
 
   // ----- Loading & error states -----
-  if (loading) {
+  if (loading || coursesLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -379,7 +360,6 @@ export default function EditTestimonial() {
           </div>
           <div className="flex items-center gap-2">
             <button
-              type="submit"
               onClick={handleSubmit}
               disabled={submitting}
               className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-base font-semibold rounded-xl shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
@@ -402,7 +382,8 @@ export default function EditTestimonial() {
 
       {/* Main Form */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 pb-28 sm:pb-12">
-        {error && (
+        {/* Courses Error */}
+        {coursesError && (
           <div className="flex items-start gap-3 p-4 mb-6 bg-red-50 border border-red-200 rounded-2xl text-base text-red-700">
             <AlertCircle
               size={18}
@@ -410,8 +391,25 @@ export default function EditTestimonial() {
             />
             <div className="flex-1">
               <p className="font-semibold">Error</p>
-              <p className="mt-0.5">{error}</p>
+              <p className="mt-0.5">{coursesError}</p>
             </div>
+            <button
+              onClick={() => setCoursesError("")}
+              className="text-red-400 hover:text-red-600 transition-colors"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        )}
+
+        {/* Error Alert */}
+        {error && (
+          <div className="flex items-start gap-3 p-4 mb-6 bg-red-50 border border-red-200 rounded-2xl text-base text-red-700">
+            <AlertCircle
+              size={18}
+              className="mt-0.5 flex-shrink-0 text-red-500"
+            />
+            <span className="flex-1">{error}</span>
             <button
               onClick={() => setError("")}
               className="text-red-400 hover:text-red-600 transition-colors flex-shrink-0"
@@ -422,7 +420,7 @@ export default function EditTestimonial() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Name */}
+          {/* Name Card */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-9 h-9 bg-indigo-50 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -452,7 +450,7 @@ export default function EditTestimonial() {
             />
           </div>
 
-          {/* Rating */}
+          {/* Rating Card */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-9 h-9 bg-amber-50 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -522,7 +520,7 @@ export default function EditTestimonial() {
             </div>
           </div>
 
-          {/* Review */}
+          {/* Review Card */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-9 h-9 bg-violet-50 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -555,7 +553,7 @@ export default function EditTestimonial() {
             </p>
           </div>
 
-          {/* Category */}
+          {/* Course Selection Card */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-9 h-9 bg-pink-50 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -563,32 +561,35 @@ export default function EditTestimonial() {
               </div>
               <div>
                 <label className="block text-base font-semibold text-gray-800">
-                  Course / Category
+                  Course <span className="text-red-500">*</span>
                 </label>
                 <p className="text-xs text-gray-400 mt-0.5">
-                  Select the associated course or category
+                  Select the course this testimonial belongs to
                 </p>
               </div>
             </div>
 
-            {categoriesLoading ? (
+            {coursesLoading ? (
               <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-base text-gray-500">
                 <div className="w-4 h-4 border-2 border-indigo-300 border-t-indigo-600 rounded-full animate-spin flex-shrink-0" />
-                Loading categories…
+                Loading courses…
               </div>
             ) : (
               <>
                 <div className="relative">
                   <select
-                    name="category"
-                    value={formData.category}
+                    name="course"
+                    value={formData.course}
                     onChange={handleChange}
                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none cursor-pointer"
+                    required
                   >
-                    <option value="">— Select a category —</option>
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name}
+                    <option value="">— Select a course —</option>
+                    {courses.map((course) => (
+                      <option key={course.id} value={course.id}>
+                        {course.name}
+                        {course.category_details?.name &&
+                          ` (${course.category_details.name})`}
                       </option>
                     ))}
                   </select>
@@ -598,14 +599,19 @@ export default function EditTestimonial() {
                   />
                 </div>
 
-                {selectedCategory && (
+                {selectedCourse && (
                   <div className="mt-3 flex items-center gap-2 p-3 bg-pink-50 border border-pink-100 rounded-xl">
                     <div className="w-6 h-6 bg-pink-100 rounded-lg flex items-center justify-center flex-shrink-0">
                       <Layers size={12} className="text-pink-500" />
                     </div>
                     <p className="text-xs text-pink-700">
                       <span className="font-semibold">Selected:</span>{" "}
-                      {selectedCategory.name}
+                      {selectedCourse.name}
+                      {selectedCourse.category_details?.name && (
+                        <span className="text-pink-400 ml-1">
+                          · {selectedCourse.category_details.name}
+                        </span>
+                      )}
                     </p>
                   </div>
                 )}
@@ -613,7 +619,7 @@ export default function EditTestimonial() {
             )}
           </div>
 
-          {/* Profile Image */}
+          {/* Profile Image Card */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-9 h-9 bg-emerald-50 rounded-xl flex items-center justify-center flex-shrink-0">

@@ -503,13 +503,17 @@ import {
     Tag,
     Layers,
 } from "lucide-react";
-import Toasts from "./Toasts"; // <-- import the toast component
+import Toasts from "./Toasts";
 
 export default function AddModule() {
     const navigate = useNavigate();
 
     const [loading, setLoading] = useState(false);
-    const [formData, setFormData] = useState({ name: "", course_data: "" });
+    const [formData, setFormData] = useState({
+        name: "",
+        descriptions: "",
+        course_data: "",
+    });
 
     const [courses, setCourses] = useState([]);
     const [loadingCourses, setLoadingCourses] = useState(false);
@@ -570,8 +574,14 @@ export default function AddModule() {
         }
         setLoading(true);
         try {
+            // Prepare descriptions: send null if empty, otherwise trimmed string
+            const descriptionsValue = formData.descriptions.trim() === ""
+                ? null
+                : formData.descriptions.trim();
+
             const submitData = {
                 name: formData.name.trim(),
+                descriptions: descriptionsValue,
                 course_data: parseInt(formData.course_data),
             };
             const response = await fetch("https://codingcloud.pythonanywhere.com/modules/", {
@@ -582,7 +592,7 @@ export default function AddModule() {
             const data = await response.json();
             if (response.ok || response.status === 201) {
                 showToast("Module created successfully!", "success");
-                setFormData({ name: "", course_data: "" });
+                setFormData({ name: "", descriptions: "", course_data: "" });
                 setTimeout(() => navigate("/modules"), 2000);
             } else {
                 showToast(data.message || data.detail || "Failed to create module. Please try again.", "error");
@@ -649,8 +659,6 @@ export default function AddModule() {
             {/* ── Main ── */}
             <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 pb-28 sm:pb-12">
 
-                {/* Removed inline error/success alerts — now using toast */}
-
                 {/* Courses loading */}
                 {loadingCourses && (
                     <div className="flex items-center gap-3 p-4 mb-6 bg-indigo-50 border border-indigo-100 rounded-2xl text-base text-indigo-600">
@@ -661,7 +669,7 @@ export default function AddModule() {
 
                 <form onSubmit={handleSubmit} className="space-y-5">
 
-                    {/* ── Module Name Card ── */}
+                    {/* ── Module Details Card (Name + Description) ── */}
                     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
                         <div className="flex items-center gap-3 mb-4">
                             <div className="w-9 h-9 bg-indigo-50 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -669,25 +677,48 @@ export default function AddModule() {
                             </div>
                             <div>
                                 <label htmlFor="name" className="block text-base font-semibold text-gray-800">
-                                    Module Name <span className="text-red-500">*</span>
+                                    Module Details <span className="text-red-500">*</span>
                                 </label>
-                                <p className="text-xs text-gray-400 mt-0.5">Enter a descriptive name for the module</p>
+                                <p className="text-xs text-gray-400 mt-0.5">Enter a name and optional description</p>
                             </div>
                         </div>
-                        <input
-                            id="name"
-                            type="text"
-                            name="name"
-                            value={formData.name}
-                            onChange={handleInputChange}
-                            placeholder="e.g., Module 1 - Introduction to Python"
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
-                            required
-                        />
-                        <p className="flex items-center gap-1.5 text-xs text-gray-400 mt-2">
-                            <Info size={11} />
-                            Keep it short and descriptive — e.g., "Module 2 – Variables & Data Types"
-                        </p>
+
+                        {/* Module Name */}
+                        <div className="mb-4">
+                            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                                Module Name <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                id="name"
+                                type="text"
+                                name="name"
+                                value={formData.name}
+                                onChange={handleInputChange}
+                                placeholder="e.g., Module 1 - Introduction to Python"
+                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                                required
+                            />
+                        </div>
+
+                        {/* Description */}
+                        <div>
+                            <label htmlFor="descriptions" className="block text-sm font-medium text-gray-700 mb-1">
+                                Description <span className="text-gray-400 text-xs">(optional)</span>
+                            </label>
+                            <textarea
+                                id="descriptions"
+                                name="descriptions"
+                                value={formData.descriptions}
+                                onChange={handleInputChange}
+                                rows="3"
+                                placeholder="e.g., This module covers the basics of Python programming, including variables, loops, and functions."
+                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-y"
+                            />
+                            <p className="flex items-center gap-1.5 text-xs text-gray-400 mt-2">
+                                <Info size={11} />
+                                Provide a brief overview of what this module covers.
+                            </p>
+                        </div>
                     </div>
 
                     {/* ── Course Selection Card ── */}
@@ -727,7 +758,6 @@ export default function AddModule() {
                         </div>
                     )}
 
-                  
                     {/* ── Mobile Submit ── */}
                     <div className="sm:hidden">
                         <button
