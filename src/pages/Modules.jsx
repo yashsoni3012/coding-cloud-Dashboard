@@ -1424,12 +1424,12 @@ export default function Modules() {
       if (modulesData.success) {
         const sortedModules = [...modulesData.data].sort((a, b) => b.id - a.id);
 
-const dataWithDisplayIds = sortedModules.map((item, index) => ({
-  ...item,
-  display_id: index + 1,
-}));
+        const dataWithDisplayIds = sortedModules.map((item, index) => ({
+          ...item,
+          display_id: index + 1,
+        }));
 
-setModules(dataWithDisplayIds);
+        setModules(dataWithDisplayIds);
 
         const courses = [
           ...new Set(modulesData.data.map((m) => m.course_data)),
@@ -1973,9 +1973,6 @@ setModules(dataWithDisplayIds);
                   <h2 className="text-xl font-bold text-slate-900">
                     {selectedModule.name}
                   </h2>
-                  <p className="text-base text-slate-400 mt-0.5">
-                    Module #{selectedModule.display_id}
-                  </p>
                 </div>
               </div>
 
@@ -1996,15 +1993,16 @@ setModules(dataWithDisplayIds);
                 </div>
               </div>
 
-              {/* Description */}
-              {selectedModule.description && (
+              {/* Description - renders rich text from TinyMCE */}
+              {selectedModule.descriptions && (
                 <div className="bg-slate-50 border border-slate-100 rounded-xl p-4">
                   <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">
                     Description
                   </p>
-                  <p className="text-base text-slate-600 leading-relaxed">
-                    {selectedModule.description}
-                  </p>
+                  <div
+                    className="prose prose-sm max-w-none text-slate-600 leading-relaxed"
+                    dangerouslySetInnerHTML={{ __html: selectedModule.descriptions }}
+                  />
                 </div>
               )}
             </div>
