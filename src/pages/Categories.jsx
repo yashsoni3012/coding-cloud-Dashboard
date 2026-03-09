@@ -522,11 +522,7 @@ export default function Categories() {
       const categoryArray = json.data || [];
       const dataWithDates = categoryArray.map((item) => ({
         ...item,
-        created_at:
-          item.created_at ||
-          new Date(
-            Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000,
-          ).toISOString(),
+        created_at: item.created_at || null,
       }));
       setCategories(dataWithDates);
       setFilteredCategories(dataWithDates);
@@ -566,22 +562,38 @@ export default function Categories() {
 
     // 📅 Date Filter
     if (filters.dateRange !== "all") {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const now = new Date();
+
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+
+      const todayEnd = new Date();
+      todayEnd.setHours(23, 59, 59, 999);
 
       const weekAgo = new Date();
-      weekAgo.setDate(weekAgo.getDate() - 7);
+      weekAgo.setDate(now.getDate() - 7);
 
       const monthAgo = new Date();
-      monthAgo.setMonth(monthAgo.getMonth() - 1);
+      monthAgo.setMonth(now.getMonth() - 1);
 
       result = result.filter((c) => {
         if (!c.created_at) return false;
+
         const createdDate = new Date(c.created_at);
         if (isNaN(createdDate)) return false;
-        if (filters.dateRange === "today") return createdDate >= today;
-        if (filters.dateRange === "week") return createdDate >= weekAgo;
-        if (filters.dateRange === "month") return createdDate >= monthAgo;
+
+        if (filters.dateRange === "today") {
+          return createdDate >= todayStart && createdDate <= todayEnd;
+        }
+
+        if (filters.dateRange === "week") {
+          return createdDate >= weekAgo && createdDate <= now;
+        }
+
+        if (filters.dateRange === "month") {
+          return createdDate >= monthAgo && createdDate <= now;
+        }
+
         return true;
       });
     }
@@ -797,22 +809,7 @@ export default function Categories() {
           {/* Expandable filter panel */}
           {showFilters && (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4 pt-4 border-t border-slate-100">
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
-                  Image
-                </label>
-                <select
-                  value={filters.hasImage}
-                  onChange={(e) =>
-                    setFilters({ ...filters, hasImage: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-violet-500 bg-slate-50"
-                >
-                  <option value="all">All Categories</option>
-                  <option value="yes">With Image</option>
-                  <option value="no">Without Image</option>
-                </select>
-              </div>
+
               <div>
                 <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
                   Date Added

@@ -422,18 +422,25 @@ export default function AddCategory() {
       .replace(/--+/g, "-");
   };
 
-  const handleNameChange = (e) => {
-    const { value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      name: value,
-      slug:
-        prev.slug === generateSlug(prev.name) || !prev.slug
-          ? generateSlug(value)
-          : prev.slug,
-    }));
-    setError("");
-  };
+const handleNameChange = (e) => {
+  let value = e.target.value;
+
+  // Allow only letters and spaces
+  if (!/^[A-Za-z\s]*$/.test(value)) {
+    return;
+  }
+
+  setFormData((prev) => ({
+    ...prev,
+    name: value,
+    slug:
+      prev.slug === generateSlug(prev.name) || !prev.slug
+        ? generateSlug(value)
+        : prev.slug,
+  }));
+
+  setError("");
+};
 
   const processFile = (file) => {
     if (!file) return;
@@ -470,10 +477,10 @@ export default function AddCategory() {
 
 const handleSubmit = async (e) => {
   e.preventDefault();
-  if (!formData.name.trim()) {
-    setError("Category name is required");
-    return;
-  }
+  if (!/^[A-Za-z\s]+$/.test(formData.name.trim())) {
+  setError("Category name must contain only letters");
+  return;
+}
 
   // Clear any pending navigation
   if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -484,9 +491,9 @@ const handleSubmit = async (e) => {
   try {
     const payload = new FormData();
     payload.append("name", formData.name.trim());
-    if (formData.text.trim()) payload.append("text", formData.text.trim());
+    payload.append("text", formData.text.trim() || "");
     if (formData.image) payload.append("image", formData.image);
-    if (formData.slug.trim()) payload.append("slug", formData.slug.trim());
+    payload.append("slug", formData.slug.trim() || generateSlug(formData.name));
 
     const response = await fetch(
       "https://codingcloud.pythonanywhere.com/category/",
@@ -495,7 +502,7 @@ const handleSubmit = async (e) => {
         body: payload,
       }
     );
-    if (!response.ok) throw new Error("Failed to create category");
+    if (!response.ok)throw new Error(data.message || data.detail || "Failed to create category");
 
     // Show success toast
     setToast({
@@ -527,7 +534,7 @@ const handleSubmit = async (e) => {
       )}
 
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+      <header className=" top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
@@ -606,6 +613,7 @@ const handleSubmit = async (e) => {
               name="name"
               value={formData.name}
               onChange={handleNameChange}
+              pattern="[A-Za-z\s]+"
               placeholder="e.g., Web Development, Design, Marketing…"
               className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
               required
@@ -662,10 +670,9 @@ const handleSubmit = async (e) => {
                   className="block text-base font-semibold text-gray-800"
                 >
                   Description
+                  <span className="text-red-500">*</span>
                 </label>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  Optional — give context about this category
-                </p>
+                
               </div>
             </div>
             <textarea

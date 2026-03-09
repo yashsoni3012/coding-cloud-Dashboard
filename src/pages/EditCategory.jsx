@@ -683,8 +683,8 @@ export default function EditCategory() {
     )}
 
       {/* ── Header ── */}
-      <header className="top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <header className="top-0 z-50 bg-white border-b border-gray-200 shadow-sm ">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between ">
           {/* Left: back + title */}
           <div className="flex items-center gap-3">
             <button
