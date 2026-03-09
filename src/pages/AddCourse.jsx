@@ -1965,6 +1965,7 @@ export default function AddCourse() {
     setFormData((prev) => ({ ...prev, [name]: checked }));
   };
 
+  // 🟥 NEW VALIDATION: Clear file field error when a file is selected
   const handleFileChange = (e) => {
     const { name, files } = e.target;
     const file = files[0];
@@ -1989,10 +1990,17 @@ export default function AddCourse() {
       else if (name === "icon") setIconPreview(URL.createObjectURL(file));
       else if (name === "image2") setImage2Preview(URL.createObjectURL(file));
       else if (name === "pdf_file") setPdfName(file.name);
+
+      // 🟥 Clear error for this file field
+      if (fieldErrors[name]) {
+        setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
+      }
+
       setError("");
     }
   };
 
+  // 🟥 Clear error when file is removed
   const removeFile = (field) => {
     setFormData((prev) => ({ ...prev, [field]: null }));
     if (field === "image") {
@@ -2011,8 +2019,14 @@ export default function AddCourse() {
       setPdfName("");
       document.getElementById("pdf-upload").value = "";
     }
+
+    // 🟥 Clear error for this field
+    if (fieldErrors[field]) {
+      setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
   };
 
+  // 🟥 NEW VALIDATION: Added checks for image, banner_img, pdf_file
   const validateForm = () => {
     const errors = {};
 
@@ -2052,16 +2066,49 @@ export default function AddCourse() {
       errors.keywords = "Keywords are required";
     }
 
+    // 🟥 NEW: File fields are now required
+    if (!formData.image) {
+      errors.image = "Course image is required";
+    }
+    if (!formData.banner_img) {
+      errors.banner_img = "Banner image is required";
+    }
+    if (!formData.pdf_file) {
+      errors.pdf_file = "Syllabus PDF is required";
+    }
+
     setFieldErrors(errors);
 
     return Object.keys(errors).length === 0;
+  };
+
+  // 🟥 Helper to build a user‑friendly list of empty fields
+  const getEmptyFieldsList = (errors) => {
+    const fieldLabels = {
+      name: "Course name",
+      slug: "Course slug",
+      category: "Category",
+      text: "Description",
+      short_description: "Short description",
+      meta_title: "Meta title",
+      meta_description: "Meta description",
+      keywords: "Keywords",
+      image: "Course image",
+      banner_img: "Banner image",
+      pdf_file: "Syllabus PDF",
+    };
+    return Object.keys(errors)
+      .map((key) => fieldLabels[key] || key)
+      .join(", ");
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const isValid = validateForm();
     if (!isValid) {
-      setError("Please fix the highlighted fields.");
+      // 🟥 Show a detailed error message listing missing fields
+      const emptyFields = getEmptyFieldsList(fieldErrors);
+      setError(`Please fill in the following required fields: ${emptyFields}`);
       return;
     }
 
@@ -2168,7 +2215,7 @@ export default function AddCourse() {
     }
   };
 
-  // ── Reusable Image Upload Box ──
+  // ── Reusable Image Upload Box with error styling ──
   const ImageUploadBox = ({
     preview,
     onRemove,
@@ -2178,8 +2225,13 @@ export default function AddCourse() {
     hint,
     iconBg,
     iconColor,
+    error, // 🟥 new prop
   }) => (
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+    <div
+      className={`bg-white rounded-2xl border shadow-sm p-6 ${
+        error ? "border-red-500" : "border-gray-200"
+      }`}
+    >
       <div className="flex items-center gap-3 mb-4">
         <div
           className={`w-9 h-9 ${iconBg} rounded-xl flex items-center justify-center flex-shrink-0`}
@@ -2242,9 +2294,13 @@ export default function AddCourse() {
     </div>
   );
 
-  // ── PDF Upload Box ──
-  const PdfUploadBox = () => (
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+  // ── PDF Upload Box with error styling ──
+  const PdfUploadBox = ({ error }) => (
+    <div
+      className={`bg-white rounded-2xl border shadow-sm p-6 ${
+        error ? "border-red-500" : "border-gray-200"
+      }`}
+    >
       <div className="flex items-center gap-3 mb-4">
         <div className="w-9 h-9 bg-red-50 rounded-xl flex items-center justify-center flex-shrink-0">
           <FileText size={16} className="text-red-500" />
@@ -2252,7 +2308,7 @@ export default function AddCourse() {
         <div>
           <p className="text-base font-semibold text-gray-800">Syllabus PDF</p>
           <p className="text-xs text-gray-400 mt-0.5">
-            Optional — PDF only · Max 10MB
+            Required — PDF only · Max 10MB
           </p>
         </div>
       </div>
@@ -2905,9 +2961,10 @@ export default function AddCourse() {
               inputId="image-upload"
               inputName="image"
               label="Course Image"
-              hint="PNG, JPG · Max 5MB"
+              hint="Required · PNG, JPG · Max 5MB"
               iconBg="bg-pink-50"
               iconColor="text-pink-500"
+              error={!!fieldErrors.image} // 🟥 pass error prop
             />
             <ImageUploadBox
               preview={bannerPreview}
@@ -2915,9 +2972,10 @@ export default function AddCourse() {
               inputId="banner-upload"
               inputName="banner_img"
               label="Banner Image"
-              hint="PNG, JPG · Max 5MB"
+              hint="Required · PNG, JPG · Max 5MB"
               iconBg="bg-indigo-50"
               iconColor="text-indigo-500"
+              error={!!fieldErrors.banner_img} // 🟥 pass error prop
             />
             <ImageUploadBox
               preview={iconPreview}
@@ -2925,9 +2983,10 @@ export default function AddCourse() {
               inputId="icon-upload"
               inputName="icon"
               label="Course Icon"
-              hint="PNG, JPG · Max 2MB"
+              hint="Optional · PNG, JPG · Max 2MB"
               iconBg="bg-violet-50"
               iconColor="text-violet-500"
+              // icon is not required, so no error prop
             />
             <ImageUploadBox
               preview={image2Preview}
@@ -2935,11 +2994,12 @@ export default function AddCourse() {
               inputId="image2-upload"
               inputName="image2"
               label="Additional Image"
-              hint="PNG, JPG · Max 5MB"
+              hint="Optional · PNG, JPG · Max 5MB"
               iconBg="bg-orange-50"
               iconColor="text-orange-500"
+              // image2 is not required
             />
-            <PdfUploadBox />
+            <PdfUploadBox error={!!fieldErrors.pdf_file} /> {/* 🟥 pass error prop */}
           </div>
 
           {/* SECTION 4 — SEO & Metadata */}
