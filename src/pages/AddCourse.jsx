@@ -1941,9 +1941,16 @@ export default function AddCourse() {
   const [pdfName, setPdfName] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
 
+  // 🟥 RED BORDER LOGIC: Clear error for a field when user types
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+
+    // Clear error for this field if it exists
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
+
     if (name === "name" && !formData.slug) {
       const generatedSlug = value
         .toLowerCase()
@@ -2142,11 +2149,23 @@ export default function AddCourse() {
     const plainText = formData.text.replace(/<[^>]*>/g, "");
     const truncated = plainText.slice(0, 200);
     setFormData((prev) => ({ ...prev, short_description: truncated }));
+    // 🟥 Clear any error for short_description
+    if (fieldErrors.short_description) {
+      setFieldErrors((prev) => ({ ...prev, short_description: undefined }));
+    }
     setToast({
       show: true,
       message: "Short description generated from main description",
       type: "success",
     });
+  };
+
+  // 🟥 RED BORDER LOGIC: Clear text error when editor content changes
+  const handleEditorChange = (content) => {
+    setFormData((prev) => ({ ...prev, text: content }));
+    if (fieldErrors.text) {
+      setFieldErrors((prev) => ({ ...prev, text: undefined }));
+    }
   };
 
   // ── Reusable Image Upload Box ──
@@ -2429,11 +2448,7 @@ export default function AddCourse() {
           />
 
           {/* Course Name */}
-          <div
-            className={`bg-white rounded-2xl border shadow-sm p-6 ${
-              error ? "border-red-400 bg-red-50/30" : "border-gray-200"
-            }`}
-          >
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <label
               htmlFor="name"
               className="block text-base font-semibold text-gray-800 mb-1"
@@ -2451,7 +2466,9 @@ export default function AddCourse() {
               value={formData.name}
               onChange={handleInputChange}
               placeholder="e.g., Advanced React Development 2024"
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+              className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
+                fieldErrors.name ? "border-red-500" : "border-gray-200"
+              }`}
               required
             />
           </div>
@@ -2479,7 +2496,9 @@ export default function AddCourse() {
                 value={formData.slug}
                 onChange={handleInputChange}
                 placeholder="advanced-react-development-2024"
-                className="flex-1 px-4 py-3 bg-gray-50 text-gray-900 text-base placeholder-gray-400 outline-none focus:bg-white transition-all"
+                className={`flex-1 px-4 py-3 bg-gray-50 text-gray-900 text-base placeholder-gray-400 outline-none focus:bg-white transition-all ${
+                  fieldErrors.slug ? "border-red-500" : ""
+                }`}
                 required
               />
             </div>
@@ -2503,7 +2522,9 @@ export default function AddCourse() {
                 name="category"
                 value={formData.category}
                 onChange={handleInputChange}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none"
+                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none ${
+                  fieldErrors.category ? "border-red-500" : "border-gray-200"
+                }`}
                 required
               >
                 <option value="">Select a category</option>
@@ -2566,51 +2587,60 @@ export default function AddCourse() {
 
             {/* Conditional Editor */}
             {editorMode === "tinymce" ? (
-              <Editor
-                apiKey="x5ikrjt2xexo2x73y0uzybqhbjq29owf8drai57qhtew5e0j"
-                value={formData.text}
-                onEditorChange={(content) =>
-                  setFormData((prev) => ({ ...prev, text: content }))
-                }
-                init={{
-                  height: 400,
-                  menubar: true,
-                  plugins: [
-                    "advlist",
-                    "autolink",
-                    "lists",
-                    "link",
-                    "image",
-                    "charmap",
-                    "preview",
-                    "anchor",
-                    "searchreplace",
-                    "visualblocks",
-                    "code",
-                    "fullscreen",
-                    "insertdatetime",
-                    "media",
-                    "table",
-                    "help",
-                    "wordcount",
-                  ],
-                  toolbar:
-                    "undo redo | blocks | " +
-                    "bold italic forecolor | alignleft aligncenter " +
-                    "alignright alignjustify | bullist numlist outdent indent | " +
-                    "removeformat | code | help",
-                  content_style:
-                    "body { font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.6; }",
-                  placeholder: "Write a detailed description of your course…",
-                }}
-              />
+              <div
+                className={`border rounded-xl overflow-hidden ${
+                  fieldErrors.text ? "border-red-500" : "border-gray-200"
+                }`}
+              >
+                <Editor
+                  apiKey="x5ikrjt2xexo2x73y0uzybqhbjq29owf8drai57qhtew5e0j"
+                  value={formData.text}
+                  onEditorChange={handleEditorChange}
+                  init={{
+                    height: 400,
+                    menubar: true,
+                    plugins: [
+                      "advlist",
+                      "autolink",
+                      "lists",
+                      "link",
+                      "image",
+                      "charmap",
+                      "preview",
+                      "anchor",
+                      "searchreplace",
+                      "visualblocks",
+                      "code",
+                      "fullscreen",
+                      "insertdatetime",
+                      "media",
+                      "table",
+                      "help",
+                      "wordcount",
+                    ],
+                    toolbar:
+                      "undo redo | blocks | " +
+                      "bold italic forecolor | alignleft aligncenter " +
+                      "alignright alignjustify | bullist numlist outdent indent | " +
+                      "removeformat | code | help",
+                    content_style:
+                      "body { font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.6; }",
+                    placeholder: "Write a detailed description of your course…",
+                  }}
+                />
+              </div>
             ) : (
               <textarea
                 value={formData.text}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, text: e.target.value }))
-                }
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base font-mono placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                onChange={(e) => {
+                  setFormData((prev) => ({ ...prev, text: e.target.value }));
+                  if (fieldErrors.text) {
+                    setFieldErrors((prev) => ({ ...prev, text: undefined }));
+                  }
+                }}
+                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base font-mono placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
+                  fieldErrors.text ? "border-red-500" : "border-gray-200"
+                }`}
                 rows={12}
                 placeholder="<!-- Write HTML here -->"
               />
@@ -2664,7 +2694,11 @@ export default function AddCourse() {
               value={formData.short_description}
               onChange={handleInputChange}
               placeholder="e.g., Learn React from scratch in 40 hours"
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+              className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
+                fieldErrors.short_description
+                  ? "border-red-500"
+                  : "border-gray-200"
+              }`}
             />
           </div>
 
@@ -2937,7 +2971,9 @@ export default function AddCourse() {
                 value={formData.meta_title}
                 onChange={handleInputChange}
                 placeholder="SEO optimized title for your course"
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
+                  fieldErrors.meta_title ? "border-red-500" : "border-gray-200"
+                }`}
               />
               <p className="text-xs text-gray-400 text-right mt-1">
                 {formData.meta_title.length} / 60
@@ -2966,7 +3002,11 @@ export default function AddCourse() {
                 onChange={handleInputChange}
                 rows={3}
                 placeholder="Brief description for search engines…"
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-none"
+                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-none ${
+                  fieldErrors.meta_description
+                    ? "border-red-500"
+                    : "border-gray-200"
+                }`}
               />
               <p className="text-xs text-gray-400 text-right mt-1">
                 {formData.meta_description.length} / 160
@@ -2995,7 +3035,9 @@ export default function AddCourse() {
                 value={formData.keywords}
                 onChange={handleInputChange}
                 placeholder="react, javascript, web development, frontend"
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
+                  fieldErrors.keywords ? "border-red-500" : "border-gray-200"
+                }`}
               />
             </div>
           </div>

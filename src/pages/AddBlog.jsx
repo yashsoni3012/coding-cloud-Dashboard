@@ -1355,12 +1355,18 @@ import {
   Search,
   Upload,
   ImagePlus,
+  Sparkles,
 } from "lucide-react";
 
 export default function AddBlog() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
   const editorRef = useRef(null);
+
+  // ------------------------------------------------------------------------
+  // Editor mode: "tinymce" or "html"
+  // ------------------------------------------------------------------------
+  const [editorMode, setEditorMode] = useState("tinymce");
 
   const [formData, setFormData] = useState({
     title: "",
@@ -1465,7 +1471,7 @@ export default function AddBlog() {
 
       const response = await fetch(
         "https://codingcloud.pythonanywhere.com/blogs/",
-        { method: "POST", body: payload },
+        { method: "POST", body: payload }
       );
       if (!response.ok) {
         let errorMessage;
@@ -1485,7 +1491,6 @@ export default function AddBlog() {
         type: "success",
       });
 
-      setTimeout(() => navigate("/blogs"), 2000);
       setTimeout(() => navigate("/blogs"), 2000);
     } catch (err) {
       console.error("Error creating blog:", err);
@@ -1726,57 +1731,103 @@ export default function AddBlog() {
                 </p>
               </div>
 
-              {/* Main Content with TinyMCE */}
+              {/* Main Content with tabs */}
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-                <label
-                  htmlFor="content"
-                  className="block text-base font-semibold text-gray-800 mb-1"
-                >
-                  Content <span className="text-red-500">*</span>
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label
+                    htmlFor="content"
+                    className="block text-base font-semibold text-gray-800"
+                  >
+                    Content <span className="text-red-500">*</span>
+                  </label>
+
+                  {/* Tab Switcher */}
+                  <div className="flex gap-1 p-1 bg-gray-100 rounded-lg">
+                    <button
+                      type="button"
+                      onClick={() => setEditorMode("tinymce")}
+                      className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
+                        editorMode === "tinymce"
+                          ? "bg-white text-indigo-600 shadow-sm"
+                          : "text-gray-600 hover:text-gray-900"
+                      }`}
+                    >
+                      TinyMCE
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditorMode("html")}
+                      className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
+                        editorMode === "html"
+                          ? "bg-white text-indigo-600 shadow-sm"
+                          : "text-gray-600 hover:text-gray-900"
+                      }`}
+                    >
+                      HTML
+                    </button>
+                  </div>
+                </div>
+
                 <p className="text-xs text-gray-400 mb-3">
-                  Write the full content of your blog post
+                  {editorMode === "tinymce"
+                    ? "Rich text editor with formatting tools"
+                    : "Edit raw HTML source code"}
                 </p>
-                <Editor
-                  apiKey="x5ikrjt2xexo2x73y0uzybqhbjq29owf8drai57qhtew5e0j" // Replace with your actual TinyMCE API key
-                  onInit={(evt, editor) => (editorRef.current = editor)}
-                  value={formData.content}
-                  onEditorChange={(content) =>
-                    setFormData((prev) => ({ ...prev, content }))
-                  }
-                  init={{
-                    height: 500,
-                    menubar: true,
-                    plugins: [
-                      "advlist",
-                      "autolink",
-                      "lists",
-                      "link",
-                      "image",
-                      "charmap",
-                      "preview",
-                      "anchor",
-                      "searchreplace",
-                      "visualblocks",
-                      "code",
-                      "fullscreen",
-                      "insertdatetime",
-                      "media",
-                      "table",
-                      "help",
-                      "wordcount",
-                    ],
-                    toolbar:
-                      "undo redo | blocks | " +
-                      "bold italic forecolor | alignleft aligncenter " +
-                      "alignright alignjustify | bullist numlist outdent indent | " +
-                      "removeformat | help",
-                    content_style:
-                      "body { font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.6; }",
-                    placeholder:
-                      "Write the full content of the blog post here…",
-                  }}
-                />
+
+                {/* Conditional Editor */}
+                {editorMode === "tinymce" ? (
+                  <Editor
+                    apiKey="x5ikrjt2xexo2x73y0uzybqhbjq29owf8drai57qhtew5e0j"
+                    onInit={(evt, editor) => (editorRef.current = editor)}
+                    value={formData.content}
+                    onEditorChange={(content) =>
+                      setFormData((prev) => ({ ...prev, content }))
+                    }
+                    init={{
+                      height: 500,
+                      menubar: true,
+                      plugins: [
+                        "advlist",
+                        "autolink",
+                        "lists",
+                        "link",
+                        "image",
+                        "charmap",
+                        "preview",
+                        "anchor",
+                        "searchreplace",
+                        "visualblocks",
+                        "code",
+                        "fullscreen",
+                        "insertdatetime",
+                        "media",
+                        "table",
+                        "help",
+                        "wordcount",
+                      ],
+                      toolbar:
+                        "undo redo | blocks | " +
+                        "bold italic forecolor | alignleft aligncenter " +
+                        "alignright alignjustify | bullist numlist outdent indent | " +
+                        "removeformat | code | help",
+                      content_style:
+                        "body { font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.6; }",
+                      placeholder:
+                        "Write the full content of the blog post here…",
+                    }}
+                  />
+                ) : (
+                  <textarea
+                    value={formData.content}
+                    onChange={(e) =>
+                      setFormData((prev) => ({ ...prev, content: e.target.value }))
+                    }
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base font-mono placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                    rows={16}
+                    placeholder="<!-- Write HTML here -->"
+                  />
+                )}
+
                 <p className="text-xs text-gray-400 text-right mt-1">
                   {formData.content.length} characters
                 </p>
@@ -1992,7 +2043,7 @@ export default function AddBlog() {
                       {formData.publish_date
                         ? new Date(formData.publish_date).toLocaleDateString(
                             "en-US",
-                            { year: "numeric", month: "short", day: "numeric" },
+                            { year: "numeric", month: "short", day: "numeric" }
                           )
                         : "—"}
                     </span>
