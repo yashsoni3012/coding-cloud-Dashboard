@@ -832,6 +832,7 @@ export default function EditCourse() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [categories, setCategories] = useState([]);
+    const [categoriesLoading, setCategoriesLoading] = useState(true);
 
     // Toast state
     const [toast, setToast] = useState({
@@ -844,9 +845,9 @@ export default function EditCourse() {
         id: "",
         name: "",
         slug: "",
-        category: "",
+        category: "",               // will be a number after fetch
         text: "",
-        short_description: "",          // ✨ NEW FIELD
+        short_description: "",
         duration: "",
         lecture: "",
         students: "",
@@ -862,18 +863,18 @@ export default function EditCourse() {
         banner_img: null,
         pdf_file: null,
         icon: null,
-        image2: null,                    // ✨ NEW FIELD
+        image2: null,
         existing_image: "",
         existing_banner: "",
         existing_icon: "",
         existing_pdf: "",
-        existing_image2: "",             // ✨ NEW FIELD
+        existing_image2: "",
     });
 
     const [imagePreview, setImagePreview] = useState("");
     const [bannerPreview, setBannerPreview] = useState("");
     const [iconPreview, setIconPreview] = useState("");
-    const [image2Preview, setImage2Preview] = useState(""); // ✨ NEW PREVIEW
+    const [image2Preview, setImage2Preview] = useState("");
     const [pdfName, setPdfName] = useState("");
 
     const [filesChanged, setFilesChanged] = useState({
@@ -881,7 +882,7 @@ export default function EditCourse() {
         banner_img: false,
         icon: false,
         pdf_file: false,
-        image2: false,                   // ✨ NEW
+        image2: false,
     });
 
     // Helper to show toast
@@ -892,6 +893,29 @@ export default function EditCourse() {
     const closeToast = () => {
         setToast((prev) => ({ ...prev, show: false }));
     };
+
+    // Fetch categories
+    const fetchCategories = async () => {
+        try {
+            setCategoriesLoading(true);
+            const response = await fetch("https://codingcloud.pythonanywhere.com/category/");
+            const data = await response.json();
+            if (data.success) {
+                setCategories(data.data);
+            } else {
+                showToast("Failed to load categories", "error");
+            }
+        } catch (error) {
+            console.error("Error fetching categories:", error);
+            showToast("Network error while loading categories", "error");
+        } finally {
+            setCategoriesLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchCategories();
+    }, []);
 
     useEffect(() => {
         const fetchCourseData = async () => {
@@ -906,15 +930,15 @@ export default function EditCourse() {
                         id: course.id,
                         name: course.name || "",
                         slug: course.slug || "",
-                        category: course.category || "",
+                        category: course.category || "", // keep as number (if exists)
                         text: course.text || "",
-                        short_description: course.short_description || "",   // ✨
+                        short_description: course.short_description || "",
                         duration: course.duration || "",
                         lecture: course.lecture || "",
                         students: course.students || "",
                         level: course.level || "",
                         language: course.language || "",
-                        certificate: course.certificate || "No",
+                        certificate: course.certificate_display || "No",
                         featured: course.featured || false,
                         kids_course: course.kids_course || false,
                         meta_title: course.meta_title || "",
@@ -924,23 +948,16 @@ export default function EditCourse() {
                         banner_img: null,
                         pdf_file: null,
                         icon: null,
-                        image2: null,                                       // ✨
+                        image2: null,
                         existing_image: course.image || "",
                         existing_banner: course.banner_img || "",
                         existing_icon: course.icon || "",
                         existing_pdf: course.pdf_file || "",
-                        existing_image2: course.image2 || "",               // ✨
+                        existing_image2: course.image2 || "",
                     });
                 } else {
                     showToast("Failed to fetch course details", "error");
                 }
-
-                // Mock categories – replace with actual API call if needed
-                setCategories([
-                    { id: 40, name: "IT and Software" },
-                    { id: 43, name: "Mobile Application" },
-                    { id: 54, name: "check123" },
-                ]);
             } catch (err) {
                 console.error("Error fetching course:", err);
                 showToast("Network error. Please try again.", "error");
@@ -954,9 +971,16 @@ export default function EditCourse() {
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
+        // Convert category to number so that select matching works
+        const newValue = name === "category" ? Number(value) : value;
+        setFormData((prev) => ({ ...prev, [name]: newValue }));
+
+        // Auto-generate slug from name if slug is empty
         if (name === "name" && !formData.slug) {
-            const generatedSlug = value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+            const generatedSlug = value
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, "-")
+                .replace(/^-|-$/g, "");
             setFormData((prev) => ({ ...prev, slug: generatedSlug }));
         }
     };
@@ -988,7 +1012,7 @@ export default function EditCourse() {
             if (name === "image") setImagePreview(URL.createObjectURL(file));
             else if (name === "banner_img") setBannerPreview(URL.createObjectURL(file));
             else if (name === "icon") setIconPreview(URL.createObjectURL(file));
-            else if (name === "image2") setImage2Preview(URL.createObjectURL(file)); // ✨
+            else if (name === "image2") setImage2Preview(URL.createObjectURL(file));
             else if (name === "pdf_file") setPdfName(file.name);
         }
     };
@@ -1000,11 +1024,22 @@ export default function EditCourse() {
         } else {
             setFormData((prev) => ({ ...prev, [field]: null }));
             setFilesChanged((prev) => ({ ...prev, [field]: true }));
-            if (field === "image") { setImagePreview(""); document.getElementById("image-upload").value = ""; }
-            else if (field === "banner_img") { setBannerPreview(""); document.getElementById("banner-upload").value = ""; }
-            else if (field === "icon") { setIconPreview(""); document.getElementById("icon-upload").value = ""; }
-            else if (field === "image2") { setImage2Preview(""); document.getElementById("image2-upload").value = ""; } // ✨
-            else if (field === "pdf_file") { setPdfName(""); document.getElementById("pdf-upload").value = ""; }
+            if (field === "image") {
+                setImagePreview("");
+                document.getElementById("image-upload").value = "";
+            } else if (field === "banner_img") {
+                setBannerPreview("");
+                document.getElementById("banner-upload").value = "";
+            } else if (field === "icon") {
+                setIconPreview("");
+                document.getElementById("icon-upload").value = "";
+            } else if (field === "image2") {
+                setImage2Preview("");
+                document.getElementById("image2-upload").value = "";
+            } else if (field === "pdf_file") {
+                setPdfName("");
+                document.getElementById("pdf-upload").value = "";
+            }
         }
     };
 
@@ -1028,9 +1063,9 @@ export default function EditCourse() {
             const submitData = new FormData();
             submitData.append("name", formData.name);
             submitData.append("slug", formData.slug);
-            submitData.append("category", formData.category);
+            submitData.append("category", formData.category); // now a number
             submitData.append("text", formData.text);
-            if (formData.short_description)                                  // ✨
+            if (formData.short_description)
                 submitData.append("short_description", formData.short_description);
             if (formData.duration) submitData.append("duration", formData.duration);
             if (formData.lecture) submitData.append("lecture", formData.lecture);
@@ -1047,9 +1082,12 @@ export default function EditCourse() {
             if (formData.banner_img) submitData.append("banner_img", formData.banner_img);
             if (formData.pdf_file) submitData.append("pdf_file", formData.pdf_file);
             if (formData.icon) submitData.append("icon", formData.icon);
-            if (formData.image2) submitData.append("image2", formData.image2); // ✨
+            if (formData.image2) submitData.append("image2", formData.image2);
 
-            const response = await fetch(`https://codingcloud.pythonanywhere.com/course/${id}/`, { method: "PATCH", body: submitData });
+            const response = await fetch(`https://codingcloud.pythonanywhere.com/course/${id}/`, {
+                method: "PATCH",
+                body: submitData,
+            });
             const data = await response.json();
             if (response.ok || response.status === 200) {
                 showToast("Course updated successfully!", "success");
@@ -1124,16 +1162,22 @@ export default function EditCourse() {
                             src={previewSrc}
                             alt="preview"
                             className="w-full max-h-48 object-cover block"
-                            onError={(e) => { e.target.onerror = null; e.target.src = "https://via.placeholder.com/400x200?text=Image+Error"; }}
+                            onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.src = "https://via.placeholder.com/400x200?text=Image+Error";
+                            }}
                         />
                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all pointer-events-none" />
 
                         {/* Status badge */}
                         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent px-4 py-3 pointer-events-none">
-                            {isNew
-                                ? <p className="text-xs text-emerald-300 font-semibold">✓ New image selected — will replace existing</p>
-                                : <p className="text-xs text-white/70 font-medium">Current image</p>
-                            }
+                            {isNew ? (
+                                <p className="text-xs text-emerald-300 font-semibold">
+                                    ✓ New image selected — will replace existing
+                                </p>
+                            ) : (
+                                <p className="text-xs text-white/70 font-medium">Current image</p>
+                            )}
                         </div>
 
                         {/* Change button */}
@@ -1155,7 +1199,14 @@ export default function EditCourse() {
                         </button>
                     </div>
                 )}
-                <input type="file" name={inputName} accept="image/*" onChange={handleFileChange} className="hidden" id={inputId} />
+                <input
+                    type="file"
+                    name={inputName}
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                    id={inputId}
+                />
             </div>
         );
     };
@@ -1191,8 +1242,16 @@ export default function EditCourse() {
                     </div>
                 ) : (
                     <div className="space-y-3">
-                        <div className={`relative flex items-center gap-3 p-4 rounded-xl border ${isNew ? "bg-emerald-50 border-emerald-100" : "bg-red-50 border-red-100"}`}>
-                            <div className={`w-10 h-10 ${isNew ? "bg-emerald-100" : "bg-red-100"} rounded-xl flex items-center justify-center flex-shrink-0`}>
+                        <div
+                            className={`relative flex items-center gap-3 p-4 rounded-xl border ${
+                                isNew ? "bg-emerald-50 border-emerald-100" : "bg-red-50 border-red-100"
+                            }`}
+                        >
+                            <div
+                                className={`w-10 h-10 ${
+                                    isNew ? "bg-emerald-100" : "bg-red-100"
+                                } rounded-xl flex items-center justify-center flex-shrink-0`}
+                            >
                                 <FileText size={18} className={isNew ? "text-emerald-600" : "text-red-600"} />
                             </div>
                             <div className="flex-1 min-w-0">
@@ -1221,7 +1280,14 @@ export default function EditCourse() {
                         </button>
                     </div>
                 )}
-                <input type="file" name="pdf_file" accept=".pdf" onChange={handleFileChange} id="pdf-upload" className="hidden" />
+                <input
+                    type="file"
+                    name="pdf_file"
+                    accept=".pdf"
+                    onChange={handleFileChange}
+                    id="pdf-upload"
+                    className="hidden"
+                />
             </div>
         );
     };
@@ -1240,7 +1306,7 @@ export default function EditCourse() {
     );
 
     // ── Loading State ──
-    if (loading) {
+    if (loading || categoriesLoading) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
                 <div className="text-center">
@@ -1253,15 +1319,8 @@ export default function EditCourse() {
 
     return (
         <div className="min-h-screen bg-gray-50">
-
             {/* Toast notification */}
-            {toast.show && (
-                <Toasts
-                    message={toast.message}
-                    type={toast.type}
-                    onClose={closeToast}
-                />
-            )}
+            {toast.show && <Toasts message={toast.message} type={toast.type} onClose={closeToast} />}
 
             {/* ── Header ── */}
             <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
@@ -1302,9 +1361,7 @@ export default function EditCourse() {
 
             {/* ── Main ── */}
             <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 pb-28 sm:pb-12">
-
                 <form onSubmit={handleSubmit} className="space-y-5">
-
                     {/* ════════════════════════════════
                         SECTION 1 — Basic Information
                     ════════════════════════════════ */}
@@ -1374,7 +1431,9 @@ export default function EditCourse() {
                             >
                                 <option value="">Select a category</option>
                                 {categories.map((cat) => (
-                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                    <option key={cat.id} value={cat.id}>
+                                        {cat.name}
+                                    </option>
                                 ))}
                             </select>
                             <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
@@ -1390,16 +1449,28 @@ export default function EditCourse() {
                         <Editor
                             apiKey="x5ikrjt2xexo2x73y0uzybqhbjq29owf8drai57qhtew5e0j"
                             value={formData.text}
-                            onEditorChange={(content) =>
-                                setFormData((prev) => ({ ...prev, text: content }))
-                            }
+                            onEditorChange={(content) => setFormData((prev) => ({ ...prev, text: content }))}
                             init={{
                                 height: 400,
                                 menubar: true,
                                 plugins: [
-                                    "advlist", "autolink", "lists", "link", "image", "charmap", "preview",
-                                    "anchor", "searchreplace", "visualblocks", "code", "fullscreen",
-                                    "insertdatetime", "media", "table", "help", "wordcount"
+                                    "advlist",
+                                    "autolink",
+                                    "lists",
+                                    "link",
+                                    "image",
+                                    "charmap",
+                                    "preview",
+                                    "anchor",
+                                    "searchreplace",
+                                    "visualblocks",
+                                    "code",
+                                    "fullscreen",
+                                    "insertdatetime",
+                                    "media",
+                                    "table",
+                                    "help",
+                                    "wordcount",
                                 ],
                                 toolbar:
                                     "undo redo | blocks | " +
@@ -1414,7 +1485,7 @@ export default function EditCourse() {
                         <p className="text-xs text-gray-400 text-right mt-2">{formData.text.length} characters</p>
                     </div>
 
-                    {/* ✨ Short Description — NEW FIELD */}
+                    {/* ✨ Short Description */}
                     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
                         <label htmlFor="short_description" className="block text-base font-semibold text-gray-800 mb-1">
                             Short Description
@@ -1446,9 +1517,30 @@ export default function EditCourse() {
                     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                             {[
-                                { icon: Clock, label: "Duration", name: "duration", placeholder: "e.g., 40 hours", bg: "bg-blue-50", color: "text-blue-500" },
-                                { icon: BookOpen, label: "Lectures", name: "lecture", placeholder: "e.g., 98 lectures", bg: "bg-emerald-50", color: "text-emerald-500" },
-                                { icon: Users, label: "Students", name: "students", placeholder: "e.g., 1,000+", bg: "bg-orange-50", color: "text-orange-500" },
+                                {
+                                    icon: Clock,
+                                    label: "Duration",
+                                    name: "duration",
+                                    placeholder: "e.g., 40 hours",
+                                    bg: "bg-blue-50",
+                                    color: "text-blue-500",
+                                },
+                                {
+                                    icon: BookOpen,
+                                    label: "Lectures",
+                                    name: "lecture",
+                                    placeholder: "e.g., 98 lectures",
+                                    bg: "bg-emerald-50",
+                                    color: "text-emerald-500",
+                                },
+                                {
+                                    icon: Users,
+                                    label: "Students",
+                                    name: "students",
+                                    placeholder: "e.g., 1,000+",
+                                    bg: "bg-orange-50",
+                                    color: "text-orange-500",
+                                },
                             ].map((field) => (
                                 <div key={field.name}>
                                     <div className="flex items-center gap-2 mb-2">
@@ -1473,7 +1565,6 @@ export default function EditCourse() {
                     {/* Level / Language / Certificate */}
                     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-
                             {/* Level */}
                             <div>
                                 <div className="flex items-center gap-2 mb-2">
@@ -1541,7 +1632,9 @@ export default function EditCourse() {
                                                 name="certificate"
                                                 value={val}
                                                 checked={formData.certificate === val}
-                                                onChange={(e) => setFormData((prev) => ({ ...prev, certificate: e.target.value }))}
+                                                onChange={(e) =>
+                                                    setFormData((prev) => ({ ...prev, certificate: e.target.value }))
+                                                }
                                                 className="hidden"
                                             />
                                             {val === "Yes" ? <Award size={12} /> : <X size={12} />}
@@ -1627,7 +1720,7 @@ export default function EditCourse() {
                             iconBg="bg-violet-50"
                             iconColor="text-violet-500"
                         />
-                        {/* ✨ NEW IMAGE2 FIELD */}
+                        {/* NEW IMAGE2 FIELD */}
                         <ImageUploadBox
                             preview={image2Preview}
                             existingUrl={formData.existing_image2}
@@ -1732,7 +1825,6 @@ export default function EditCourse() {
                             )}
                         </button>
                     </div>
-
                 </form>
             </main>
         </div>

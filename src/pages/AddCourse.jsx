@@ -2116,8 +2116,7 @@ export default function AddCourse() {
             Click to upload
           </p>
           <p className="text-xs text-gray-400">
-            <span className="text-indigo-500 font-medium">Browse files</span> ·{" "}
-            {hint}
+            <span className="text-indigo-500 font-medium">Browse files</span>{" "}
           </p>
         </div>
       ) : (
