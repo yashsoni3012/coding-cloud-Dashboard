@@ -1821,7 +1821,6 @@
 //   );
 // }
 
-
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Editor } from "@tinymce/tinymce-react";
@@ -1895,7 +1894,7 @@ export default function AddCourse() {
     slug: "",
     category: "",
     text: "",
-    short_description: "",          // ✨ NEW FIELD
+    short_description: "", // ✨ NEW FIELD
     duration: "",
     lecture: "",
     students: "",
@@ -1911,7 +1910,7 @@ export default function AddCourse() {
     banner_img: null,
     pdf_file: null,
     icon: null,
-    image2: null,                    // ✨ NEW FIELD
+    image2: null, // ✨ NEW FIELD
   });
 
   const [imagePreview, setImagePreview] = useState("");
@@ -1919,6 +1918,7 @@ export default function AddCourse() {
   const [iconPreview, setIconPreview] = useState("");
   const [image2Preview, setImage2Preview] = useState(""); // ✨ NEW PREVIEW
   const [pdfName, setPdfName] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -1959,7 +1959,8 @@ export default function AddCourse() {
       else if (name === "banner_img")
         setBannerPreview(URL.createObjectURL(file));
       else if (name === "icon") setIconPreview(URL.createObjectURL(file));
-      else if (name === "image2") setImage2Preview(URL.createObjectURL(file)); // ✨
+      else if (name === "image2")
+        setImage2Preview(URL.createObjectURL(file)); // ✨
       else if (name === "pdf_file") setPdfName(file.name);
       setError("");
     }
@@ -1976,7 +1977,8 @@ export default function AddCourse() {
     } else if (field === "icon") {
       setIconPreview("");
       document.getElementById("icon-upload").value = "";
-    } else if (field === "image2") {                     // ✨
+    } else if (field === "image2") {
+      // ✨
       setImage2Preview("");
       document.getElementById("image2-upload").value = "";
     } else if (field === "pdf_file") {
@@ -1984,25 +1986,57 @@ export default function AddCourse() {
       document.getElementById("pdf-upload").value = "";
     }
   };
-
   const validateForm = () => {
-    if (!formData.name.trim()) return "Course name is required";
-    if (!formData.slug.trim()) return "Course slug is required";
-    if (!formData.category) return "Category is required";
-    if (!formData.text.trim()) return "Description is required";
-    if (formData.text.length > MAX_DESCRIPTION_LENGTH) {
-      return `Description is too long (max ${MAX_DESCRIPTION_LENGTH} characters)`;
+    const errors = {};
+
+    if (!formData.name.trim()) {
+      errors.name = "Course name is required";
     }
-    return "";
+
+    if (!formData.slug.trim()) {
+      errors.slug = "Course slug is required";
+    }
+
+    if (!formData.category) {
+      errors.category = "Category is required";
+    }
+
+    if (!formData.text.trim()) {
+      errors.text = "Description is required";
+    }
+
+    if (formData.text.length > MAX_DESCRIPTION_LENGTH) {
+      errors.text = `Description must be under ${MAX_DESCRIPTION_LENGTH} characters`;
+    }
+
+    if (!formData.short_description.trim()) {
+      errors.short_description = "Short description is required";
+    }
+
+    if (!formData.meta_title.trim()) {
+      errors.meta_title = "Meta title is required";
+    }
+
+    if (!formData.meta_description.trim()) {
+      errors.meta_description = "Meta description is required";
+    }
+
+    if (!formData.keywords.trim()) {
+      errors.keywords = "Keywords are required";
+    }
+
+    setFieldErrors(errors);
+
+    return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const validationError = validateForm();
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
+    const isValid = validateForm();
+if (!isValid) {
+  setError("Please fix the highlighted fields.");
+  return;
+}
 
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
 
@@ -2016,7 +2050,8 @@ export default function AddCourse() {
       submitData.append("slug", formData.slug);
       submitData.append("category", formData.category);
       submitData.append("text", formData.text);
-      if (formData.short_description)                     // ✨
+      if (formData.short_description)
+        // ✨
         submitData.append("short_description", formData.short_description);
       if (formData.duration) submitData.append("duration", formData.duration);
       if (formData.lecture) submitData.append("lecture", formData.lecture);
@@ -2116,7 +2151,9 @@ export default function AddCourse() {
             Click to upload
           </p>
           <p className="text-xs text-gray-400">
-            <span className="text-indigo-500 font-medium">Browse files</span>{" "}
+            <span className="text-indigo-500 font-medium">
+              Browse files
+            </span>{" "}
           </p>
         </div>
       ) : (
@@ -2244,33 +2281,31 @@ export default function AddCourse() {
   );
 
   // ── Section Header ──
-const SectionHeader = ({
-  icon: Icon,
-  label,
-  iconBg,
-  iconColor,
-  description,
-  required = false,
-}) => (
-  <div className="flex items-center gap-3 pt-2">
-    <div
-      className={`w-9 h-9 ${iconBg} rounded-xl flex items-center justify-center flex-shrink-0`}
-    >
-      <Icon size={16} className={iconColor} />
-    </div>
+  const SectionHeader = ({
+    icon: Icon,
+    label,
+    iconBg,
+    iconColor,
+    description,
+    required = false,
+  }) => (
+    <div className="flex items-center gap-3 pt-2">
+      <div
+        className={`w-9 h-9 ${iconBg} rounded-xl flex items-center justify-center flex-shrink-0`}
+      >
+        <Icon size={16} className={iconColor} />
+      </div>
 
-    <div>
-      <p className="text-base font-bold text-gray-800">
-        {label}
-        {required && <span className="text-red-400 ml-1">*</span>}
-      </p>
+      <div>
+        <p className="text-base font-bold text-gray-800">
+          {label}
+          {required && <span className="text-red-400 ml-1">*</span>}
+        </p>
 
-      {description && (
-        <p className="text-xs text-gray-400">{description}</p>
-      )}
+        {description && <p className="text-xs text-gray-400">{description}</p>}
+      </div>
     </div>
-  </div>
-);
+  );
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -2362,7 +2397,9 @@ const SectionHeader = ({
           />
 
           {/* Course Name */}
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+          <div className={`bg-white rounded-2xl border shadow-sm p-6 ${
+  error ? "border-red-400 bg-red-50/30" : "border-gray-200"
+}`}>
             <label
               htmlFor="name"
               className="block text-base font-semibold text-gray-800 mb-1"
@@ -2528,7 +2565,7 @@ const SectionHeader = ({
               Short Description
               <span className="text-red-400 ml-1">*</span>
             </label>
-            
+
             <p className="text-xs text-gray-400 mb-3">
               A brief summary of the course
             </p>
@@ -2546,13 +2583,12 @@ const SectionHeader = ({
           {/* SECTION 2 — Course Details */}
           <SectionHeader
             icon={BookMarked}
-            label="Course Details" 
+            label="Course Details"
             description="Duration, lectures, audience and difficulty"
             iconBg="bg-violet-50"
             iconColor="text-violet-600"
             required={true}
           />
-          
 
           {/* Duration / Lectures / Students */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
@@ -2747,7 +2783,7 @@ const SectionHeader = ({
               inputId="image-upload"
               inputName="image"
               label="Course Image"
-              hint="Optional — PNG, JPG · Max 5MB"
+              hint="PNG, JPG · Max 5MB"
               iconBg="bg-pink-50"
               iconColor="text-pink-500"
             />
@@ -2757,7 +2793,7 @@ const SectionHeader = ({
               inputId="banner-upload"
               inputName="banner_img"
               label="Banner Image"
-              hint="Optional — PNG, JPG · Max 5MB"
+              hint="PNG, JPG · Max 5MB"
               iconBg="bg-indigo-50"
               iconColor="text-indigo-500"
             />
@@ -2767,7 +2803,7 @@ const SectionHeader = ({
               inputId="icon-upload"
               inputName="icon"
               label="Course Icon"
-              hint="Optional — PNG, JPG · Max 2MB"
+              hint="PNG, JPG · Max 2MB"
               iconBg="bg-violet-50"
               iconColor="text-violet-500"
             />
@@ -2778,7 +2814,7 @@ const SectionHeader = ({
               inputId="image2-upload"
               inputName="image2"
               label="Additional Image"
-              hint="Optional — PNG, JPG · Max 5MB"
+              hint="PNG, JPG · Max 5MB"
               iconBg="bg-orange-50"
               iconColor="text-orange-500"
             />

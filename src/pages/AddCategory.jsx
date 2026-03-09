@@ -426,7 +426,7 @@ const handleNameChange = (e) => {
   let value = e.target.value;
 
   // Allow only letters and spaces
-  if (!/^[A-Za-z\s]*$/.test(value)) {
+  if (!/^[A-Za-z\s,-]*$/.test(value)) {
     return;
   }
 
@@ -477,8 +477,8 @@ const handleNameChange = (e) => {
 
 const handleSubmit = async (e) => {
   e.preventDefault();
-  if (!/^[A-Za-z\s]+$/.test(formData.name.trim())) {
-  setError("Category name must contain only letters");
+ if (!/^[A-Za-z\s,-]+$/.test(formData.name.trim())) {
+  setError("Category name can contain letters, spaces, comma (,) and hyphen (-)");
   return;
 }
 
@@ -613,7 +613,7 @@ const handleSubmit = async (e) => {
               name="name"
               value={formData.name}
               onChange={handleNameChange}
-              pattern="[A-Za-z\s]+"
+             pattern="[A-Za-z\s,-]+"
               placeholder="e.g., Web Development, Design, Marketing…"
               className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
               required

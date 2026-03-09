@@ -561,7 +561,7 @@ export default function AddModule() {
 
     const validateForm = () => {
         if (!formData.name.trim()) return "Module name is required";
-        if (!formData.course_data) return "Course ID is required";
+        if (!formData.course_data) return "Course is required";
         if (isNaN(formData.course_data) || parseInt(formData.course_data) <= 0)
             return "Please enter a valid Course ID";
         return "";
@@ -671,6 +671,44 @@ export default function AddModule() {
 
                 <form onSubmit={handleSubmit} className="space-y-5">
 
+                 {/* ── Course Selection Card ── */}
+                    {courses.length > 0 && (
+                        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="w-9 h-9 bg-violet-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                                    <BookOpen size={16} className="text-violet-600" />
+                                </div>
+                                <div>
+                                    <label className="block text-base font-semibold text-gray-800">
+                                        Select Course <span className="text-red-500">*</span>
+                                    </label>
+                                    <p className="text-xs text-gray-400 mt-0.5">Choose the course this module belongs to</p>
+                                </div>
+                            </div>
+
+                            <div className="relative">
+                                <select
+                                    value={formData.course_data}
+                                    onChange={(e) => {
+                                        if (e.target.value)
+                                            setFormData((prev) => ({ ...prev, course_data: e.target.value }));
+                                    }}
+                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none"
+                                >
+                                    <option value="">— Select a course —</option>
+                                    {courses.map((course) => (
+                                        <option key={course.id} value={course.id}>
+                                            {course.id}: {course.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                            </div>
+                            <p className="text-xs text-gray-400 mt-2">Selecting a course will auto-fill the Course ID</p>
+                        </div>
+                    )}
+
+
                     {/* ── Module Details Card (Name + Description) ── */}
                     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
                         <div className="flex items-center gap-3 mb-4">
@@ -679,7 +717,7 @@ export default function AddModule() {
                             </div>
                             <div>
                                 <label htmlFor="name" className="block text-base font-semibold text-gray-800">
-                                    Module Details <span className="text-red-500">*</span>
+                                    Module Details
                                 </label>
                                 <p className="text-xs text-gray-400 mt-0.5">Enter a name and optional description</p>
                             </div>
@@ -754,43 +792,7 @@ export default function AddModule() {
                         </div>
                     </div>
 
-                    {/* ── Course Selection Card ── */}
-                    {courses.length > 0 && (
-                        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="w-9 h-9 bg-violet-50 rounded-xl flex items-center justify-center flex-shrink-0">
-                                    <BookOpen size={16} className="text-violet-600" />
-                                </div>
-                                <div>
-                                    <label className="block text-base font-semibold text-gray-800">
-                                        Select Course <span className="text-red-500">*</span>
-                                    </label>
-                                    <p className="text-xs text-gray-400 mt-0.5">Choose the course this module belongs to</p>
-                                </div>
-                            </div>
-
-                            <div className="relative">
-                                <select
-                                    value={formData.course_data}
-                                    onChange={(e) => {
-                                        if (e.target.value)
-                                            setFormData((prev) => ({ ...prev, course_data: e.target.value }));
-                                    }}
-                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none"
-                                >
-                                    <option value="">— Select a course —</option>
-                                    {courses.map((course) => (
-                                        <option key={course.id} value={course.id}>
-                                            {course.id}: {course.name}
-                                        </option>
-                                    ))}
-                                </select>
-                                <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                            </div>
-                            <p className="text-xs text-gray-400 mt-2">Selecting a course will auto-fill the Course ID</p>
-                        </div>
-                    )}
-
+                   
                     {/* ── Mobile Submit ── */}
                     <div className="sm:hidden">
                         <button

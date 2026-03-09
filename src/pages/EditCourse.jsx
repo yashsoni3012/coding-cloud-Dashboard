@@ -1225,61 +1225,79 @@ export default function EditCourse() {
                     </div>
                     <div>
                         <p className="text-base font-semibold text-gray-800">Syllabus PDF</p>
-                        <p className="text-xs text-gray-400 mt-0.5">Optional — PDF only · Max 10MB</p>
+                        <p className="text-xs text-gray-400 mt-0.5">PDF only · Max 10MB</p>
                     </div>
                 </div>
 
-                {!hasPdf ? (
-                    <div
-                        onClick={() => document.getElementById("pdf-upload")?.click()}
-                        className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center cursor-pointer hover:border-red-200 hover:bg-red-50/40 transition-all select-none"
-                    >
-                        <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center mx-auto mb-3">
-                            <Upload size={20} className="text-red-400" />
-                        </div>
-                        <p className="text-base font-semibold text-gray-700 mb-1">Upload Syllabus</p>
-                        <p className="text-xs text-gray-400"><span className="text-red-400 font-medium">Browse files</span> · PDF only up to 10MB</p>
-                    </div>
-                ) : (
-                    <div className="space-y-3">
-                        <div
-                            className={`relative flex items-center gap-3 p-4 rounded-xl border ${
-                                isNew ? "bg-emerald-50 border-emerald-100" : "bg-red-50 border-red-100"
-                            }`}
-                        >
-                            <div
-                                className={`w-10 h-10 ${
-                                    isNew ? "bg-emerald-100" : "bg-red-100"
-                                } rounded-xl flex items-center justify-center flex-shrink-0`}
-                            >
-                                <FileText size={18} className={isNew ? "text-emerald-600" : "text-red-600"} />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <p className="text-base font-semibold text-gray-800 truncate">{pdfDisplayName}</p>
-                                <p className={`text-xs mt-0.5 ${isNew ? "text-emerald-500" : "text-red-400"}`}>
-                                    {isNew ? "New file — will replace existing" : "Current syllabus"}
-                                </p>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => removeFile("pdf_file", !pdfName)}
-                                className="w-8 h-8 bg-white rounded-full shadow-sm flex items-center justify-center text-gray-400 hover:text-red-500 transition-all flex-shrink-0"
-                            >
-                                <X size={15} />
-                            </button>
-                        </div>
+               {!hasPdf ? (
+  <div
+    onClick={() => document.getElementById("pdf-upload")?.click()}
+    className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center cursor-pointer hover:border-blue-200 hover:bg-blue-50/40 transition-all select-none"
+  >
+    <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center mx-auto mb-3">
+      <Upload size={20} className="text-blue-400" />
+    </div>
 
-                        {/* Change PDF */}
-                        <button
-                            type="button"
-                            onClick={() => document.getElementById("pdf-upload")?.click()}
-                            className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-500 hover:bg-red-100 rounded-xl text-xs font-semibold transition-all"
-                        >
-                            <Upload size={13} />
-                            Replace PDF
-                        </button>
-                    </div>
-                )}
+    <p className="text-base font-semibold text-gray-700 mb-1">
+      Upload Syllabus
+    </p>
+
+    <p className="text-xs text-gray-400">
+      <span className="text-blue-400 font-medium">Browse files</span> · PDF only up to 10MB
+    </p>
+  </div>
+) : (
+  <div className="space-y-3">
+    <div
+      className={`relative flex items-center gap-3 p-4 rounded-xl border ${
+        isNew ? "bg-emerald-50 border-emerald-100" : "bg-blue-50 border-blue-100"
+      }`}
+    >
+      <div
+        className={`w-10 h-10 ${
+          isNew ? "bg-emerald-100" : "bg-blue-100"
+        } rounded-xl flex items-center justify-center flex-shrink-0`}
+      >
+        <FileText
+          size={18}
+          className={isNew ? "text-emerald-600" : "text-blue-600"}
+        />
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <p className="text-base font-semibold text-gray-800 truncate">
+          {pdfDisplayName}
+        </p>
+
+        <p
+          className={`text-xs mt-0.5 ${
+            isNew ? "text-emerald-500" : "text-blue-400"
+          }`}
+        >
+          {isNew ? "New file — will replace existing" : "Current syllabus"}
+        </p>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => removeFile("pdf_file", !pdfName)}
+        className="w-8 h-8 bg-white rounded-full shadow-sm flex items-center justify-center text-gray-400 hover:text-blue-500 transition-all flex-shrink-0"
+      >
+        <X size={15} />
+      </button>
+    </div>
+
+    {/* Replace PDF */}
+    <button
+      type="button"
+      onClick={() => document.getElementById("pdf-upload")?.click()}
+      className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-500 hover:bg-blue-100 rounded-xl text-xs font-semibold transition-all"
+    >
+      <Upload size={13} />
+      Replace PDF
+    </button>
+  </div>
+)}
                 <input
                     type="file"
                     name="pdf_file"
@@ -1490,7 +1508,7 @@ export default function EditCourse() {
                         <label htmlFor="short_description" className="block text-base font-semibold text-gray-800 mb-1">
                             Short Description
                         </label>
-                        <p className="text-xs text-gray-400 mb-3">A brief summary of the course (optional)</p>
+                        <p className="text-xs text-gray-400 mb-3">A brief summary of the course</p>
                         <input
                             id="short_description"
                             type="text"
@@ -1694,7 +1712,7 @@ export default function EditCourse() {
                             inputId="image-upload"
                             inputName="image"
                             label="Course Image"
-                            hint="Optional — PNG, JPG · Max 5MB"
+                            hint="PNG, JPG · Max 5MB"
                             iconBg="bg-pink-50"
                             iconColor="text-pink-500"
                         />
@@ -1705,7 +1723,7 @@ export default function EditCourse() {
                             inputId="banner-upload"
                             inputName="banner_img"
                             label="Banner Image"
-                            hint="Optional — PNG, JPG · Max 5MB"
+                            hint="PNG, JPG · Max 5MB"
                             iconBg="bg-indigo-50"
                             iconColor="text-indigo-500"
                         />
@@ -1716,7 +1734,7 @@ export default function EditCourse() {
                             inputId="icon-upload"
                             inputName="icon"
                             label="Course Icon"
-                            hint="Optional — PNG, JPG · Max 2MB"
+                            hint="PNG, JPG · Max 2MB"
                             iconBg="bg-violet-50"
                             iconColor="text-violet-500"
                         />
@@ -1728,7 +1746,7 @@ export default function EditCourse() {
                             inputId="image2-upload"
                             inputName="image2"
                             label="Additional Image"
-                            hint="Optional — PNG, JPG · Max 5MB"
+                            hint="PNG, JPG · Max 5MB"
                             iconBg="bg-orange-50"
                             iconColor="text-orange-500"
                         />

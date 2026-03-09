@@ -456,6 +456,7 @@
 //     );
 // }
 
+
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import {
@@ -468,8 +469,9 @@ import {
   AlertCircle,
   Tag,
   FileText,
+  Link2,
 } from "lucide-react";
-import Toasts from "../pages/Toasts"; // 👈 import Toasts
+import Toasts from "../pages/Toasts";
 
 export default function EditCategory() {
   const navigate = useNavigate();
@@ -477,9 +479,14 @@ export default function EditCategory() {
   const location = useLocation();
   const locationState = location.state;
   const fileInputRef = useRef(null);
-  const timeoutRef = useRef(null); // for delayed navigation
+  const timeoutRef = useRef(null);
 
-  const [formData, setFormData] = useState({ name: "", text: "", image: null });
+  const [formData, setFormData] = useState({
+    name: "",
+    text: "",
+    slug: "",
+    image: null,
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -487,7 +494,7 @@ export default function EditCategory() {
     show: false,
     message: "",
     type: "success",
-  }); // 👈 toast state
+  });
   const [imagePreview, setImagePreview] = useState(null);
   const [originalImage, setOriginalImage] = useState(null);
   const [dragOver, setDragOver] = useState(false);
@@ -521,6 +528,7 @@ export default function EditCategory() {
           setFormData({
             name: categoryData.name || "",
             text: categoryData.text || "",
+            slug: categoryData.slug || "",
             image: null,
           });
           if (categoryData.image) {
@@ -544,6 +552,31 @@ export default function EditCategory() {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    setError("");
+  };
+
+  const generateSlug = (name) => {
+    return name
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/--+/g, "-");
+  };
+
+  const handleNameChange = (e) => {
+    const value = e.target.value;
+    setFormData((prev) => {
+      // Only auto‑generate slug if the slug hasn't been manually edited
+      // or if it matches the previously generated slug from the old name
+      const shouldAutoGenerate =
+        !prev.slug || prev.slug === generateSlug(prev.name);
+      return {
+        ...prev,
+        name: value,
+        slug: shouldAutoGenerate ? generateSlug(value) : prev.slug,
+      };
+    });
     setError("");
   };
 
@@ -593,17 +626,20 @@ export default function EditCategory() {
       return;
     }
 
-    // Clear any pending navigation
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
 
     setSaving(true);
     setError("");
-    setToast({ ...toast, show: false }); // hide any previous toast
+    setToast({ ...toast, show: false });
 
     try {
       const payload = new FormData();
       payload.append("name", formData.name.trim());
       if (formData.text?.trim()) payload.append("text", formData.text.trim());
+
+      // Always send slug (even empty) to allow clearing it
+      payload.append("slug", formData.slug?.trim() || "");
+
       if (formData.image instanceof File)
         payload.append("image", formData.image);
 
@@ -612,52 +648,37 @@ export default function EditCategory() {
         { method: "PATCH", body: payload },
       );
 
-      if (!response.ok) throw new Error("Failed to update category");
+      if (!response.ok) {
+  const data = await response.json();
 
-      // Show success toast
+  let message = "Enter a valid \"slug\" consisting of letters, numbers, underscores or hyphens.";
+
+  if (data.slug && data.slug.length > 0) {
+    message = data.slug[0];
+  } else if (data.name && data.name.length > 0) {
+    message = data.name[0];
+  } else if (data.detail) {
+    message = data.detail;
+  }
+
+  throw new Error(message);
+}
+
       setToast({
         show: true,
         message: "Category updated successfully!",
         type: "success",
       });
 
-      // Navigate after a short delay (so the toast is visible)
       timeoutRef.current = setTimeout(() => {
         navigate("/category");
-      }, 1500); // 1.5 seconds
+      }, 1500);
     } catch (err) {
-      setError(err.message || "Failed to update category");
+      setError(err.message || "Enter a valid \"slug\" consisting of letters, numbers, underscores or hyphens.");
       setSaving(false);
     }
-    // On success, saving remains true → button stays disabled during the delay
   };
 
-  const handleDelete = async (categoryId) => {
-    try {
-      const response = await fetch(
-        `https://codingcloud.pythonanywhere.com/category/${categoryId}/`,
-        { method: "DELETE" },
-      );
-      if (!response.ok) throw new Error("Failed to delete category");
-
-      // Show success toast (red background = type "error")
-      setToast({
-        show: true,
-        message: "Category deleted successfully!",
-        type: "error", // because our Toasts uses red for error
-      });
-
-      // Optionally refresh the list after a short delay
-      setTimeout(() => {
-        // fetch categories again or remove from local state
-        // e.g., setCategories(prev => prev.filter(c => c.id !== categoryId));
-      }, 1500); // match toast duration or navigate away
-    } catch (err) {
-      // handle error (maybe show a different toast)
-    }
-  };
-
-  // ── Loading State ──
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -673,19 +694,16 @@ export default function EditCategory() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* ── Toast ── */}
       {toast.show && (
-      <Toasts
-        message={toast.message}
-        type={toast.type}
-        onClose={() => setToast({ ...toast, show: false })}
-      />
-    )}
+        <Toasts
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast({ ...toast, show: false })}
+        />
+      )}
 
-      {/* ── Header ── */}
-      <header className="top-0 z-50 bg-white border-b border-gray-200 shadow-sm ">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between ">
-          {/* Left: back + title */}
+      <header className="top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate("/category")}
@@ -694,9 +712,7 @@ export default function EditCategory() {
               <ArrowLeft size={16} />
               <span className="hidden sm:inline">Back</span>
             </button>
-
             <div className="w-px h-6 bg-gray-200" />
-
             <div>
               <h1 className="text-base sm:text-lg font-bold text-gray-900 leading-tight">
                 Edit Category
@@ -706,8 +722,6 @@ export default function EditCategory() {
               </p>
             </div>
           </div>
-
-          {/* Right: update button (desktop only) */}
           <button
             onClick={handleSubmit}
             disabled={saving}
@@ -728,9 +742,7 @@ export default function EditCategory() {
         </div>
       </header>
 
-      {/* ── Main Content ── */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 pb-28 sm:pb-12">
-        {/* Error Alert */}
         {error && (
           <div className="flex items-start gap-3 p-4 mb-6 bg-red-50 border border-red-200 rounded-2xl text-base text-red-700">
             <AlertCircle
@@ -741,10 +753,8 @@ export default function EditCategory() {
           </div>
         )}
 
-        {/* Success Toast is now used instead of inline alert */}
-
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* ── Category Name Card ── */}
+          {/* Name Card */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-9 h-9 bg-indigo-50 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -767,14 +777,53 @@ export default function EditCategory() {
               type="text"
               name="name"
               value={formData.name}
-              onChange={handleInputChange}
+              onChange={handleNameChange}
               placeholder="e.g., Web Development, Design, Marketing…"
               className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
               required
             />
           </div>
 
-          {/* ── Description Card ── */}
+          {/* Slug Card */}
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-9 h-9 bg-amber-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Link2 size={16} className="text-amber-600" />
+              </div>
+              <div>
+                <label
+                  htmlFor="slug"
+                  className="block text-base font-semibold text-gray-800"
+                >
+                  Slug
+                </label>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  URL-friendly version of the name (auto-generated from name,
+                  but you can edit it manually)
+                </p>
+              </div>
+            </div>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-base">
+                /
+              </span>
+              <input
+                id="slug"
+                type="text"
+                name="slug"
+                value={formData.slug}
+                onChange={handleInputChange}
+                placeholder="web-development"
+                className="w-full pl-8 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+              />
+            </div>
+            <p className="text-xs text-gray-400 mt-2">
+              Slug is used in URLs. Only lowercase letters, numbers, and hyphens
+              allowed.
+            </p>
+          </div>
+
+          {/* Description Card */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-9 h-9 bg-violet-50 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -806,7 +855,7 @@ export default function EditCategory() {
             </p>
           </div>
 
-          {/* ── Image Upload Card ── */}
+          {/* Image Upload Card */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-9 h-9 bg-pink-50 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -823,7 +872,6 @@ export default function EditCategory() {
             </div>
 
             {!imagePreview ? (
-              /* ── Empty: drag & drop zone ── */
               <div
                 onClick={triggerFileInput}
                 onDragOver={(e) => {
@@ -868,7 +916,6 @@ export default function EditCategory() {
                 />
               </div>
             ) : (
-              /* ── Preview ── */
               <div className="space-y-3">
                 <div className="relative rounded-xl overflow-hidden border border-gray-200 group">
                   <img
@@ -881,10 +928,7 @@ export default function EditCategory() {
                         "https://via.placeholder.com/400x300?text=Image+Error";
                     }}
                   />
-                  {/* Hover overlay */}
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all pointer-events-none" />
-
-                  {/* File name / status badge at bottom */}
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent px-4 py-3 pointer-events-none">
                     {formData.image ? (
                       <p className="text-xs text-emerald-300 font-semibold">
@@ -896,8 +940,6 @@ export default function EditCategory() {
                       </p>
                     )}
                   </div>
-
-                  {/* Change button */}
                   <button
                     type="button"
                     onClick={triggerFileInput}
@@ -905,8 +947,6 @@ export default function EditCategory() {
                   >
                     Change
                   </button>
-
-                  {/* Remove button */}
                   <button
                     type="button"
                     onClick={removeImage}
@@ -914,7 +954,6 @@ export default function EditCategory() {
                   >
                     <X size={15} />
                   </button>
-
                   <input
                     type="file"
                     ref={fileInputRef}
@@ -923,8 +962,6 @@ export default function EditCategory() {
                     className="hidden"
                   />
                 </div>
-
-                {/* Action buttons row */}
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
@@ -934,7 +971,6 @@ export default function EditCategory() {
                     <Upload size={14} />
                     Change Image
                   </button>
-
                   {formData.image && originalImage && (
                     <button
                       type="button"
@@ -945,7 +981,6 @@ export default function EditCategory() {
                       Restore Original
                     </button>
                   )}
-
                   {!formData.image && originalImage && (
                     <button
                       type="button"
@@ -961,7 +996,7 @@ export default function EditCategory() {
             )}
           </div>
 
-          {/* ── Mobile Submit Button ── */}
+          {/* Mobile Submit Button */}
           <div className="sm:hidden">
             <button
               type="submit"
