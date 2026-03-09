@@ -2531,7 +2531,7 @@ const SectionHeader = ({
             </label>
             
             <p className="text-xs text-gray-400 mb-3">
-              A brief summary of the course (optional)
+              A brief summary of the course
             </p>
             <input
               id="short_description"
