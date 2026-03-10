@@ -610,6 +610,7 @@ import {
     Tag,
     BookOpen,
     Sparkles,
+    AlertCircle,
 } from "lucide-react";
 import Toasts from "./Toasts";
 
@@ -620,6 +621,7 @@ export default function EditModule() {
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [fieldErrors, setFieldErrors] = useState({});
 
     // ------------------------------------------------------------------------
     // Editor mode: "tinymce" or "html"
@@ -681,7 +683,7 @@ export default function EditModule() {
                     const module = data.data;
                     setFormData({
                         name: module.name || "",
-                        descriptions: module.descriptions || "", // handle null
+                        descriptions: module.descriptions || "",
                         course_data: module.course_data?.toString() || "",
                     });
                 } else {
@@ -699,24 +701,38 @@ export default function EditModule() {
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
+        // Clear error for this field when user types
+        if (fieldErrors[name]) {
+            setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
+        }
     };
 
     const validateForm = () => {
-        if (!formData.name.trim()) return "Module name is required";
-        if (!formData.course_data) return "Please select a course";
-        return "";
+        const errors = {};
+
+        if (!formData.name.trim()) {
+            errors.name = "Module name is required";
+        }
+
+        if (!formData.course_data) {
+            errors.course_data = "Course selection is required";
+        }
+
+        setFieldErrors(errors);
+        return Object.keys(errors).length === 0;
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const validationError = validateForm();
-        if (validationError) {
-            showToast(validationError, "error");
+
+        if (!validateForm()) {
+            const missingFields = Object.keys(fieldErrors).join(", ");
+            showToast(`Please fill required fields: ${missingFields}`, "error");
             return;
         }
+
         setSaving(true);
         try {
-            // Prepare descriptions: send null if empty, otherwise trimmed string
             const descriptionsValue = formData.descriptions.trim() === ""
                 ? null
                 : formData.descriptions.trim();
@@ -726,20 +742,33 @@ export default function EditModule() {
                 descriptions: descriptionsValue,
                 course_data: parseInt(formData.course_data),
             };
+
             const response = await fetch(`https://codingcloud.pythonanywhere.com/modules/${id}/`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(submitData),
             });
+
             const data = await response.json();
+
             if (response.ok || response.status === 200) {
                 showToast("Module updated successfully!", "success");
                 setTimeout(() => navigate("/modules"), 2000);
             } else {
-                showToast(data.message || data.detail || "Failed to update module. Please try again.", "error");
+                // Handle structured field errors from backend
+                if (data.errors) {
+                    const backendErrors = {};
+                    Object.keys(data.errors).forEach((key) => {
+                        backendErrors[key] = data.errors[key].join(", ");
+                    });
+                    setFieldErrors(backendErrors);
+                    showToast("Please correct the errors below", "error");
+                } else {
+                    showToast(data.message || data.detail || "Failed to update module.", "error");
+                }
             }
         } catch (err) {
-            showToast("Network error. Please check your connection and try again.", "error");
+            showToast("Network error. Please check your connection.", "error");
         } finally {
             setSaving(false);
         }
@@ -772,7 +801,7 @@ export default function EditModule() {
             )}
 
             {/* ── Header ── */}
-            <header className=" top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+            <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <button
@@ -785,7 +814,6 @@ export default function EditModule() {
                         <div className="w-px h-6 bg-gray-200" />
                         <div>
                             <h1 className="text-base sm:text-lg font-bold text-gray-900 leading-tight">Edit Module</h1>
-                            <p className="text-xs text-gray-400 hidden sm:block">ID: {id} · Update module information</p>
                         </div>
                     </div>
                     <button
@@ -811,8 +839,6 @@ export default function EditModule() {
             {/* ── Main ── */}
             <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 pb-28 sm:pb-12">
 
-                {/* Removed inline error/success alerts — now using toast */}
-
                 <form onSubmit={handleSubmit} className="space-y-5">
 
                     {/* ── Module Details Card (Name + Description) ── */}
@@ -825,7 +851,6 @@ export default function EditModule() {
                                 <label htmlFor="name" className="block text-base font-semibold text-gray-800">
                                     Module Details <span className="text-red-500">*</span>
                                 </label>
-                                <p className="text-xs text-gray-400 mt-0.5">Edit the name and description</p>
                             </div>
                         </div>
 
@@ -841,16 +866,21 @@ export default function EditModule() {
                                 value={formData.name}
                                 onChange={handleInputChange}
                                 placeholder="e.g., Introduction to Python, Module 1 - Basics"
-                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
+                                    fieldErrors.name ? "border-red-500" : "border-gray-200"
+                                }`}
                                 required
                             />
+                            {fieldErrors.name && (
+                                <p className="text-xs text-red-500 mt-1">{fieldErrors.name}</p>
+                            )}
                         </div>
 
                         {/* Description - with tabs */}
                         <div>
                             <div className="flex items-center justify-between mb-2">
                                 <label htmlFor="descriptions" className="block text-sm font-medium text-gray-700">
-                                    Description <span className="text-gray-400 text-xs">(optional)</span>
+                                    Description
                                 </label>
 
                                 {/* Tab Switcher */}
@@ -880,71 +910,74 @@ export default function EditModule() {
                                 </div>
                             </div>
 
-                            <p className="text-xs text-gray-400 mb-3">
-                                {editorMode === "tinymce"
-                                    ? "Rich text editor with formatting tools"
-                                    : "Edit raw HTML source code"}
-                            </p>
+                            
 
                             {/* Conditional Editor */}
                             {editorMode === "tinymce" ? (
-                                <Editor
-                                    apiKey="x5ikrjt2xexo2x73y0uzybqhbjq29owf8drai57qhtew5e0j"
-                                    onInit={(evt, editor) => (editorRef.current = editor)}
-                                    value={formData.descriptions}
-                                    onEditorChange={(content) =>
-                                        setFormData((prev) => ({ ...prev, descriptions: content }))
-                                    }
-                                    init={{
-                                        height: 400,
-                                        menubar: true,
-                                        plugins: [
-                                            "advlist",
-                                            "autolink",
-                                            "lists",
-                                            "link",
-                                            "image",
-                                            "charmap",
-                                            "preview",
-                                            "anchor",
-                                            "searchreplace",
-                                            "visualblocks",
-                                            "code",
-                                            "fullscreen",
-                                            "insertdatetime",
-                                            "media",
-                                            "table",
-                                            "help",
-                                            "wordcount",
-                                        ],
-                                        toolbar:
-                                            "undo redo | blocks | " +
-                                            "bold italic forecolor | alignleft aligncenter " +
-                                            "alignright alignjustify | bullist numlist outdent indent | " +
-                                            "removeformat | code | help",
-                                        content_style:
-                                            "body { font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.6; }",
-                                        placeholder:
-                                            "Provide a brief overview of what this module covers…",
-                                    }}
-                                />
+                                <div className={`border rounded-xl overflow-hidden ${
+                                    fieldErrors.descriptions ? "border-red-500" : "border-gray-200"
+                                }`}>
+                                    <Editor
+                                        apiKey="x5ikrjt2xexo2x73y0uzybqhbjq29owf8drai57qhtew5e0j"
+                                        onInit={(evt, editor) => (editorRef.current = editor)}
+                                        value={formData.descriptions}
+                                        onEditorChange={(content) => {
+                                            setFormData((prev) => ({ ...prev, descriptions: content }));
+                                            if (fieldErrors.descriptions) {
+                                                setFieldErrors((prev) => ({ ...prev, descriptions: undefined }));
+                                            }
+                                        }}
+                                        init={{
+                                            height: 400,
+                                            menubar: true,
+                                            plugins: [
+                                                "advlist",
+                                                "autolink",
+                                                "lists",
+                                                "link",
+                                                "image",
+                                                "charmap",
+                                                "preview",
+                                                "anchor",
+                                                "searchreplace",
+                                                "visualblocks",
+                                                "code",
+                                                "fullscreen",
+                                                "insertdatetime",
+                                                "media",
+                                                "table",
+                                                "help",
+                                                "wordcount",
+                                            ],
+                                            toolbar:
+                                                "undo redo | blocks | " +
+                                                "bold italic forecolor | alignleft aligncenter " +
+                                                "alignright alignjustify | bullist numlist outdent indent | " +
+                                                "removeformat | code | help",
+                                            content_style:
+                                                "body { font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.6; }",
+                                            placeholder:
+                                                "Provide a brief overview of what this module covers…",
+                                        }}
+                                    />
+                                </div>
                             ) : (
                                 <textarea
                                     value={formData.descriptions}
-                                    onChange={(e) =>
-                                        setFormData((prev) => ({ ...prev, descriptions: e.target.value }))
-                                    }
-                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base font-mono placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                                    onChange={(e) => {
+                                        setFormData((prev) => ({ ...prev, descriptions: e.target.value }));
+                                        if (fieldErrors.descriptions) {
+                                            setFieldErrors((prev) => ({ ...prev, descriptions: undefined }));
+                                        }
+                                    }}
+                                    className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base font-mono placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
+                                        fieldErrors.descriptions ? "border-red-500" : "border-gray-200"
+                                    }`}
                                     rows={12}
                                     placeholder="<!-- Write HTML here -->"
                                 />
                             )}
 
-                            {/* Character count */}
-                            <p className="flex items-center gap-1.5 text-xs text-gray-400 mt-2">
-                                <Info size={11} />
-                                {formData.descriptions.length} characters · You can format the description with rich text (optional).
-                            </p>
                         </div>
                     </div>
 
@@ -958,7 +991,6 @@ export default function EditModule() {
                                 <label className="block text-base font-semibold text-gray-800">
                                     Select Course <span className="text-red-500">*</span>
                                 </label>
-                                <p className="text-xs text-gray-400 mt-0.5">Choose the course this module belongs to</p>
                             </div>
                         </div>
 
@@ -975,7 +1007,9 @@ export default function EditModule() {
                                 name="course_data"
                                 value={formData.course_data}
                                 onChange={handleInputChange}
-                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none disabled:opacity-50 disabled:cursor-not-allowed"
+                                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none disabled:opacity-50 disabled:cursor-not-allowed ${
+                                    fieldErrors.course_data ? "border-red-500" : "border-gray-200"
+                                }`}
                                 required
                                 disabled={loadingCategories}
                             >
@@ -989,18 +1023,11 @@ export default function EditModule() {
                             <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                         </div>
 
-                        {/* Selected course confirmation badge */}
-                        {selectedCourse && !loadingCategories && (
-                            <div className="mt-3 flex items-center gap-2 p-3 bg-indigo-50 border border-indigo-100 rounded-xl">
-                                <div className="w-6 h-6 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                    <Layers size={12} className="text-indigo-600" />
-                                </div>
-                                <p className="text-xs text-indigo-700">
-                                    <span className="font-semibold">Selected:</span> {selectedCourse.name}
-                                    <span className="text-indigo-400 ml-1">· {selectedCourse.category}</span>
-                                </p>
-                            </div>
+                        {fieldErrors.course_data && (
+                            <p className="text-xs text-red-500 mt-1">{fieldErrors.course_data}</p>
                         )}
+
+                        
                     </div>
 
                     {/* ── Mobile Submit ── */}
