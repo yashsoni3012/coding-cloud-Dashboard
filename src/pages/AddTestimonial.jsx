@@ -81,6 +81,12 @@ export default function AddTestimonial() {
       ...prev,
       [name]:
         name === "rating" || name === "course" ? parseInt(value) || 0 : value,
+      [name]:
+        name === "rating" || name === "course"
+          ? value === ""
+            ? ""
+            : parseInt(value)
+          : value,
     }));
     // Clear error for this field when user types
     if (fieldErrors[name]) {
@@ -178,7 +184,7 @@ export default function AddTestimonial() {
       formDataToSend.append("name", formData.name.trim());
       formDataToSend.append("review", formData.review.trim());
       formDataToSend.append("rating", formData.rating.toString());
-      formDataToSend.append("course_id", formData.course.toString());
+      formDataToSend.append("course", formData.course.toString());
       if (formData.image) formDataToSend.append("image", formData.image);
 
       const response = await fetch(

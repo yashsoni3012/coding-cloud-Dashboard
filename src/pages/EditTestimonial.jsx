@@ -78,7 +78,7 @@ export default function EditTestimonial() {
         review: testimonial.review || "",
         rating: testimonial.rating || 5,
         image: null,
-        course: testimonial.course || "", // course ID
+        course: testimonial.course ? Number(testimonial.course) : "",
         existingImage: testimonial.image || null,
       });
 
@@ -491,7 +491,7 @@ export default function EditTestimonial() {
                   >
                     <option value="">— Select a course —</option>
                     {courses.map((course) => (
-                      <option key={course.id} value={course.id}>
+                     <option key={course.id} value={Number(course.id)}>
                         {course.name}
                         {course.category_details?.name &&
                           ` (${course.category_details.name})`}
@@ -509,22 +509,7 @@ export default function EditTestimonial() {
                   </p>
                 )}
 
-                {selectedCourse && (
-                  <div className="mt-3 flex items-center gap-2 p-3 bg-pink-50 border border-pink-100 rounded-xl">
-                    <div className="w-6 h-6 bg-pink-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Layers size={12} className="text-pink-500" />
-                    </div>
-                    <p className="text-xs text-pink-700">
-                      <span className="font-semibold">Selected:</span>{" "}
-                      {selectedCourse.name}
-                      {selectedCourse.category_details?.name && (
-                        <span className="text-pink-400 ml-1">
-                          · {selectedCourse.category_details.name}
-                        </span>
-                      )}
-                    </p>
-                  </div>
-                )}
+                
               </>
             )}
           </div>
