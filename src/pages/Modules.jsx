@@ -1339,7 +1339,7 @@
 // }
 
 import { useState, useEffect, useRef } from "react";
-import { useNavigate, useLocation } from "react-router-dom"; // added useLocation
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Search,
   X,
@@ -1348,24 +1348,23 @@ import {
   Edit,
   Trash2,
   AlertCircle,
-  CheckCircle,
   Layers,
   FolderOpen,
   Eye,
   ChevronDown,
-  RefreshCw,
   SortAsc,
   SortDesc,
   BookMarked,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
-import Toasts from "./Toasts"; // <-- import toast component
+import Toasts from "./Toasts";
 
 export default function Modules() {
   const navigate = useNavigate();
-  const location = useLocation(); // to detect navigation from AddModule
+  const location = useLocation();
 
   const [modules, setModules] = useState([]);
-  const [filteredModules, setFilteredModules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
@@ -1377,6 +1376,8 @@ export default function Modules() {
   });
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({ course: "all" });
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [uniqueCourses, setUniqueCourses] = useState([]);
   const [coursesMap, setCoursesMap] = useState({});
@@ -1387,49 +1388,32 @@ export default function Modules() {
   const [moduleToDelete, setModuleToDelete] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  // Toast state
   const [toast, setToast] = useState({
     show: false,
     message: "",
     type: "success",
   });
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-
-  const isFirstLoad = useRef(true);
-
-  // Helper to show toast
-  const showToast = (message, type = "success") => {
-    setToast({ show: true, message, type });
-  };
-
-  const closeToast = () => {
-    setToast((prev) => ({ ...prev, show: false }));
-  };
+  const prevDeps = useRef({ searchTerm, sortConfig, itemsPerPage, filters });
 
   const fetchModules = async (silent = false) => {
     if (silent) setRefreshing(true);
     else setLoading(true);
-
     try {
       const [modulesRes, coursesRes] = await Promise.all([
         fetch("https://codingcloud.pythonanywhere.com/modules/"),
         fetch("https://codingcloud.pythonanywhere.com/course/"),
       ]);
-
       const modulesData = await modulesRes.json();
       const coursesData = await coursesRes.json();
 
       if (modulesData.success) {
-        const sortedModules = [...modulesData.data].sort((a, b) => b.id - a.id);
-
-        const dataWithDisplayIds = sortedModules.map((item, index) => ({
+        const sorted = [...modulesData.data].sort((a, b) => b.id - a.id);
+        const withIds = sorted.map((item, index) => ({
           ...item,
           display_id: index + 1,
         }));
-
-        setModules(dataWithDisplayIds);
+        setModules(withIds);
 
         const courses = [
           ...new Set(modulesData.data.map((m) => m.course_data)),
@@ -1438,12 +1422,12 @@ export default function Modules() {
 
         const courseMap = {};
         const actualCourses = coursesData.data || coursesData;
-        if (Array.isArray(actualCourses)) {
-          actualCourses.forEach((course) => {
-            courseMap[course.id] = course.name;
+        if (Array.isArray(actualCourses))
+          actualCourses.forEach((c) => {
+            courseMap[c.id] = c.name;
           });
-        }
         setCoursesMap(courseMap);
+        setError(null);
       } else {
         if (!silent) setError("Failed to fetch modules");
       }
@@ -1452,7 +1436,6 @@ export default function Modules() {
     } finally {
       setLoading(false);
       setRefreshing(false);
-      isFirstLoad.current = false;
     }
   };
 
@@ -1460,29 +1443,18 @@ export default function Modules() {
     fetchModules(false);
   }, []);
 
-  // Detect if we just added a module and reset to page 1
   useEffect(() => {
     if (location.state?.fromAdd) {
       setCurrentPage(1);
-      // Clear the state so it doesn't keep resetting on re-renders
       navigate(location.pathname, { replace: true, state: {} });
     }
   }, [location, navigate]);
 
-  // Adjust current page if it becomes out of range
-  useEffect(() => {
-    const maxPage = Math.ceil(filteredModules.length / itemsPerPage);
-    if (currentPage > maxPage && maxPage > 0) {
-      setCurrentPage(maxPage);
-    } else if (filteredModules.length === 0) {
-      setCurrentPage(1);
-    }
-  }, [filteredModules.length, itemsPerPage, currentPage]);
-
-  useEffect(() => {
+  // ── Derived — no state, no jerk ──
+  const filteredModules = (() => {
     let result = [...modules];
 
-    if (searchTerm) {
+    if (searchTerm.trim()) {
       const q = searchTerm.toLowerCase();
       result = result.filter(
         (m) =>
@@ -1493,9 +1465,8 @@ export default function Modules() {
       );
     }
 
-    if (filters.course !== "all") {
+    if (filters.course !== "all")
       result = result.filter((m) => m.course_data === parseInt(filters.course));
-    }
 
     result.sort((a, b) => {
       let aVal, bVal;
@@ -1516,33 +1487,50 @@ export default function Modules() {
       return 0;
     });
 
-    setFilteredModules(result);
-  }, [searchTerm, filters, sortConfig, modules, coursesMap]);
+    return result;
+  })();
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredModules.length / itemsPerPage),
+  );
+  const safePage = Math.min(currentPage, totalPages);
+  const indexOfFirstItem = (safePage - 1) * itemsPerPage;
+  const paginatedModules = filteredModules.slice(
+    indexOfFirstItem,
+    indexOfFirstItem + itemsPerPage,
+  );
+
+  // Reset page on dependency change
+  useEffect(() => {
+    const p = prevDeps.current;
+    if (
+      p.searchTerm !== searchTerm ||
+      p.sortConfig !== sortConfig ||
+      p.itemsPerPage !== itemsPerPage ||
+      p.filters !== filters
+    ) {
+      setCurrentPage(1);
+      prevDeps.current = { searchTerm, sortConfig, itemsPerPage, filters };
+    }
+  }, [searchTerm, sortConfig, itemsPerPage, filters]);
 
   const handleSort = (key) => {
-    setSortConfig((cur) => ({
+    setSortConfig((c) => ({
       key,
-      direction: cur.key === key && cur.direction === "asc" ? "desc" : "asc",
+      direction: c.key === key && c.direction === "asc" ? "desc" : "asc",
     }));
   };
 
-  const getSortIcon = (key) => {
-    if (sortConfig.key !== key)
-      return <SortAsc size={13} className="text-slate-400" />;
+  const SortIcon = ({ col }) => {
+    if (sortConfig.key !== col)
+      return <SortAsc size={13} style={{ color: "#cbd5e1" }} />;
     return sortConfig.direction === "asc" ? (
-      <SortAsc size={13} className="text-violet-500" />
+      <SortAsc size={13} style={{ color: "#7c3aed" }} />
     ) : (
-      <SortDesc size={13} className="text-violet-500" />
+      <SortDesc size={13} style={{ color: "#7c3aed" }} />
     );
   };
-
-  const indexOfFirstItem = (currentPage - 1) * itemsPerPage;
-  const indexOfLastItem = indexOfFirstItem + itemsPerPage;
-  const paginatedModules = filteredModules.slice(
-    indexOfFirstItem,
-    indexOfLastItem,
-  );
-  const totalPages = Math.ceil(filteredModules.length / itemsPerPage);
 
   const handleDeleteClick = (e, module) => {
     e.stopPropagation();
@@ -1559,32 +1547,81 @@ export default function Modules() {
         { method: "DELETE" },
       );
       if (response.ok || response.status === 204) {
-        // Show red toast for delete success
-        showToast("Module deleted successfully!", "error");
+        setToast({
+          show: true,
+          message: "Module deleted successfully!",
+          type: "error",
+        });
         fetchModules(true);
         setShowDeleteModal(false);
         setModuleToDelete(null);
       } else {
-        showToast("Failed to delete module.", "error");
+        setToast({
+          show: true,
+          message: "Failed to delete module.",
+          type: "error",
+        });
       }
     } catch {
-      showToast("Network error. Please try again.", "error");
+      setToast({
+        show: true,
+        message: "Network error. Please try again.",
+        type: "error",
+      });
     } finally {
       setDeleteLoading(false);
     }
   };
 
-  const activeFiltersCount = [
-    filters.course !== "all",
-    sortConfig.key !== "name" || sortConfig.direction !== "asc",
-  ].filter(Boolean).length;
+  const activeFiltersCount = [filters.course !== "all"].filter(Boolean).length;
+
+  const getPageNumbers = () => {
+    if (totalPages <= 5)
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    if (safePage <= 3) return [1, 2, 3, 4, 5];
+    if (safePage >= totalPages - 2)
+      return [
+        totalPages - 4,
+        totalPages - 3,
+        totalPages - 2,
+        totalPages - 1,
+        totalPages,
+      ];
+    return [safePage - 2, safePage - 1, safePage, safePage + 1, safePage + 2];
+  };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-violet-200 border-t-violet-600 rounded-full animate-spin mx-auto" />
-          <p className="mt-4 text-slate-500 text-base font-medium">
+      <div
+        style={{
+          minHeight: "100vh",
+          background: "#f8fafc",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <div style={{ textAlign: "center" }}>
+          <div
+            style={{
+              width: 44,
+              height: 44,
+              border: "3px solid #ede9fe",
+              borderTopColor: "#7c3aed",
+              borderRadius: "50%",
+              margin: "0 auto",
+              animation: "spin 0.8s linear infinite",
+            }}
+          />
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+          <p
+            style={{
+              marginTop: 14,
+              color: "#94a3b8",
+              fontSize: 15,
+              fontWeight: 500,
+            }}
+          >
             Loading modules…
           </p>
         </div>
@@ -1594,18 +1631,66 @@ export default function Modules() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-lg p-8 max-w-sm w-full text-center">
-          <div className="bg-red-50 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-            <X size={24} className="text-red-500" />
+      <div
+        style={{
+          minHeight: "100vh",
+          background: "#f8fafc",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 16,
+        }}
+      >
+        <div
+          style={{
+            background: "#fff",
+            borderRadius: 20,
+            boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
+            padding: 32,
+            maxWidth: 360,
+            width: "100%",
+            textAlign: "center",
+          }}
+        >
+          <div
+            style={{
+              width: 56,
+              height: 56,
+              background: "#fef2f2",
+              borderRadius: "50%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto 16px",
+            }}
+          >
+            <X size={22} color="#ef4444" />
           </div>
-          <h3 className="text-lg font-semibold text-slate-900 mb-1">
+          <h3
+            style={{
+              fontSize: 17,
+              fontWeight: 700,
+              color: "#0f172a",
+              margin: "0 0 6px",
+            }}
+          >
             Something went wrong
           </h3>
-          <p className="text-slate-500 text-base mb-5">{error}</p>
+          <p style={{ fontSize: 15, color: "#94a3b8", margin: "0 0 20px" }}>
+            {error}
+          </p>
           <button
             onClick={() => window.location.reload()}
-            className="px-5 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors text-base font-medium"
+            style={{
+              padding: "10px 24px",
+              background: "#7c3aed",
+              color: "#fff",
+              border: "none",
+              borderRadius: 10,
+              fontSize: 15,
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
           >
             Try Again
           </button>
@@ -1615,100 +1700,278 @@ export default function Modules() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Toast notification */}
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "#f8fafc",
+        fontFamily: "'DM Sans', 'Segoe UI', sans-serif",
+      }}
+    >
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+        * { box-sizing: border-box; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeSlideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        .mod-animate { animation: fadeSlideIn 0.22s ease forwards; }
+        .mod-row { transition: background 0.13s; cursor: pointer; }
+        .mod-row:hover { background: #fafafa; }
+        .mod-action-btn { background: none; border: none; cursor: pointer; padding: 8px; border-radius: 9px; display: flex; align-items: center; justify-content: center; transition: background 0.13s, color 0.13s; color: #94a3b8; }
+        .mod-action-btn.view:hover { background: #f1f5f9; color: #475569; }
+        .mod-action-btn.edit:hover { background: #ede9fe; color: #7c3aed; }
+        .mod-action-btn.del:hover  { background: #fef2f2; color: #ef4444; }
+        .mod-th-btn { background: none; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #94a3b8; padding: 0; transition: color 0.13s; font-family: inherit; }
+        .mod-th-btn:hover { color: #475569; }
+        .mod-page-btn { width: 34px; height: 34px; border-radius: 8px; border: 1.5px solid #e2e8f0; background: #fff; font-size: 14px; font-weight: 600; color: #64748b; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.13s; font-family: inherit; }
+        .mod-page-btn:hover:not(:disabled) { background: #f1f5f9; border-color: #cbd5e1; }
+        .mod-page-btn.active { background: #7c3aed; border-color: #7c3aed; color: #fff; box-shadow: 0 2px 8px rgba(124,58,237,0.28); }
+        .mod-page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+        .mod-search { width: 100%; padding: 11px 36px 11px 40px; border: 1.5px solid #e2e8f0; border-radius: 12px; font-size: 15px; color: #1e293b; background: #f8fafc; outline: none; transition: border-color 0.15s, box-shadow 0.15s; font-family: inherit; }
+        .mod-search:focus { border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124,58,237,0.1); background: #fff; }
+        .mod-search::placeholder { color: #cbd5e1; }
+        .mod-select { padding: 9px 14px; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 14px; color: #475569; background: #f8fafc; outline: none; cursor: pointer; font-family: inherit; font-weight: 500; transition: border-color 0.15s; }
+        .mod-select:focus { border-color: #7c3aed; }
+        .mod-filter-select { width: 100%; padding: 9px 12px; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 14px; color: #475569; background: #f8fafc; outline: none; cursor: pointer; font-family: inherit; font-weight: 500; transition: border-color 0.15s; }
+        .mod-filter-select:focus { border-color: #7c3aed; }
+        .mod-add-btn { display: flex; align-items: center; gap: 7px; padding: 10px 20px; background: linear-gradient(135deg, #7c3aed, #6d28d9); color: #fff; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; white-space: nowrap; box-shadow: 0 3px 12px rgba(124,58,237,0.28); transition: opacity 0.15s; font-family: inherit; flex-shrink: 0; }
+        .mod-add-btn:hover { opacity: 0.9; }
+        .mod-filter-btn { display: flex; align-items: center; gap: 7px; padding: 10px 16px; border-radius: 12px; border: 1.5px solid #e2e8f0; background: #fff; font-size: 15px; font-weight: 600; color: #64748b; cursor: pointer; white-space: nowrap; transition: all 0.15s; font-family: inherit; flex-shrink: 0; }
+        .mod-filter-btn.active { border-color: #a78bfa; background: #f5f3ff; color: #6d28d9; }
+        .mod-filter-btn:hover { background: #f8fafc; }
+      `}</style>
+
       {toast.show && (
         <Toasts
           message={toast.message}
           type={toast.type}
-          onClose={closeToast}
+          onClose={() => setToast({ ...toast, show: false })}
         />
       )}
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <div style={{ padding: "28px 16px" }}>
         {/* ── Header ── */}
-        <div className="mb-6">
-          <div className="flex items-center gap-2 mb-1">
-            <Layers size={20} className="text-violet-600" />
-            <h1 className="text-2xl font-bold text-slate-900">Modules</h1>
-            <span className="ml-1 px-2 py-0.5 bg-violet-100 text-violet-700 text-xs font-semibold rounded-full">
+        <div style={{ marginBottom: 24 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              marginBottom: 5,
+            }}
+          >
+            <div
+              style={{
+                width: 38,
+                height: 38,
+                background: "linear-gradient(135deg,#7c3aed,#a78bfa)",
+                borderRadius: 11,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxShadow: "0 4px 12px rgba(124,58,237,0.25)",
+              }}
+            >
+              <Layers size={17} color="#fff" />
+            </div>
+            <h1
+              style={{
+                fontSize: 22,
+                fontWeight: 700,
+                color: "#0f172a",
+                margin: 0,
+              }}
+            >
+              Modules
+            </h1>
+            <span
+              style={{
+                padding: "3px 11px",
+                background: "#ede9fe",
+                color: "#6d28d9",
+                fontSize: 13,
+                fontWeight: 700,
+                borderRadius: 99,
+              }}
+            >
               {modules.length}
             </span>
           </div>
-          <p className="text-slate-500 text-base">
+          <p
+            style={{
+              fontSize: 14,
+              color: "#94a3b8",
+              margin: 0,
+              paddingLeft: 48,
+            }}
+          >
             Manage your course modules and lessons
           </p>
         </div>
 
-        {/* ── Toolbar (single line) ── */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 px-4 py-3 mb-5">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+        {/* ── Toolbar ── */}
+        <div
+          style={{
+            background: "#fff",
+            borderRadius: 16,
+            border: "1px solid #e2e8f0",
+            padding: "14px 18px",
+            boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              alignItems: "center",
+              gap: 10,
+            }}
+          >
             {/* Search */}
-            <div className="relative flex-1 min-w-0">
+            <div
+              style={{ position: "relative", flex: "1 1 220px", minWidth: 0 }}
+            >
               <Search
                 size={16}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+                style={{
+                  position: "absolute",
+                  left: 13,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  color: "#cbd5e1",
+                  pointerEvents: "none",
+                }}
               />
               <input
+                className="mod-search"
                 type="text"
                 placeholder="Search by module name, course or ID…"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-8 py-2.5 border border-slate-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent bg-slate-50 placeholder:text-slate-400"
               />
               {searchTerm && (
                 <button
                   onClick={() => setSearchTerm("")}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  style={{
+                    position: "absolute",
+                    right: 11,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    color: "#94a3b8",
+                    display: "flex",
+                    padding: 2,
+                  }}
                 >
                   <X size={14} />
                 </button>
               )}
             </div>
 
+            {/* Items per page */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                flexShrink: 0,
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 14,
+                  color: "#94a3b8",
+                  fontWeight: 500,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Show
+              </span>
+              <select
+                className="mod-select"
+                value={itemsPerPage}
+                onChange={(e) => setItemsPerPage(Number(e.target.value))}
+              >
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+              </select>
+              <span style={{ fontSize: 14, color: "#94a3b8", fontWeight: 500 }}>
+                per page
+              </span>
+            </div>
+
             {/* Filter toggle */}
             <button
+              className={`mod-filter-btn${showFilters || activeFiltersCount > 0 ? " active" : ""}`}
               onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-base font-medium transition-all whitespace-nowrap ${
-                showFilters || activeFiltersCount > 0
-                  ? "border-violet-400 bg-violet-50 text-violet-700"
-                  : "border-slate-200 text-slate-600 hover:bg-slate-50"
-              }`}
             >
               <Filter size={15} />
               Filters
               {activeFiltersCount > 0 && (
-                <span className="px-1.5 py-0.5 bg-violet-600 text-white text-xs rounded-full leading-none">
+                <span
+                  style={{
+                    padding: "1px 7px",
+                    background: "#7c3aed",
+                    color: "#fff",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    borderRadius: 99,
+                  }}
+                >
                   {activeFiltersCount}
                 </span>
               )}
               <ChevronDown
                 size={14}
-                className={`transition-transform ${showFilters ? "rotate-180" : ""}`}
+                style={{
+                  transform: showFilters ? "rotate(180deg)" : "none",
+                  transition: "transform 0.2s",
+                }}
               />
             </button>
 
             {/* Add Module */}
             <button
+              className="mod-add-btn"
               onClick={() => navigate("/add-module")}
-              className="flex items-center gap-2 px-4 py-2.5 bg-violet-600 text-white rounded-xl hover:bg-violet-700 transition-colors text-base font-medium whitespace-nowrap shadow-sm shadow-violet-200"
             >
-              <Plus size={16} />
-              Add Module
+              <Plus size={16} /> Add Module
             </button>
           </div>
 
-          {/* Expandable filter panel */}
+          {/* Expandable filter — Course only */}
           {showFilters && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 pt-4 border-t border-slate-100">
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                gap: 14,
+                marginTop: 14,
+                paddingTop: 14,
+                borderTop: "1px solid #f1f5f9",
+              }}
+            >
               <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.07em",
+                    color: "#94a3b8",
+                    marginBottom: 6,
+                  }}
+                >
                   Course
                 </label>
                 <select
+                  className="mod-filter-select"
                   value={filters.course}
                   onChange={(e) => setFilters({ course: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-violet-500 bg-slate-50"
                 >
                   <option value="all">All Courses</option>
                   {uniqueCourses.map((courseId) => (
@@ -1720,127 +1983,231 @@ export default function Modules() {
                   ))}
                 </select>
               </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
-                  Items Per Page
-                </label>
-                <select
-                  value={itemsPerPage}
-                  onChange={(e) => setItemsPerPage(Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-violet-500 bg-slate-50"
-                >
-                  <option value={5}>5 per page</option>
-                  <option value={10}>10 per page</option>
-                  <option value={25}>25 per page</option>
-                  <option value={50}>50 per page</option>
-                </select>
-              </div>
             </div>
           )}
         </div>
 
-        {/* ── Table / Empty state ── */}
+        {/* ── Gap ── */}
+        <div style={{ height: 20 }} />
+
+        {/* ── Table / Empty ── */}
         {filteredModules.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-16 text-center">
-            <div className="bg-slate-100 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-              <Layers size={28} className="text-slate-400" />
+          <div
+            className="mod-animate"
+            style={{
+              background: "#fff",
+              borderRadius: 16,
+              border: "1px solid #e2e8f0",
+              padding: "64px 24px",
+              textAlign: "center",
+            }}
+          >
+            <div
+              style={{
+                width: 62,
+                height: 62,
+                background: "#f1f5f9",
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto 16px",
+              }}
+            >
+              <Layers size={27} color="#cbd5e1" />
             </div>
-            <h3 className="text-base font-semibold text-slate-800 mb-1">
+            <h3
+              style={{
+                fontSize: 16,
+                fontWeight: 700,
+                color: "#1e293b",
+                margin: "0 0 6px",
+              }}
+            >
               No modules found
             </h3>
-            <p className="text-slate-400 text-base mb-5">
+            <p style={{ fontSize: 14.5, color: "#94a3b8", margin: "0 0 20px" }}>
               {searchTerm || filters.course !== "all"
                 ? "Try adjusting your filters or search term."
                 : "Get started by adding your first module."}
             </p>
             <button
               onClick={() => navigate("/add-module")}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-xl hover:bg-violet-700 transition-colors text-base font-medium"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "10px 20px",
+                background: "#7c3aed",
+                color: "#fff",
+                border: "none",
+                borderRadius: 10,
+                fontSize: 14.5,
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
             >
               <Plus size={15} /> Add Module
             </button>
           </div>
         ) : (
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            {/* Silent refresh progress bar */}
+          <div
+            className="mod-animate"
+            style={{
+              background: "#fff",
+              borderRadius: 16,
+              border: "1px solid #e2e8f0",
+              overflow: "hidden",
+              boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+            }}
+          >
+            {/* Silent refresh bar */}
             {refreshing && (
-              <>
-                <style>{`@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }`}</style>
-                <div
-                  style={{
-                    height: 3,
-                    background:
-                      "linear-gradient(90deg, #7c3aed, #a78bfa, #7c3aed)",
-                    backgroundSize: "200% 100%",
-                    animation: "shimmer 1.2s linear infinite",
-                  }}
-                />
-              </>
+              <div
+                style={{
+                  height: 3,
+                  background:
+                    "linear-gradient(90deg, #7c3aed, #a78bfa, #7c3aed)",
+                  backgroundSize: "200% 100%",
+                  animation: "shimmer 1.2s linear infinite",
+                }}
+              />
             )}
 
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[500px]">
+            <div style={{ overflowX: "auto" }}>
+              <table
+                style={{
+                  width: "100%",
+                  minWidth: 500,
+                  borderCollapse: "collapse",
+                }}
+              >
                 <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200">
+                  <tr
+                    style={{
+                      borderBottom: "2px solid #f1f5f9",
+                      background: "#fafafa",
+                    }}
+                  >
                     <th
-                      className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide cursor-pointer select-none hover:text-slate-800 w-14"
-                      onClick={() => handleSort("display_id")}
+                      style={{
+                        padding: "14px 18px",
+                        textAlign: "left",
+                        width: 56,
+                      }}
                     >
-                      <span className="flex items-center gap-1">
-                        # {getSortIcon("display_id")}
-                      </span>
+                      <button
+                        className="mod-th-btn"
+                        onClick={() => handleSort("display_id")}
+                      >
+                        # <SortIcon col="display_id" />
+                      </button>
                     </th>
-                    <th
-                      className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide cursor-pointer select-none hover:text-slate-800"
-                      onClick={() => handleSort("name")}
-                    >
-                      <span className="flex items-center gap-1">
-                        Module Name {getSortIcon("name")}
-                      </span>
+                    <th style={{ padding: "14px 18px", textAlign: "left" }}>
+                      <button
+                        className="mod-th-btn"
+                        onClick={() => handleSort("name")}
+                      >
+                        Module Name <SortIcon col="name" />
+                      </button>
                     </th>
-                    <th
-                      className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide cursor-pointer select-none hover:text-slate-800"
-                      onClick={() => handleSort("course")}
-                    >
-                      <span className="flex items-center gap-1">
-                        Course {getSortIcon("course")}
-                      </span>
+                    <th style={{ padding: "14px 18px", textAlign: "left" }}>
+                      <button
+                        className="mod-th-btn"
+                        onClick={() => handleSort("course")}
+                      >
+                        Course <SortIcon col="course" />
+                      </button>
                     </th>
-                    <th className="px-5 py-3.5 text-right text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                      Actions
+                    <th style={{ padding: "14px 18px", textAlign: "right" }}>
+                      <span
+                        style={{
+                          fontSize: 12,
+                          fontWeight: 700,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.07em",
+                          color: "#94a3b8",
+                        }}
+                      >
+                        Actions
+                      </span>
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody>
                   {paginatedModules.map((module, index) => (
                     <tr
                       key={module.id}
-                      className="hover:bg-slate-50/70 transition-colors cursor-pointer group"
+                      className="mod-row"
+                      style={{ borderBottom: "1px solid #f1f5f9" }}
                       onClick={() => {
                         setSelectedModule(module);
                         setShowViewModal(true);
                       }}
                     >
                       {/* # */}
-                      <td className="px-5 py-4 text-base font-semibold text-slate-400">
+                      <td
+                        style={{
+                          padding: "15px 18px",
+                          fontSize: 14,
+                          fontWeight: 600,
+                          color: "#cbd5e1",
+                        }}
+                      >
                         {indexOfFirstItem + index + 1}
                       </td>
 
                       {/* Module name */}
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 bg-violet-100 rounded-xl flex items-center justify-center text-violet-600 flex-shrink-0">
-                            <BookMarked size={15} />
+                      <td style={{ padding: "15px 18px" }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 12,
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: 38,
+                              height: 38,
+                              background: "#f5f3ff",
+                              borderRadius: 10,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              flexShrink: 0,
+                            }}
+                          >
+                            <BookMarked size={15} color="#7c3aed" />
                           </div>
-                          <span className="text-base font-semibold text-slate-800">
+                          <span
+                            style={{
+                              fontSize: 15,
+                              fontWeight: 600,
+                              color: "#1e293b",
+                            }}
+                          >
                             {module.name}
                           </span>
                         </div>
                       </td>
 
                       {/* Course badge */}
-                      <td className="px-5 py-4">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-violet-50 text-violet-700 border border-violet-100 text-xs font-semibold rounded-full">
+                      <td style={{ padding: "15px 18px" }}>
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 5,
+                            padding: "4px 11px",
+                            background: "#f5f3ff",
+                            color: "#6d28d9",
+                            border: "1px solid #ddd6fe",
+                            fontSize: 13,
+                            fontWeight: 600,
+                            borderRadius: 99,
+                          }}
+                        >
                           <FolderOpen size={11} />
                           {coursesMap[module.course_data] ||
                             `Course ${module.course_data}`}
@@ -1848,32 +2215,42 @@ export default function Modules() {
                       </td>
 
                       {/* Actions */}
-                      <td className="px-5 py-4">
-                        <div className="flex items-center justify-end gap-1.5">
+                      <td
+                        style={{ padding: "15px 18px" }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "flex-end",
+                            gap: 4,
+                          }}
+                        >
                           <button
+                            className="mod-action-btn view"
                             onClick={(e) => {
                               e.stopPropagation();
                               setSelectedModule(module);
                               setShowViewModal(true);
                             }}
-                            className="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all"
                             title="View"
                           >
                             <Eye size={15} />
                           </button>
                           <button
+                            className="mod-action-btn edit"
                             onClick={(e) => {
                               e.stopPropagation();
                               navigate(`/edit-module/${module.id}`);
                             }}
-                            className="p-2 rounded-lg text-slate-400 hover:text-violet-600 hover:bg-violet-50 transition-all"
                             title="Edit"
                           >
                             <Edit size={15} />
                           </button>
                           <button
+                            className="mod-action-btn del"
                             onClick={(e) => handleDeleteClick(e, module)}
-                            className="p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all"
                             title="Delete"
                           >
                             <Trash2 size={15} />
@@ -1886,60 +2263,61 @@ export default function Modules() {
               </table>
             </div>
 
-            {/* Pagination */}
-            <div className="px-5 py-3.5 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
-              <span className="text-xs text-slate-400 font-medium">
+            {/* ── Pagination ── */}
+            <div
+              style={{
+                padding: "13px 18px",
+                background: "#fafafa",
+                borderTop: "1px solid #f1f5f9",
+                display: "flex",
+                flexWrap: "wrap",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 10,
+              }}
+            >
+              <span
+                style={{ fontSize: 13.5, color: "#94a3b8", fontWeight: 500 }}
+              >
                 Showing{" "}
-                <span className="text-slate-700 font-semibold">
+                <strong style={{ color: "#475569" }}>
                   {indexOfFirstItem + 1}–
-                  {Math.min(indexOfLastItem, filteredModules.length)}
-                </span>{" "}
+                  {Math.min(
+                    indexOfFirstItem + itemsPerPage,
+                    filteredModules.length,
+                  )}
+                </strong>{" "}
                 of{" "}
-                <span className="text-slate-700 font-semibold">
+                <strong style={{ color: "#475569" }}>
                   {filteredModules.length}
-                </span>{" "}
+                </strong>{" "}
                 modules
               </span>
-              <div className="flex items-center gap-2">
+              <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                 <button
+                  className="mod-page-btn"
                   onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                  disabled={currentPage === 1}
-                  className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white transition-colors"
+                  disabled={safePage === 1}
                 >
-                  ← Prev
+                  <ChevronLeft size={15} />
                 </button>
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                    let page = i + 1;
-                    if (totalPages > 5) {
-                      if (currentPage <= 3) page = i + 1;
-                      else if (currentPage >= totalPages - 2)
-                        page = totalPages - 4 + i;
-                      else page = currentPage - 2 + i;
-                    }
-                    return (
-                      <button
-                        key={page}
-                        onClick={() => setCurrentPage(page)}
-                        className={`w-8 h-8 rounded-lg text-xs font-semibold transition-colors ${
-                          currentPage === page
-                            ? "bg-violet-600 text-white shadow-sm"
-                            : "text-slate-500 hover:bg-slate-200"
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    );
-                  })}
-                </div>
+                {getPageNumbers().map((page) => (
+                  <button
+                    key={page}
+                    className={`mod-page-btn${safePage === page ? " active" : ""}`}
+                    onClick={() => setCurrentPage(page)}
+                  >
+                    {page}
+                  </button>
+                ))}
                 <button
+                  className="mod-page-btn"
                   onClick={() =>
                     setCurrentPage((p) => Math.min(p + 1, totalPages))
                   }
-                  disabled={currentPage === totalPages}
-                  className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white transition-colors"
+                  disabled={safePage === totalPages}
                 >
-                  Next →
+                  <ChevronRight size={15} />
                 </button>
               </div>
             </div>
@@ -1949,68 +2327,190 @@ export default function Modules() {
 
       {/* ── View Modal ── */}
       {showViewModal && selectedModule && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 50,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+          }}
+        >
           <div
-            className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm"
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(15,23,42,0.5)",
+              backdropFilter: "blur(4px)",
+            }}
             onClick={() => setShowViewModal(false)}
           />
-          <div className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full z-10 overflow-hidden">
-            {/* Close */}
+          <div
+            className="mod-animate"
+            style={{
+              position: "relative",
+              background: "#fff",
+              borderRadius: 20,
+              boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
+              maxWidth: 520,
+              width: "100%",
+              zIndex: 10,
+              overflow: "hidden",
+            }}
+          >
             <button
               onClick={() => setShowViewModal(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+              style={{
+                position: "absolute",
+                top: 14,
+                right: 14,
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                color: "#94a3b8",
+                padding: 6,
+                borderRadius: 8,
+                display: "flex",
+              }}
             >
-              <X size={16} />
+              <X size={15} />
             </button>
 
-            <div className="p-6">
+            <div style={{ padding: 24 }}>
               {/* Icon + title */}
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-14 h-14 bg-violet-100 rounded-2xl flex items-center justify-center text-violet-600 flex-shrink-0">
-                  <BookMarked size={26} />
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 14,
+                  marginBottom: 22,
+                }}
+              >
+                <div
+                  style={{
+                    width: 52,
+                    height: 52,
+                    background: "#f5f3ff",
+                    borderRadius: 14,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <BookMarked size={24} color="#7c3aed" />
                 </div>
-                <div>
-                  <h2 className="text-xl font-bold text-slate-900">
-                    {selectedModule.name}
-                  </h2>
-                </div>
+                <h2
+                  style={{
+                    fontSize: 20,
+                    fontWeight: 700,
+                    color: "#0f172a",
+                    margin: 0,
+                  }}
+                >
+                  {selectedModule.name}
+                </h2>
               </div>
 
               {/* Course */}
-              <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 mb-4">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">
+              <div
+                style={{
+                  background: "#f8fafc",
+                  border: "1px solid #f1f5f9",
+                  borderRadius: 12,
+                  padding: 16,
+                  marginBottom: 14,
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.07em",
+                    color: "#94a3b8",
+                    margin: "0 0 6px",
+                  }}
+                >
                   Course
                 </p>
-                <div className="flex items-center gap-2">
-                  <FolderOpen
-                    size={15}
-                    className="text-violet-500 flex-shrink-0"
-                  />
-                  <p className="text-base font-semibold text-slate-800">
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <FolderOpen size={15} color="#7c3aed" />
+                  <p
+                    style={{
+                      fontSize: 15,
+                      fontWeight: 600,
+                      color: "#1e293b",
+                      margin: 0,
+                    }}
+                  >
                     {coursesMap[selectedModule.course_data] ||
                       `Course ${selectedModule.course_data}`}
                   </p>
                 </div>
               </div>
 
-              {/* Description - renders rich text from TinyMCE */}
+              {/* Description */}
               {selectedModule.descriptions && (
-                <div className="bg-slate-50 border border-slate-100 rounded-xl p-4">
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">
+                <div
+                  style={{
+                    background: "#f8fafc",
+                    border: "1px solid #f1f5f9",
+                    borderRadius: 12,
+                    padding: 16,
+                  }}
+                >
+                  <p
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.07em",
+                      color: "#94a3b8",
+                      margin: "0 0 8px",
+                    }}
+                  >
                     Description
                   </p>
                   <div
-                    className="prose prose-sm max-w-none text-slate-600 leading-relaxed"
-                    dangerouslySetInnerHTML={{ __html: selectedModule.descriptions }}
+                    style={{
+                      fontSize: 14.5,
+                      color: "#475569",
+                      lineHeight: 1.65,
+                    }}
+                    dangerouslySetInnerHTML={{
+                      __html: selectedModule.descriptions,
+                    }}
                   />
                 </div>
               )}
             </div>
 
-            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
+            <div
+              style={{
+                padding: "14px 24px",
+                background: "#f8fafc",
+                borderTop: "1px solid #f1f5f9",
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: 10,
+              }}
+            >
               <button
                 onClick={() => setShowViewModal(false)}
-                className="px-4 py-2 border border-slate-200 text-slate-600 text-base font-medium rounded-xl hover:bg-slate-100 transition-colors"
+                style={{
+                  padding: "9px 18px",
+                  border: "1.5px solid #e2e8f0",
+                  background: "#fff",
+                  color: "#475569",
+                  borderRadius: 10,
+                  fontSize: 14.5,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                }}
               >
                 Close
               </button>
@@ -2019,7 +2519,20 @@ export default function Modules() {
                   setShowViewModal(false);
                   navigate(`/edit-module/${selectedModule.id}`);
                 }}
-                className="px-5 py-2 bg-violet-600 text-white text-base font-medium rounded-xl hover:bg-violet-700 transition-colors flex items-center gap-2 shadow-sm shadow-violet-200"
+                style={{
+                  padding: "9px 18px",
+                  background: "#7c3aed",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 10,
+                  fontSize: 14.5,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 7,
+                  fontFamily: "inherit",
+                }}
               >
                 <Edit size={14} /> Edit Module
               </button>
@@ -2030,53 +2543,154 @@ export default function Modules() {
 
       {/* ── Delete Modal ── */}
       {showDeleteModal && moduleToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 50,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+          }}
+        >
           <div
-            className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm"
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(15,23,42,0.45)",
+              backdropFilter: "blur(4px)",
+            }}
             onClick={() => !deleteLoading && setShowDeleteModal(false)}
           />
-          <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 z-10">
+          <div
+            className="mod-animate"
+            style={{
+              position: "relative",
+              background: "#fff",
+              borderRadius: 20,
+              boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
+              maxWidth: 420,
+              width: "100%",
+              padding: 26,
+              zIndex: 10,
+            }}
+          >
             <button
               onClick={() => !deleteLoading && setShowDeleteModal(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors"
+              style={{
+                position: "absolute",
+                top: 14,
+                right: 14,
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                color: "#94a3b8",
+                padding: 6,
+                borderRadius: 8,
+                display: "flex",
+              }}
             >
-              <X size={16} />
+              <X size={15} />
             </button>
-
-            <div className="flex items-start gap-4">
-              <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-red-50 flex items-center justify-center">
-                <AlertCircle size={22} className="text-red-500" />
+            <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
+              <div
+                style={{
+                  width: 46,
+                  height: 46,
+                  background: "#fef2f2",
+                  borderRadius: 12,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <AlertCircle size={22} color="#ef4444" />
               </div>
-              <div className="flex-1">
-                <h3 className="text-base font-semibold text-slate-900 mb-1">
+              <div>
+                <h3
+                  style={{
+                    fontSize: 16,
+                    fontWeight: 700,
+                    color: "#0f172a",
+                    margin: "0 0 7px",
+                  }}
+                >
                   Delete Module
                 </h3>
-                <p className="text-base text-slate-500">
+                <p
+                  style={{
+                    fontSize: 14.5,
+                    color: "#64748b",
+                    margin: 0,
+                    lineHeight: 1.55,
+                  }}
+                >
                   Are you sure you want to delete{" "}
-                  <span className="font-semibold text-slate-700">
+                  <strong style={{ color: "#1e293b" }}>
                     "{moduleToDelete.name}"
-                  </span>
+                  </strong>
                   ? This action cannot be undone.
                 </p>
               </div>
             </div>
-
-            <div className="mt-6 flex gap-3 justify-end">
+            <div
+              style={{
+                marginTop: 22,
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: 10,
+              }}
+            >
               <button
                 onClick={() => setShowDeleteModal(false)}
                 disabled={deleteLoading}
-                className="px-4 py-2 border border-slate-200 text-slate-600 text-base font-medium rounded-xl hover:bg-slate-50 transition-colors disabled:opacity-50"
+                style={{
+                  padding: "10px 20px",
+                  border: "1.5px solid #e2e8f0",
+                  background: "#fff",
+                  color: "#475569",
+                  borderRadius: 10,
+                  fontSize: 14.5,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                }}
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeleteConfirm}
                 disabled={deleteLoading}
-                className="px-5 py-2 bg-red-600 text-white text-base font-medium rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                style={{
+                  padding: "10px 20px",
+                  background: "#ef4444",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 10,
+                  fontSize: 14.5,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 7,
+                  opacity: deleteLoading ? 0.7 : 1,
+                  fontFamily: "inherit",
+                }}
               >
                 {deleteLoading ? (
                   <>
-                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <div
+                      style={{
+                        width: 14,
+                        height: 14,
+                        border: "2px solid rgba(255,255,255,0.4)",
+                        borderTopColor: "#fff",
+                        borderRadius: "50%",
+                        animation: "spin 0.7s linear infinite",
+                      }}
+                    />{" "}
                     Deleting…
                   </>
                 ) : (

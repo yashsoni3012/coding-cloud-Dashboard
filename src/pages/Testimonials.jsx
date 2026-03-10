@@ -17,6 +17,8 @@ import {
   SortAsc,
   SortDesc,
   Eye,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 // API base URL – change this if your endpoint moves
@@ -43,7 +45,6 @@ export default function Testimonials() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [testimonialToDelete, setTestimonialToDelete] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const [deleteSuccess, setDeleteSuccess] = useState("");
   const [deleteError, setDeleteError] = useState("");
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -173,14 +174,11 @@ export default function Testimonials() {
     }));
   };
 
-  const getSortIcon = (key) => {
-    if (sortConfig.key !== key)
-      return <SortAsc size={13} className="text-slate-400" />;
-    return sortConfig.direction === "asc" ? (
-      <SortAsc size={13} className="text-violet-500" />
-    ) : (
-      <SortDesc size={13} className="text-violet-500" />
-    );
+  const SortIcon = ({ col }) => {
+    if (sortConfig.key !== col) return <SortAsc size={13} style={{ color: "#cbd5e1" }} />;
+    return sortConfig.direction === "asc"
+      ? <SortAsc size={13} style={{ color: "#7c3aed" }} />
+      : <SortDesc size={13} style={{ color: "#7c3aed" }} />;
   };
 
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -196,14 +194,12 @@ export default function Testimonials() {
     setTestimonialToDelete(testimonial);
     setShowDeleteModal(true);
     setDeleteError("");
-    setDeleteSuccess("");
   };
 
   const handleDeleteConfirm = async () => {
     if (!testimonialToDelete) return;
     setDeleteLoading(true);
     setDeleteError("");
-    setDeleteSuccess("");
     try {
       const response = await fetch(
         `${BASE_URL}/testimonials/${testimonialToDelete.id}/`,
@@ -215,7 +211,7 @@ export default function Testimonials() {
         setToast({
           show: true,
           message: "Testimonial deleted successfully!",
-          type: "error", // using error type for red background, you can change to "success"
+          type: "error",
         });
         fetchTestimonials();
       } else {
@@ -243,11 +239,9 @@ export default function Testimonials() {
   };
 
   const getRatingColor = (rating) => {
-    if (rating >= 4)
-      return "bg-emerald-50 text-emerald-700 border border-emerald-200";
-    if (rating >= 3)
-      return "bg-amber-50 text-amber-700 border border-amber-200";
-    return "bg-red-50 text-red-700 border border-red-200";
+    if (rating >= 4) return { background: "#ecfdf5", color: "#047857", border: "1px solid #a7f3d0" };
+    if (rating >= 3) return { background: "#fffbeb", color: "#b45309", border: "1px solid #fde68a" };
+    return { background: "#fef2f2", color: "#b91c1c", border: "1px solid #fecaca" };
   };
 
   const activeFiltersCount = [
@@ -256,27 +250,38 @@ export default function Testimonials() {
   ].filter(Boolean).length;
 
   const StarRating = ({ rating, size = 13 }) => (
-    <div className="flex items-center gap-0.5">
+    <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
       {[1, 2, 3, 4, 5].map((star) => (
         <Star
           key={star}
           size={size}
-          className={
-            star <= rating ? "text-amber-400 fill-amber-400" : "text-slate-200"
-          }
+          style={{
+            color: star <= rating ? "#fbbf24" : "#e2e8f0",
+            fill: star <= rating ? "#fbbf24" : "none",
+          }}
         />
       ))}
     </div>
   );
 
+  const getPageNumbers = () => {
+    if (totalPages <= 5) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    if (currentPage <= 3) return [1, 2, 3, 4, 5];
+    if (currentPage >= totalPages - 2) return [totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    return [currentPage - 2, currentPage - 1, currentPage, currentPage + 1, currentPage + 2];
+  };
+
+  const avatarColors = ["#7c3aed", "#2563eb", "#0891b2", "#059669", "#d97706", "#dc2626"];
+  const getColor = (id) => avatarColors[(id || 0) % avatarColors.length];
+  const getInitials = (name) => (name ? name.slice(0, 2).toUpperCase() : "TM");
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-violet-200 border-t-violet-600 rounded-full animate-spin mx-auto" />
-          <p className="mt-4 text-slate-500 text-sm font-medium">
-            Loading testimonials…
-          </p>
+      <div style={{ minHeight: "100vh", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ width: 44, height: 44, border: "3px solid #ede9fe", borderTopColor: "#7c3aed", borderRadius: "50%", margin: "0 auto", animation: "spin 0.8s linear infinite" }} />
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+          <p style={{ marginTop: 14, color: "#94a3b8", fontSize: 15, fontWeight: 500 }}>Loading testimonials…</p>
         </div>
       </div>
     );
@@ -284,19 +289,14 @@ export default function Testimonials() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-lg p-8 max-w-sm w-full text-center">
-          <div className="bg-red-50 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-            <X size={24} className="text-red-500" />
+      <div style={{ minHeight: "100vh", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+        <div style={{ background: "#fff", borderRadius: 20, boxShadow: "0 8px 32px rgba(0,0,0,0.08)", padding: 32, maxWidth: 360, width: "100%", textAlign: "center" }}>
+          <div style={{ width: 56, height: 56, background: "#fef2f2", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+            <X size={22} color="#ef4444" />
           </div>
-          <h3 className="text-lg font-semibold text-slate-900 mb-1">
-            Something went wrong
-          </h3>
-          <p className="text-slate-500 text-sm mb-5">{error}</p>
-          <button
-            onClick={fetchTestimonials}
-            className="px-5 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors text-sm font-medium"
-          >
+          <h3 style={{ fontSize: 17, fontWeight: 700, color: "#0f172a", margin: "0 0 6px" }}>Something went wrong</h3>
+          <p style={{ fontSize: 15, color: "#94a3b8", margin: "0 0 20px" }}>{error}</p>
+          <button onClick={fetchTestimonials} style={{ padding: "10px 24px", background: "#7c3aed", color: "#fff", border: "none", borderRadius: 10, fontSize: 15, fontWeight: 600, cursor: "pointer" }}>
             Try Again
           </button>
         </div>
@@ -305,7 +305,37 @@ export default function Testimonials() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div style={{ minHeight: "100vh", background: "#f8fafc", fontFamily: "'DM Sans', 'Segoe UI', sans-serif" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+        * { box-sizing: border-box; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeSlideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .test-animate { animation: fadeSlideIn 0.22s ease forwards; }
+        .test-row { transition: background 0.13s; cursor: pointer; }
+        .test-row:hover { background: #fafafa; }
+        .test-action-btn { background: none; border: none; cursor: pointer; padding: 8px; border-radius: 9px; display: flex; align-items: center; justify-content: center; transition: background 0.13s, color 0.13s; color: #94a3b8; }
+        .test-action-btn:hover { background: #ede9fe; color: #7c3aed; }
+        .test-th-btn { background: none; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #94a3b8; padding: 0; transition: color 0.13s; font-family: inherit; }
+        .test-th-btn:hover { color: #475569; }
+        .test-page-btn { width: 34px; height: 34px; border-radius: 8px; border: 1.5px solid #e2e8f0; background: #fff; font-size: 14px; font-weight: 600; color: #64748b; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.13s; font-family: inherit; }
+        .test-page-btn:hover:not(:disabled) { background: #f1f5f9; border-color: #cbd5e1; }
+        .test-page-btn.active { background: #7c3aed; border-color: #7c3aed; color: #fff; box-shadow: 0 2px 8px rgba(124,58,237,0.28); }
+        .test-page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+        .test-search { width: 100%; padding: 11px 36px 11px 40px; border: 1.5px solid #e2e8f0; border-radius: 12px; font-size: 15px; color: #1e293b; background: #f8fafc; outline: none; transition: border-color 0.15s, box-shadow 0.15s; font-family: inherit; }
+        .test-search:focus { border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124,58,237,0.1); background: #fff; }
+        .test-search::placeholder { color: #cbd5e1; }
+        .test-select { padding: 9px 14px; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 14px; color: #475569; background: #f8fafc; outline: none; cursor: pointer; font-family: inherit; font-weight: 500; transition: border-color 0.15s; }
+        .test-select:focus { border-color: #7c3aed; }
+        .test-filter-btn { display: flex; align-items: center; gap: 8px; padding: 9px 16px; border: 1.5px solid #e2e8f0; border-radius: 10px; background: #fff; color: #475569; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.13s; font-family: inherit; white-space: nowrap; }
+        .test-filter-btn.active { border-color: #7c3aed; background: #ede9fe; color: #7c3aed; }
+        .test-filter-btn:hover { background: #f1f5f9; }
+        .test-add-btn { display: flex; align-items: center; gap: 8px; padding: 9px 18px; border: none; border-radius: 10px; background: #7c3aed; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.13s; font-family: inherit; white-space: nowrap; box-shadow: 0 2px 8px rgba(124,58,237,0.25); }
+        .test-add-btn:hover { background: #6d28d9; }
+        .test-close-btn { padding: 9px 16px; border: 1.5px solid #e2e8f0; background: #fff; color: #475569; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background 0.13s; }
+        .test-close-btn:hover { background: #f1f5f9; }
+      `}</style>
+
       {toast.show && (
         <Toasts
           message={toast.message}
@@ -313,41 +343,39 @@ export default function Testimonials() {
           onClose={() => setToast((prev) => ({ ...prev, show: false }))}
         />
       )}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+
+      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "28px 16px" }}>
+
         {/* Header */}
-        <div className="mb-6">
-          <div className="flex items-center gap-2 mb-1">
-            <MessageSquare size={20} className="text-violet-600" />
-            <h1 className="text-2xl font-bold text-slate-900">Testimonials</h1>
-            <span className="ml-1 px-2 py-0.5 bg-violet-100 text-violet-700 text-xs font-semibold rounded-full">
-              {testimonials.length}
-            </span>
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 5 }}>
+            <div style={{ width: 38, height: 38, background: "linear-gradient(135deg,#7c3aed,#a78bfa)", borderRadius: 11, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(124,58,237,0.25)" }}>
+              <MessageSquare size={17} color="#fff" />
+            </div>
+            <h1 style={{ fontSize: 22, fontWeight: 700, color: "#0f172a", margin: 0 }}>Testimonials</h1>
+            <span style={{ padding: "3px 11px", background: "#ede9fe", color: "#6d28d9", fontSize: 13, fontWeight: 700, borderRadius: 99 }}>{testimonials.length}</span>
           </div>
-          <p className="text-slate-500 text-sm">
-            Manage your customer testimonials and reviews
-          </p>
+          <p style={{ fontSize: 14, color: "#94a3b8", margin: 0, paddingLeft: 48 }}>Manage your customer testimonials and reviews</p>
         </div>
 
         {/* Toolbar */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 px-4 py-3 mb-5">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+        <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", padding: "14px 18px", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10 }}>
+
             {/* Search */}
-            <div className="relative flex-1 min-w-0">
-              <Search
-                size={16}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
-              />
+            <div style={{ position: "relative", flex: "1 1 220px", minWidth: 0 }}>
+              <Search size={16} style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: "#cbd5e1", pointerEvents: "none" }} />
               <input
+                className="test-search"
                 type="text"
                 placeholder="Search by name or review…"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-8 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent bg-slate-50 placeholder:text-slate-400"
               />
               {searchTerm && (
                 <button
                   onClick={() => setSearchTerm("")}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  style={{ position: "absolute", right: 11, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#94a3b8", display: "flex", padding: 2 }}
                 >
                   <X size={14} />
                 </button>
@@ -356,30 +384,23 @@ export default function Testimonials() {
 
             {/* Filter toggle */}
             <button
+              className={`test-filter-btn ${showFilters || activeFiltersCount > 0 ? "active" : ""}`}
               onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all whitespace-nowrap ${
-                showFilters || activeFiltersCount > 0
-                  ? "border-violet-400 bg-violet-50 text-violet-700"
-                  : "border-slate-200 text-slate-600 hover:bg-slate-50"
-              }`}
             >
               <Filter size={15} />
               Filters
               {activeFiltersCount > 0 && (
-                <span className="px-1.5 py-0.5 bg-violet-600 text-white text-xs rounded-full leading-none">
+                <span style={{ marginLeft: 2, background: "#7c3aed", color: "#fff", fontSize: 11, fontWeight: 600, padding: "2px 6px", borderRadius: 20 }}>
                   {activeFiltersCount}
                 </span>
               )}
-              <ChevronDown
-                size={14}
-                className={`transition-transform ${showFilters ? "rotate-180" : ""}`}
-              />
+              <ChevronDown size={14} style={{ transition: "transform 0.2s", transform: showFilters ? "rotate(180deg)" : "none" }} />
             </button>
 
             {/* Add Testimonial */}
             <button
+              className="test-add-btn"
               onClick={() => navigate("/add-testimonial")}
-              className="flex items-center gap-2 px-4 py-2.5 bg-violet-600 text-white rounded-xl hover:bg-violet-700 transition-colors text-sm font-medium whitespace-nowrap shadow-sm shadow-violet-200"
             >
               <Plus size={16} />
               Add Testimonial
@@ -388,15 +409,14 @@ export default function Testimonials() {
 
           {/* Expandable filter panel */}
           {showFilters && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 pt-4 border-t border-slate-100">
+            <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid #f1f5f9", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
               <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
-                  Rating
-                </label>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#94a3b8", marginBottom: 6 }}>Rating</label>
                 <select
+                  className="test-select"
                   value={filters.rating}
                   onChange={(e) => setFilters({ rating: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 bg-slate-50"
+                  style={{ width: "100%" }}
                 >
                   <option value="all">All Ratings</option>
                   <option value="5">5 Stars</option>
@@ -407,13 +427,12 @@ export default function Testimonials() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
-                  Items Per Page
-                </label>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#94a3b8", marginBottom: 6 }}>Items per page</label>
                 <select
+                  className="test-select"
                   value={itemsPerPage}
                   onChange={(e) => setItemsPerPage(Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 bg-slate-50"
+                  style={{ width: "100%" }}
                 >
                   <option value={5}>5 per page</option>
                   <option value={10}>10 per page</option>
@@ -425,241 +444,179 @@ export default function Testimonials() {
           )}
         </div>
 
+        {/* Gap */}
+        <div style={{ height: 20 }} />
+
         {/* Table / Empty state */}
         {filteredTestimonials.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-16 text-center">
-            <div className="bg-slate-100 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-              <MessageSquare size={28} className="text-slate-400" />
+          <div className="test-animate" style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", padding: "64px 24px", textAlign: "center" }}>
+            <div style={{ width: 62, height: 62, background: "#f1f5f9", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+              <MessageSquare size={27} color="#cbd5e1" />
             </div>
-            <h3 className="text-base font-semibold text-slate-800 mb-1">
-              No testimonials found
-            </h3>
-            <p className="text-slate-400 text-sm mb-5">
-              {searchTerm || filters.rating !== "all"
-                ? "Try adjusting your filters or search term."
-                : "Get started by adding your first testimonial."}
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: "#1e293b", margin: "0 0 6px" }}>No testimonials found</h3>
+            <p style={{ fontSize: 14.5, color: "#94a3b8", margin: "0 0 20px" }}>
+              {searchTerm || filters.rating !== "all" ? "Try adjusting your filters or search term." : "Get started by adding your first testimonial."}
             </p>
-            <button
-              onClick={() => navigate("/add-testimonial")}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-xl hover:bg-violet-700 transition-colors text-sm font-medium"
-            >
-              <Plus size={15} /> Add Testimonial
-            </button>
+            {(searchTerm || filters.rating !== "all") ? (
+              <button
+                onClick={() => { setSearchTerm(""); setFilters({ rating: "all" }); }}
+                style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "10px 20px", background: "#7c3aed", color: "#fff", border: "none", borderRadius: 10, fontSize: 14.5, fontWeight: 600, cursor: "pointer" }}
+              >
+                Clear Filters
+              </button>
+            ) : (
+              <button
+                onClick={() => navigate("/add-testimonial")}
+                style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "10px 20px", background: "#7c3aed", color: "#fff", border: "none", borderRadius: 10, fontSize: 14.5, fontWeight: 600, cursor: "pointer" }}
+              >
+                <Plus size={15} /> Add Testimonial
+              </button>
+            )}
           </div>
         ) : (
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[800px]">
+          <div className="test-animate" style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", minWidth: 800, borderCollapse: "collapse" }}>
                 <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200">
-                    <th
-                      className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide cursor-pointer select-none hover:text-slate-800 w-14"
-                      onClick={() => handleSort("display_id")}
-                    >
-                      <span className="flex items-center gap-1">
-                        # {getSortIcon("display_id")}
-                      </span>
+                  <tr style={{ borderBottom: "2px solid #f1f5f9", background: "#fafafa" }}>
+                    <th style={{ padding: "14px 18px", textAlign: "left", width: 56 }}>
+                      <button className="test-th-btn" onClick={() => handleSort("display_id")}># <SortIcon col="display_id" /></button>
                     </th>
-                    <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                      Reviewer
+                    <th style={{ padding: "14px 18px", textAlign: "left" }}>
+                      <button className="test-th-btn" onClick={() => handleSort("name")}>Reviewer <SortIcon col="name" /></button>
                     </th>
-                    <th
-                      className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide cursor-pointer select-none hover:text-slate-800"
-                      onClick={() => handleSort("rating")}
-                    >
-                      <span className="flex items-center gap-1">
-                        Rating {getSortIcon("rating")}
-                      </span>
+                    <th style={{ padding: "14px 18px", textAlign: "left" }}>
+                      <button className="test-th-btn" onClick={() => handleSort("rating")}>Rating <SortIcon col="rating" /></button>
                     </th>
-                    <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide hidden lg:table-cell">
-                      Review
+                    <th style={{ padding: "14px 18px", textAlign: "left" }} className="hidden lg:table-cell">
+                      <span style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#94a3b8" }}>Review</span>
                     </th>
-                    <th
-                      className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide cursor-pointer select-none hover:text-slate-800 hidden md:table-cell"
-                      onClick={() => handleSort("created_at")}
-                    >
-                      <span className="flex items-center gap-1">
-                        Date {getSortIcon("created_at")}
-                      </span>
+                    <th style={{ padding: "14px 18px", textAlign: "left" }} className="hidden md:table-cell">
+                      <button className="test-th-btn" onClick={() => handleSort("created_at")}>Date <SortIcon col="created_at" /></button>
                     </th>
-                    <th className="px-5 py-3.5 text-right text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                      Actions
+                    <th style={{ padding: "14px 18px", textAlign: "right" }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#94a3b8" }}>Actions</span>
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {paginatedTestimonials.map((testimonial, index) => (
-                    <tr
-                      key={testimonial.id}
-                      className="hover:bg-slate-50/70 transition-colors cursor-pointer group"
-                      onClick={() => {
-                        setSelectedTestimonial(testimonial);
-                        setShowViewModal(true);
-                      }}
-                    >
-                      {/* # */}
-                      <td className="px-5 py-4 text-sm font-semibold text-slate-400">
-                        {indexOfFirstItem + index + 1}
-                      </td>
+                <tbody>
+                  {paginatedTestimonials.map((testimonial, index) => {
+                    const color = getColor(testimonial.id);
+                    return (
+                      <tr
+                        key={testimonial.id}
+                        className="test-row"
+                        style={{ borderBottom: "1px solid #f1f5f9" }}
+                        onClick={() => { setSelectedTestimonial(testimonial); setShowViewModal(true); }}
+                      >
+                        {/* # */}
+                        <td style={{ padding: "15px 18px", fontSize: 14, fontWeight: 600, color: "#cbd5e1", verticalAlign: "top" }}>
+                          {indexOfFirstItem + index + 1}
+                        </td>
 
-                      {/* Reviewer */}
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 bg-violet-100 rounded-xl overflow-hidden border border-slate-200 flex items-center justify-center flex-shrink-0">
-                            {testimonial.image &&
-                            !testimonial.image.includes("default") ? (
-                              <img
-                                src={testimonial.image}
-                                alt={testimonial.name}
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  e.target.onerror = null;
-                                  e.target.style.display = "none";
-                                }}
-                              />
-                            ) : (
-                              <User size={16} className="text-violet-600" />
-                            )}
+                        {/* Reviewer */}
+                        <td style={{ padding: "15px 18px", verticalAlign: "top" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
+                            <div style={{ width: 38, height: 38, borderRadius: 10, background: color, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 12, fontWeight: 700, flexShrink: 0 }}>
+                              {getInitials(testimonial.name)}
+                            </div>
+                            <span style={{ fontSize: 15, fontWeight: 600, color: "#1e293b" }}>{testimonial.name}</span>
                           </div>
-                          <div>
-                            <span className="text-sm font-semibold text-slate-800 block">
-                              {testimonial.name}
+                        </td>
+
+                        {/* Rating */}
+                        <td style={{ padding: "15px 18px", verticalAlign: "top" }}>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                            <StarRating rating={testimonial.rating} />
+                            <span style={{ padding: "4px 10px", ...getRatingColor(testimonial.rating), fontSize: 12.5, fontWeight: 600, borderRadius: 99, display: "inline-block", width: "fit-content" }}>
+                              {testimonial.rating}/5
                             </span>
                           </div>
-                        </div>
-                      </td>
+                        </td>
 
-                      {/* Rating */}
-                      <td className="px-5 py-4">
-                        <div className="flex flex-col gap-1">
-                          <StarRating rating={testimonial.rating} />
-                          <span
-                            className={`inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded-full w-fit ${getRatingColor(testimonial.rating)}`}
-                          >
-                            {testimonial.rating}/5
+                        {/* Review */}
+                        <td style={{ padding: "15px 18px", verticalAlign: "top" }} className="hidden lg:table-cell">
+                          <span style={{ fontSize: 14, color: "#94a3b8", display: "block", maxWidth: 250, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {testimonial.review || <span style={{ fontStyle: "italic" }}>No review text</span>}
                           </span>
-                        </div>
-                      </td>
+                        </td>
 
-                      {/* Review */}
-                      <td className="px-5 py-4 hidden lg:table-cell">
-                        <span className="text-sm text-slate-400 line-clamp-1 max-w-[250px] block">
-                          {testimonial.review || (
-                            <span className="italic">No review text</span>
+                        {/* Date */}
+                        <td style={{ padding: "15px 18px", verticalAlign: "top" }} className="hidden md:table-cell">
+                          {testimonial.created_at ? (
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 14, color: "#64748b" }}>
+                              <Calendar size={13} color="#94a3b8" />
+                              {formatDate(testimonial.created_at)}
+                            </span>
+                          ) : (
+                            <span style={{ color: "#cbd5e1", fontSize: 14 }}>—</span>
                           )}
-                        </span>
-                      </td>
+                        </td>
 
-                      {/* Date */}
-                      <td className="px-5 py-4 hidden md:table-cell">
-                        {testimonial.created_at ? (
-                          <div className="inline-flex items-center gap-1.5 text-sm text-slate-500">
-                            <Calendar
-                              size={13}
-                              className="text-slate-400 flex-shrink-0"
-                            />
-                            {formatDate(testimonial.created_at)}
+                        {/* Actions */}
+                        <td style={{ padding: "15px 18px", verticalAlign: "top" }} onClick={(e) => e.stopPropagation()}>
+                          <div style={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
+                            <button
+                              className="test-action-btn"
+                              onClick={(e) => { e.stopPropagation(); setSelectedTestimonial(testimonial); setShowViewModal(true); }}
+                              title="View"
+                            >
+                              <Eye size={15} />
+                            </button>
+                            <button
+                              className="test-action-btn"
+                              onClick={(e) => { e.stopPropagation(); navigate(`/edit-testimonial/${testimonial.id}`, { state: { testimonial } }); }}
+                              title="Edit"
+                            >
+                              <Edit size={15} />
+                            </button>
+                            <button
+                              className="test-action-btn"
+                              onClick={(e) => handleDeleteClick(e, testimonial)}
+                              title="Delete"
+                            >
+                              <Trash2 size={15} />
+                            </button>
                           </div>
-                        ) : (
-                          <span className="text-slate-300 text-sm">—</span>
-                        )}
-                      </td>
-
-                      {/* Actions */}
-                      <td className="px-5 py-4">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedTestimonial(testimonial);
-                              setShowViewModal(true);
-                            }}
-                            className="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all"
-                            title="View"
-                          >
-                            <Eye size={15} />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/edit-testimonial/${testimonial.id}`, {
-                                state: { testimonial },
-                              });
-                            }}
-                            className="p-2 rounded-lg text-slate-400 hover:text-violet-600 hover:bg-violet-50 transition-all"
-                            title="Edit"
-                          >
-                            <Edit size={15} />
-                          </button>
-                          <button
-                            onClick={(e) => handleDeleteClick(e, testimonial)}
-                            className="p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all"
-                            title="Delete"
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
 
             {/* Pagination */}
-            <div className="px-5 py-3.5 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
-              <span className="text-xs text-slate-400 font-medium">
+            <div style={{ padding: "13px 18px", background: "#fafafa", borderTop: "1px solid #f1f5f9", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+              <span style={{ fontSize: 13.5, color: "#94a3b8", fontWeight: 500 }}>
                 Showing{" "}
-                <span className="text-slate-700 font-semibold">
-                  {indexOfFirstItem + 1}–
-                  {Math.min(indexOfLastItem, filteredTestimonials.length)}
-                </span>{" "}
-                of{" "}
-                <span className="text-slate-700 font-semibold">
-                  {filteredTestimonials.length}
-                </span>{" "}
-                testimonials
+                <strong style={{ color: "#475569" }}>{indexOfFirstItem + 1}–{Math.min(indexOfLastItem, filteredTestimonials.length)}</strong>
+                {" "}of{" "}
+                <strong style={{ color: "#475569" }}>{filteredTestimonials.length}</strong> testimonials
               </span>
-              <div className="flex items-center gap-2">
+              <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                 <button
+                  className="test-page-btn"
                   onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
                   disabled={currentPage === 1}
-                  className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white transition-colors"
                 >
-                  ← Prev
+                  <ChevronLeft size={15} />
                 </button>
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                    let page = i + 1;
-                    if (totalPages > 5) {
-                      if (currentPage <= 3) page = i + 1;
-                      else if (currentPage >= totalPages - 2)
-                        page = totalPages - 4 + i;
-                      else page = currentPage - 2 + i;
-                    }
-                    return (
-                      <button
-                        key={page}
-                        onClick={() => setCurrentPage(page)}
-                        className={`w-8 h-8 rounded-lg text-xs font-semibold transition-colors ${
-                          currentPage === page
-                            ? "bg-violet-600 text-white shadow-sm"
-                            : "text-slate-500 hover:bg-slate-200"
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    );
-                  })}
-                </div>
+                {getPageNumbers().map((page) => (
+                  <button
+                    key={page}
+                    className={`test-page-btn${currentPage === page ? " active" : ""}`}
+                    onClick={() => setCurrentPage(page)}
+                  >
+                    {page}
+                  </button>
+                ))}
                 <button
-                  onClick={() =>
-                    setCurrentPage((p) => Math.min(p + 1, totalPages))
-                  }
+                  className="test-page-btn"
+                  onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
                   disabled={currentPage === totalPages}
-                  className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white transition-colors"
                 >
-                  Next →
+                  <ChevronRight size={15} />
                 </button>
               </div>
             </div>
@@ -669,103 +626,72 @@ export default function Testimonials() {
 
       {/* View Testimonial Modal */}
       {showViewModal && selectedTestimonial && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
           <div
-            className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm"
+            style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.5)", backdropFilter: "blur(4px)" }}
             onClick={() => setShowViewModal(false)}
           />
-          <div className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full z-10 overflow-hidden max-h-[90vh] flex flex-col">
+          <div className="test-animate" style={{ position: "relative", background: "#fff", borderRadius: 20, boxShadow: "0 20px 60px rgba(0,0,0,0.15)", maxWidth: 600, width: "100%", zIndex: 10, overflow: "hidden", maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
+
             <button
               onClick={() => setShowViewModal(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors z-10"
+              style={{ position: "absolute", top: 14, right: 14, background: "none", border: "none", cursor: "pointer", color: "#94a3b8", padding: 6, borderRadius: 8, display: "flex", zIndex: 10 }}
             >
-              <X size={16} />
+              <X size={15} />
             </button>
 
-            {/* Reviewer header with avatar */}
-            <div className="p-6 border-b border-slate-100">
-              <div className="flex items-start gap-4">
-                <div className="w-16 h-16 bg-violet-100 rounded-2xl overflow-hidden border border-slate-200 flex items-center justify-center flex-shrink-0">
-                  {selectedTestimonial.image &&
-                  !selectedTestimonial.image.includes("default") ? (
-                    <img
-                      src={selectedTestimonial.image}
-                      alt={selectedTestimonial.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <User size={28} className="text-violet-600" />
-                  )}
+            <div style={{ padding: 24, overflowY: "auto", flex: 1 }}>
+
+              {/* Avatar + Name + Rating */}
+              <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
+                <div style={{ width: 52, height: 52, borderRadius: 14, background: getColor(selectedTestimonial.id), display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 18, fontWeight: 700, flexShrink: 0 }}>
+                  {getInitials(selectedTestimonial.name)}
                 </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <h2 className="text-xl font-bold text-slate-900">
-                        {selectedTestimonial.name}
-                      </h2>
-                    </div>
-                    <span
-                      className={`inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full flex-shrink-0 ${getRatingColor(selectedTestimonial.rating)}`}
-                    >
-                      {selectedTestimonial.rating}/5 Stars
-                    </span>
-                  </div>
-                  <div className="mt-2">
+                <div>
+                  <h2 style={{ fontSize: 20, fontWeight: 700, color: "#0f172a", margin: 0 }}>{selectedTestimonial.name}</h2>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4 }}>
                     <StarRating rating={selectedTestimonial.rating} size={16} />
+                    <span style={{ padding: "2px 8px", ...getRatingColor(selectedTestimonial.rating), fontSize: 11, fontWeight: 600, borderRadius: 99 }}>
+                      {selectedTestimonial.rating}/5
+                    </span>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <div className="p-6 overflow-y-auto flex-1">
               {/* Date */}
               {selectedTestimonial.created_at && (
-                <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 mb-4">
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1 flex items-center gap-1">
-                    <Calendar size={11} className="text-violet-500" /> Submitted
-                    On
+                <div style={{ background: "#f8fafc", border: "1px solid #f1f5f9", borderRadius: 12, padding: 14, marginBottom: 14 }}>
+                  <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#94a3b8", margin: "0 0 5px", display: "flex", alignItems: "center", gap: 4 }}>
+                    <Calendar size={11} color="#7c3aed" /> Submitted On
                   </p>
-                  <p className="text-sm font-semibold text-slate-800">
-                    {new Date(
-                      selectedTestimonial.created_at
-                    ).toLocaleDateString("en-US", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}
+                  <p style={{ fontSize: 15, fontWeight: 600, color: "#1e293b", margin: 0 }}>
+                    {new Date(selectedTestimonial.created_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
                   </p>
                 </div>
               )}
 
-              {/* Review Content */}
-              <div className="bg-slate-50 border border-slate-100 rounded-xl p-4">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">
-                  Review
-                </p>
-                <div className="max-h-60 overflow-y-auto">
-                  <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">
-                    {selectedTestimonial.review ||
-                      "No review content available."}
+              {/* Review */}
+              <div style={{ background: "#f8fafc", border: "1px solid #f1f5f9", borderRadius: 12, padding: 14 }}>
+                <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#94a3b8", margin: "0 0 8px" }}>Review</p>
+                <div style={{ maxHeight: 200, overflowY: "auto" }}>
+                  <p style={{ fontSize: 14, color: "#475569", lineHeight: 1.65, margin: 0, whiteSpace: "pre-wrap" }}>
+                    {selectedTestimonial.review || "No review content available."}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3 flex-shrink-0">
-              <button
-                onClick={() => setShowViewModal(false)}
-                className="px-4 py-2 border border-slate-200 text-slate-600 text-sm font-medium rounded-xl hover:bg-slate-100 transition-colors"
-              >
+            {/* Footer */}
+            <div style={{ padding: "14px 24px", background: "#f8fafc", borderTop: "1px solid #f1f5f9", display: "flex", justifyContent: "flex-end", gap: 10, flexShrink: 0 }}>
+              <button className="test-close-btn" onClick={() => setShowViewModal(false)}>
                 Close
               </button>
               <button
                 onClick={() => {
                   setShowViewModal(false);
-                  navigate(`/edit-testimonial/${selectedTestimonial.id}`, {
-                    state: { testimonial: selectedTestimonial },
-                  });
+                  navigate(`/edit-testimonial/${selectedTestimonial.id}`, { state: { testimonial: selectedTestimonial } });
                 }}
-                className="px-5 py-2 bg-violet-600 text-white text-sm font-medium rounded-xl hover:bg-violet-700 transition-colors flex items-center gap-2 shadow-sm shadow-violet-200"
+                style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "9px 18px", background: "#7c3aed", color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
               >
                 <Edit size={14} /> Edit Testimonial
               </button>
@@ -776,60 +702,49 @@ export default function Testimonials() {
 
       {/* Delete Modal */}
       {showDeleteModal && testimonialToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
           <div
-            className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm"
+            style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.5)", backdropFilter: "blur(4px)" }}
             onClick={() => !deleteLoading && setShowDeleteModal(false)}
           />
-          <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 z-10">
-            <button
-              onClick={() => !deleteLoading && setShowDeleteModal(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors"
-            >
-              <X size={16} />
-            </button>
+          <div className="test-animate" style={{ position: "relative", background: "#fff", borderRadius: 20, boxShadow: "0 20px 60px rgba(0,0,0,0.15)", maxWidth: 400, width: "100%", zIndex: 10, padding: 24 }}>
 
-            <div className="flex items-start gap-4">
-              <div className="flex-shrink-0 w-11 h-11 rounded-xl bg-red-50 flex items-center justify-center">
-                <AlertCircle size={22} className="text-red-500" />
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: "#fef2f2", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <AlertCircle size={22} color="#ef4444" />
               </div>
-              <div className="flex-1">
-                <h3 className="text-base font-semibold text-slate-900 mb-1">
-                  Delete Testimonial
-                </h3>
-                <p className="text-sm text-slate-500">
-                  Are you sure you want to delete the testimonial from{" "}
-                  <span className="font-semibold text-slate-700">
-                    "{testimonialToDelete.name}"
-                  </span>
-                  ? This action cannot be undone.
+              <div style={{ flex: 1 }}>
+                <h3 style={{ fontSize: 18, fontWeight: 700, color: "#0f172a", margin: "0 0 4px" }}>Delete Testimonial</h3>
+                <p style={{ fontSize: 14, color: "#64748b", margin: 0 }}>
+                  Are you sure you want to delete the testimonial from "<strong style={{ color: "#1e293b" }}>{testimonialToDelete.name}</strong>"? This action cannot be undone.
                 </p>
               </div>
             </div>
 
             {deleteError && (
-              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2">
-                <AlertCircle size={15} className="text-red-500 flex-shrink-0" />
-                <p className="text-sm text-red-600">{deleteError}</p>
+              <div style={{ marginTop: 16, padding: 12, background: "#fef2f2", border: "1px solid #fee2e2", borderRadius: 10, display: "flex", alignItems: "center", gap: 8 }}>
+                <AlertCircle size={15} color="#ef4444" />
+                <span style={{ fontSize: 14, color: "#b91c1c" }}>{deleteError}</span>
               </div>
             )}
 
-            <div className="mt-6 flex gap-3 justify-end">
+            <div style={{ marginTop: 24, display: "flex", justifyContent: "flex-end", gap: 10 }}>
               <button
+                className="test-close-btn"
                 onClick={() => setShowDeleteModal(false)}
                 disabled={deleteLoading}
-                className="px-4 py-2 border border-slate-200 text-slate-600 text-sm font-medium rounded-xl hover:bg-slate-50 transition-colors disabled:opacity-50"
+                style={{ opacity: deleteLoading ? 0.5 : 1 }}
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeleteConfirm}
                 disabled={deleteLoading}
-                className="px-5 py-2 bg-red-600 text-white text-sm font-medium rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "9px 18px", background: "#ef4444", color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: deleteLoading ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: deleteLoading ? 0.6 : 1 }}
               >
                 {deleteLoading ? (
                   <>
-                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <div style={{ width: 14, height: 14, border: "2px solid #fff", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.6s linear infinite" }} />
                     Deleting…
                   </>
                 ) : (

@@ -211,7 +211,6 @@ export default function EditTopic() {
                         <div className="w-px h-6 bg-gray-200" />
                         <div>
                             <h1 className="text-base sm:text-lg font-bold text-gray-900 leading-tight">Edit Topic</h1>
-                            <p className="text-xs text-gray-400 hidden sm:block">Update topic details</p>
                         </div>
                     </div>
                     <button
@@ -251,7 +250,6 @@ export default function EditTopic() {
                                 <label htmlFor="name" className="block text-base font-semibold text-gray-800">
                                     Topic Name <span className="text-red-500">*</span>
                                 </label>
-                                <p className="text-xs text-gray-400 mt-0.5">Enter a descriptive name for the topic</p>
                             </div>
                         </div>
                         <input
@@ -276,7 +274,6 @@ export default function EditTopic() {
                                 <label className="block text-base font-semibold text-gray-800">
                                     Select Course <span className="text-red-500">*</span>
                                 </label>
-                                <p className="text-xs text-gray-400 mt-0.5">Select a course to filter available modules</p>
                             </div>
                         </div>
                         <div className="relative">
@@ -295,20 +292,7 @@ export default function EditTopic() {
                             <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                         </div>
 
-                        {/* Selected course confirmation badge */}
-                        {selectedCourseObj && (
-                            <div className="mt-3 flex items-center gap-2 p-3 bg-violet-50 border border-violet-100 rounded-xl">
-                                <div className="w-6 h-6 bg-violet-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                    <Layers size={12} className="text-violet-600" />
-                                </div>
-                                <p className="text-xs text-violet-700">
-                                    <span className="font-semibold">Selected:</span> {selectedCourseObj.name}
-                                    {selectedCourseObj.category_details?.name && (
-                                        <span className="text-violet-400 ml-1">· {selectedCourseObj.category_details.name}</span>
-                                    )}
-                                </p>
-                            </div>
-                        )}
+                        
                     </div>
 
                     {/* ── Module Selection Card ── */}
@@ -321,13 +305,7 @@ export default function EditTopic() {
                                 <label className="block text-base font-semibold text-gray-800">
                                     Select Module <span className="text-red-500">*</span>
                                 </label>
-                                <p className="text-xs text-gray-400 mt-0.5">
-                                    {!selectedCourse
-                                        ? "Select a course above to see available modules"
-                                        : filteredModules.length === 0
-                                        ? "No modules found for this course"
-                                        : "Choose the module this topic belongs to"}
-                                </p>
+                                
                             </div>
                         </div>
 
@@ -365,17 +343,7 @@ export default function EditTopic() {
                             </p>
                         )}
 
-                        {/* Selected module confirmation badge */}
-                        {moduleDetails && (
-                            <div className="mt-3 flex items-center gap-2 p-3 bg-pink-50 border border-pink-100 rounded-xl">
-                                <div className="w-6 h-6 bg-pink-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                    <BookOpen size={12} className="text-pink-500" />
-                                </div>
-                                <p className="text-xs text-pink-700">
-                                    <span className="font-semibold">Selected:</span> {moduleDetails.moduleName}
-                                </p>
-                            </div>
-                        )}
+                        
                     </div>
 
                  

@@ -1,26 +1,27 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
-  Search, RefreshCw, Mail, Phone, Tag, X, ChevronDown,
-  Copy, MessageSquare, User, Filter, SortAsc, SortDesc, Eye,
+  Search, Mail, Phone, Tag, X, Copy,
+  MessageSquare, User, SortAsc, SortDesc,
+  Eye, ChevronLeft, ChevronRight,
 } from "lucide-react";
 
 export default function Contact() {
   const [contacts, setContacts] = useState([]);
-  const [filteredContacts, setFilteredContacts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState({ key: "id", direction: "desc" });
-  const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState({ hasPhone: "all", hasSubject: "all" });
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedContact, setSelectedContact] = useState(null);
   const [copied, setCopied] = useState(null);
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const prevSearch = useRef(searchTerm);
+  const prevSort = useRef(sortConfig);
+  const prevIpp = useRef(itemsPerPage);
 
   const fetchContacts = async () => {
     try {
@@ -30,7 +31,6 @@ export default function Contact() {
       const data = await response.json();
       if (data.status === "success" && data.data) {
         setContacts(data.data);
-        setFilteredContacts(data.data);
         setError(null);
       } else {
         throw new Error("Invalid API response format");
@@ -44,64 +44,79 @@ export default function Contact() {
 
   useEffect(() => { fetchContacts(); }, []);
 
-  useEffect(() => {
+  // Derived data – no state, no jerk on refresh
+  const filteredContacts = (() => {
     let result = [...contacts];
 
-    if (searchTerm) {
+    if (searchTerm.trim()) {
+      const q = searchTerm.toLowerCase();
       result = result.filter((c) =>
-        c.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.message?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c.full_name?.toLowerCase().includes(q) ||
+        c.email?.toLowerCase().includes(q) ||
+        c.subject?.toLowerCase().includes(q) ||
+        c.message?.toLowerCase().includes(q) ||
         c.mobile_no?.includes(searchTerm) ||
         c.id.toString().includes(searchTerm)
       );
     }
 
-    if (filters.hasPhone !== "all") {
-      result = result.filter((c) => filters.hasPhone === "yes" ? c.mobile_no : !c.mobile_no);
-    }
-    if (filters.hasSubject !== "all") {
-      result = result.filter((c) => filters.hasSubject === "yes" ? c.subject : !c.subject);
-    }
-
     result.sort((a, b) => {
-      let aVal = a[sortConfig.key];
-      let bVal = b[sortConfig.key];
-      if (sortConfig.key === "id") { aVal = parseInt(aVal) || 0; bVal = parseInt(bVal) || 0; }
+      let aVal, bVal;
+      if (sortConfig.key === "id")            { aVal = parseInt(a.id) || 0; bVal = parseInt(b.id) || 0; }
       else if (sortConfig.key === "full_name") { aVal = a.full_name?.toLowerCase() || ""; bVal = b.full_name?.toLowerCase() || ""; }
-      else if (sortConfig.key === "email") { aVal = a.email?.toLowerCase() || ""; bVal = b.email?.toLowerCase() || ""; }
+      else if (sortConfig.key === "email")     { aVal = a.email?.toLowerCase() || ""; bVal = b.email?.toLowerCase() || ""; }
+      else { aVal = 0; bVal = 0; }
       if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
       if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
       return 0;
     });
 
-    setFilteredContacts(result);
-    setCurrentPage(1);
-  }, [searchTerm, filters, sortConfig, contacts]);
+    return result;
+  })();
+
+  const totalPages = Math.max(1, Math.ceil(filteredContacts.length / itemsPerPage));
+  const safePage = Math.min(currentPage, totalPages);
+  const indexOfFirstItem = (safePage - 1) * itemsPerPage;
+  const paginatedContacts = filteredContacts.slice(indexOfFirstItem, indexOfFirstItem + itemsPerPage);
+
+  // Reset to page 1 when search/sort/itemsPerPage changes
+  useEffect(() => {
+    if (
+      prevSearch.current !== searchTerm ||
+      prevSort.current !== sortConfig ||
+      prevIpp.current !== itemsPerPage
+    ) {
+      setCurrentPage(1);
+      prevSearch.current = searchTerm;
+      prevSort.current = sortConfig;
+      prevIpp.current = itemsPerPage;
+    }
+  }, [searchTerm, sortConfig, itemsPerPage]);
 
   const handleSort = (key) => {
-    setSortConfig((cur) => ({ key, direction: cur.key === key && cur.direction === "asc" ? "desc" : "asc" }));
+    setSortConfig((c) => ({
+      key,
+      direction: c.key === key && c.direction === "asc" ? "desc" : "asc",
+    }));
   };
 
-  const getSortIcon = (key) => {
-    if (sortConfig.key !== key) return <SortAsc size={13} className="text-slate-400" />;
+  const SortIcon = ({ col }) => {
+    if (sortConfig.key !== col) return <SortAsc size={13} style={{ color: "#cbd5e1" }} />;
     return sortConfig.direction === "asc"
-      ? <SortAsc size={13} className="text-violet-500" />
-      : <SortDesc size={13} className="text-violet-500" />;
+      ? <SortAsc size={13} style={{ color: "#7c3aed" }} />
+      : <SortDesc size={13} style={{ color: "#7c3aed" }} />;
   };
 
- 
+  const getPageNumbers = () => {
+    if (totalPages <= 5) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    if (safePage <= 3) return [1, 2, 3, 4, 5];
+    if (safePage >= totalPages - 2) return [totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    return [safePage - 2, safePage - 1, safePage, safePage + 1, safePage + 2];
+  };
 
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const paginatedContacts = filteredContacts.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(filteredContacts.length / itemsPerPage);
-
-  const getInitials = (name) => name ? name.slice(0, 2).toUpperCase() : "??";
-
+  const getInitials = (name) => (name ? name.slice(0, 2).toUpperCase() : "??");
   const avatarColors = ["#7c3aed", "#2563eb", "#0891b2", "#059669", "#d97706", "#dc2626"];
-  const getColor = (id) => avatarColors[id % avatarColors.length];
+  const getColor = (id) => avatarColors[(id || 0) % avatarColors.length];
 
   const handleCopy = (text, id) => {
     navigator.clipboard.writeText(text);
@@ -109,18 +124,13 @@ export default function Contact() {
     setTimeout(() => setCopied(null), 2000);
   };
 
-  const activeFiltersCount = [
-    filters.hasPhone !== "all",
-    filters.hasSubject !== "all",
-    sortConfig.key !== "id" || sortConfig.direction !== "desc",
-  ].filter(Boolean).length;
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-violet-200 border-t-violet-600 rounded-full animate-spin mx-auto" />
-          <p className="mt-4 text-slate-500 text-base font-medium">Loading contacts…</p>
+      <div style={{ minHeight: "100vh", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ width: 44, height: 44, border: "3px solid #ede9fe", borderTopColor: "#7c3aed", borderRadius: "50%", margin: "0 auto", animation: "spin 0.8s linear infinite" }} />
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+          <p style={{ marginTop: 14, color: "#94a3b8", fontSize: 15, fontWeight: 500 }}>Loading contacts…</p>
         </div>
       </div>
     );
@@ -128,14 +138,14 @@ export default function Contact() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-lg p-8 max-w-sm w-full text-center">
-          <div className="bg-red-50 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-            <X size={24} className="text-red-500" />
+      <div style={{ minHeight: "100vh", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+        <div style={{ background: "#fff", borderRadius: 20, boxShadow: "0 8px 32px rgba(0,0,0,0.08)", padding: 32, maxWidth: 360, width: "100%", textAlign: "center" }}>
+          <div style={{ width: 56, height: 56, background: "#fef2f2", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+            <X size={22} color="#ef4444" />
           </div>
-          <h3 className="text-lg font-semibold text-slate-900 mb-1">Something went wrong</h3>
-          <p className="text-slate-500 text-base mb-5">{error}</p>
-          <button onClick={fetchContacts} className="px-5 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors text-base font-medium">
+          <h3 style={{ fontSize: 17, fontWeight: 700, color: "#0f172a", margin: "0 0 6px" }}>Something went wrong</h3>
+          <p style={{ fontSize: 15, color: "#94a3b8", margin: "0 0 20px" }}>{error}</p>
+          <button onClick={fetchContacts} style={{ padding: "10px 24px", background: "#7c3aed", color: "#fff", border: "none", borderRadius: 10, fontSize: 15, fontWeight: 600, cursor: "pointer" }}>
             Try Again
           </button>
         </div>
@@ -144,227 +154,221 @@ export default function Contact() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+    <div style={{ minHeight: "100vh", background: "#f8fafc", fontFamily: "'DM Sans', 'Segoe UI', sans-serif" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+        * { box-sizing: border-box; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeSlideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .con-animate { animation: fadeSlideIn 0.22s ease forwards; }
+        .con-row { transition: background 0.13s; cursor: pointer; }
+        .con-row:hover { background: #fafafa; }
+        .con-action-btn { background: none; border: none; cursor: pointer; padding: 8px; border-radius: 9px; display: flex; align-items: center; justify-content: center; transition: background 0.13s, color 0.13s; color: #94a3b8; }
+        .con-action-btn:hover { background: #ede9fe; color: #7c3aed; }
+        .con-th-btn { background: none; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #94a3b8; padding: 0; transition: color 0.13s; font-family: inherit; }
+        .con-th-btn:hover { color: #475569; }
+        .con-page-btn { width: 34px; height: 34px; border-radius: 8px; border: 1.5px solid #e2e8f0; background: #fff; font-size: 14px; font-weight: 600; color: #64748b; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.13s; font-family: inherit; }
+        .con-page-btn:hover:not(:disabled) { background: #f1f5f9; border-color: #cbd5e1; }
+        .con-page-btn.active { background: #7c3aed; border-color: #7c3aed; color: #fff; box-shadow: 0 2px 8px rgba(124,58,237,0.28); }
+        .con-page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+        .con-search { width: 100%; padding: 11px 36px 11px 40px; border: 1.5px solid #e2e8f0; border-radius: 12px; font-size: 15px; color: #1e293b; background: #f8fafc; outline: none; transition: border-color 0.15s, box-shadow 0.15s; font-family: inherit; }
+        .con-search:focus { border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124,58,237,0.1); background: #fff; }
+        .con-search::placeholder { color: #cbd5e1; }
+        .con-select { padding: 9px 14px; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 14px; color: #475569; background: #f8fafc; outline: none; cursor: pointer; font-family: inherit; font-weight: 500; transition: border-color 0.15s; }
+        .con-select:focus { border-color: #7c3aed; }
+        .con-copy-btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; border: 1.5px solid #e2e8f0; background: #fff; color: #475569; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background 0.13s; }
+        .con-copy-btn:hover { background: #f1f5f9; }
+        .con-close-btn { padding: 9px 16px; border: 1.5px solid #e2e8f0; background: #fff; color: #475569; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background 0.13s; }
+        .con-close-btn:hover { background: #f1f5f9; }
+      `}</style>
 
-        {/* ── Header ── */}
-        <div className="mb-6">
-          <div className="flex items-center gap-2 mb-1">
-            <MessageSquare size={20} className="text-violet-600" />
-            <h1 className="text-2xl font-bold text-slate-900">Contact Messages</h1>
-            <span className="ml-1 px-2 py-0.5 bg-violet-100 text-violet-700 text-xs font-semibold rounded-full">
-              {contacts.length}
-            </span>
+      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "28px 16px" }}>
+
+        {/* Header */}
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 5 }}>
+            <div style={{ width: 38, height: 38, background: "linear-gradient(135deg,#7c3aed,#a78bfa)", borderRadius: 11, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(124,58,237,0.25)" }}>
+              <MessageSquare size={17} color="#fff" />
+            </div>
+            <h1 style={{ fontSize: 22, fontWeight: 700, color: "#0f172a", margin: 0 }}>Contact Messages</h1>
+            <span style={{ padding: "3px 11px", background: "#ede9fe", color: "#6d28d9", fontSize: 13, fontWeight: 700, borderRadius: 99 }}>{contacts.length}</span>
           </div>
-          <p className="text-slate-500 text-base">Manage and respond to contact form submissions</p>
+          <p style={{ fontSize: 14, color: "#94a3b8", margin: 0, paddingLeft: 48 }}>Manage and respond to contact form submissions</p>
         </div>
 
-        {/* ── Toolbar (single line) ── */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 px-4 py-3 mb-5">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+        {/* Toolbar */}
+        <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", padding: "14px 18px", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10 }}>
 
             {/* Search */}
-            <div className="relative flex-1 min-w-0">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            <div style={{ position: "relative", flex: "1 1 220px", minWidth: 0 }}>
+              <Search size={16} style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: "#cbd5e1", pointerEvents: "none" }} />
               <input
+                className="con-search"
                 type="text"
                 placeholder="Search by name, email, subject, message or ID…"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-8 py-2.5 border border-slate-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent bg-slate-50 placeholder:text-slate-400"
               />
               {searchTerm && (
-                <button onClick={() => setSearchTerm("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                <button
+                  onClick={() => setSearchTerm("")}
+                  style={{ position: "absolute", right: 11, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#94a3b8", display: "flex", padding: 2 }}
+                >
                   <X size={14} />
                 </button>
               )}
             </div>
 
-            {/* Filter toggle */}
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-base font-medium transition-all whitespace-nowrap ${
-                showFilters || activeFiltersCount > 0
-                  ? "border-violet-400 bg-violet-50 text-violet-700"
-                  : "border-slate-200 text-slate-600 hover:bg-slate-50"
-              }`}
-            >
-              <Filter size={15} />
-              Filters
-              {activeFiltersCount > 0 && (
-                <span className="px-1.5 py-0.5 bg-violet-600 text-white text-xs rounded-full leading-none">{activeFiltersCount}</span>
-              )}
-              <ChevronDown size={14} className={`transition-transform ${showFilters ? "rotate-180" : ""}`} />
-            </button>
-
-            
-          </div>
-
-          {/* Expandable filter panel */}
-          {showFilters && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4 pt-4 border-t border-slate-100">
-              
-              
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Items Per Page</label>
-                <select
-                  value={itemsPerPage}
-                  onChange={(e) => setItemsPerPage(Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-violet-500 bg-slate-50"
-                >
-                  <option value={5}>5 per page</option>
-                  <option value={10}>10 per page</option>
-                  <option value={25}>25 per page</option>
-                  <option value={50}>50 per page</option>
-                </select>
-              </div>
+            {/* Items per page */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+              <span style={{ fontSize: 14, color: "#94a3b8", fontWeight: 500, whiteSpace: "nowrap" }}>Show</span>
+              <select className="con-select" value={itemsPerPage} onChange={(e) => setItemsPerPage(Number(e.target.value))}>
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+              </select>
+              <span style={{ fontSize: 14, color: "#94a3b8", fontWeight: 500 }}>per page</span>
             </div>
-          )}
+          </div>
         </div>
 
-        {/* ── Table / Empty state ── */}
+        {/* Gap */}
+        <div style={{ height: 20 }} />
+
+        {/* Table / Empty */}
         {filteredContacts.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-16 text-center">
-            <div className="bg-slate-100 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-              <User size={28} className="text-slate-400" />
+          <div className="con-animate" style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", padding: "64px 24px", textAlign: "center" }}>
+            <div style={{ width: 62, height: 62, background: "#f1f5f9", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+              <User size={27} color="#cbd5e1" />
             </div>
-            <h3 className="text-base font-semibold text-slate-800 mb-1">No contacts found</h3>
-            <p className="text-slate-400 text-base mb-5">
-              {searchTerm || filters.hasPhone !== "all" || filters.hasSubject !== "all"
-                ? "Try adjusting your filters or search term."
-                : "No contact messages yet."}
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: "#1e293b", margin: "0 0 6px" }}>No contacts found</h3>
+            <p style={{ fontSize: 14.5, color: "#94a3b8", margin: "0 0 20px" }}>
+              {searchTerm ? "Try a different search term." : "No contact messages yet."}
             </p>
-            <button
-              onClick={resetFilters}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-xl hover:bg-violet-700 transition-colors text-base font-medium"
-            >
-              <RefreshCw size={15} /> Clear Filters
-            </button>
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm("")}
+                style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "10px 20px", background: "#7c3aed", color: "#fff", border: "none", borderRadius: 10, fontSize: 14.5, fontWeight: 600, cursor: "pointer" }}
+              >
+                Clear Search
+              </button>
+            )}
           </div>
         ) : (
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[700px]">
+          <div className="con-animate" style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", minWidth: 700, borderCollapse: "collapse" }}>
                 <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200">
-                    <th
-                      className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide cursor-pointer select-none hover:text-slate-800 w-14"
-                      onClick={() => handleSort("id")}
-                    >
-                      <span className="flex items-center gap-1"># {getSortIcon("id")}</span>
+                  <tr style={{ borderBottom: "2px solid #f1f5f9", background: "#fafafa" }}>
+                    <th style={{ padding: "14px 18px", textAlign: "left", width: 56 }}>
+                      <button className="con-th-btn" onClick={() => handleSort("id")}># <SortIcon col="id" /></button>
                     </th>
-                    <th
-                      className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide cursor-pointer select-none hover:text-slate-800"
-                      onClick={() => handleSort("full_name")}
-                    >
-                      <span className="flex items-center gap-1">Contact {getSortIcon("full_name")}</span>
+                    <th style={{ padding: "14px 18px", textAlign: "left" }}>
+                      <button className="con-th-btn" onClick={() => handleSort("full_name")}>Contact <SortIcon col="full_name" /></button>
                     </th>
-                    <th
-                      className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide cursor-pointer select-none hover:text-slate-800"
-                      onClick={() => handleSort("email")}
-                    >
-                      <span className="flex items-center gap-1">Email {getSortIcon("email")}</span>
+                    <th style={{ padding: "14px 18px", textAlign: "left" }}>
+                      <button className="con-th-btn" onClick={() => handleSort("email")}>Email <SortIcon col="email" /></button>
                     </th>
-                    <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide hidden md:table-cell">
-                      Phone
+                    <th style={{ padding: "14px 18px", textAlign: "left" }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#94a3b8" }}>Phone</span>
                     </th>
-                    <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide hidden lg:table-cell">
-                      Subject
+                    <th style={{ padding: "14px 18px", textAlign: "left" }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#94a3b8" }}>Subject</span>
                     </th>
-                    <th className="px-5 py-3.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wide hidden xl:table-cell">
-                      Message Preview
+                    <th style={{ padding: "14px 18px", textAlign: "left" }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#94a3b8" }}>Message Preview</span>
                     </th>
-                    <th className="px-5 py-3.5 text-right text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                      Actions
+                    <th style={{ padding: "14px 18px", textAlign: "right" }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#94a3b8" }}>Actions</span>
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody>
                   {paginatedContacts.map((contact, index) => {
                     const color = getColor(contact.id);
                     return (
                       <tr
                         key={contact.id}
-                        className="hover:bg-slate-50/70 transition-colors cursor-pointer group"
+                        className="con-row"
+                        style={{ borderBottom: "1px solid #f1f5f9" }}
                         onClick={() => { setSelectedContact(contact); setShowViewModal(true); }}
                       >
                         {/* # */}
-                        <td className="px-5 py-4 text-base font-semibold text-slate-400">
+                        <td style={{ padding: "15px 18px", fontSize: 14, fontWeight: 600, color: "#cbd5e1" }}>
                           {indexOfFirstItem + index + 1}
                         </td>
 
                         {/* Contact name + avatar */}
-                        <td className="px-5 py-4">
-                          <div className="flex items-center gap-3">
-                            <div
-                              className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                              style={{ backgroundColor: color }}
-                            >
+                        <td style={{ padding: "15px 18px" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
+                            <div style={{ width: 38, height: 38, borderRadius: 10, background: color, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 12, fontWeight: 700, flexShrink: 0 }}>
                               {getInitials(contact.full_name)}
                             </div>
-                            <div>
-                              <span className="text-base font-semibold text-slate-800 block">
-                                {contact.full_name || "No Name"}
-                              </span>
-                              {/* show email under name on small screens */}
-                              <span className="text-xs text-slate-400 md:hidden line-clamp-1">{contact.email || "—"}</span>
-                            </div>
+                            <span style={{ fontSize: 15, fontWeight: 600, color: "#1e293b" }}>
+                              {contact.full_name || "No Name"}
+                            </span>
                           </div>
                         </td>
 
                         {/* Email */}
-                        <td className="px-5 py-4">
+                        <td style={{ padding: "15px 18px" }}>
                           <a
                             href={`mailto:${contact.email}`}
                             onClick={(e) => e.stopPropagation()}
-                            className="inline-flex items-center gap-1.5 text-base text-violet-600 hover:text-violet-800 hover:underline"
+                            style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 14, color: "#7c3aed", textDecoration: "none", fontWeight: 500 }}
+                            onMouseOver={(e) => e.currentTarget.style.textDecoration = "underline"}
+                            onMouseOut={(e) => e.currentTarget.style.textDecoration = "none"}
                           >
                             <Mail size={13} />
-                            <span className="line-clamp-1 max-w-[160px]">{contact.email || "—"}</span>
+                            <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 160 }}>
+                              {contact.email || "—"}
+                            </span>
                           </a>
                         </td>
 
                         {/* Phone */}
-                        <td className="px-5 py-4 hidden md:table-cell">
+                        <td style={{ padding: "15px 18px" }}>
                           {contact.mobile_no ? (
                             <a
                               href={`tel:${contact.mobile_no}`}
                               onClick={(e) => e.stopPropagation()}
-                              className="inline-flex items-center gap-1.5 text-base text-slate-600 hover:text-slate-900"
+                              style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 14, color: "#475569", textDecoration: "none", fontWeight: 500 }}
                             >
-                              <Phone size={13} className="text-slate-400" />
+                              <Phone size={13} color="#94a3b8" />
                               {contact.mobile_no}
                             </a>
                           ) : (
-                            <span className="text-slate-300 text-base">—</span>
+                            <span style={{ color: "#cbd5e1", fontSize: 14 }}>—</span>
                           )}
                         </td>
 
-                        {/* Subject badge */}
-                        <td className="px-5 py-4 hidden lg:table-cell">
+                        {/* Subject */}
+                        <td style={{ padding: "15px 18px" }}>
                           {contact.subject ? (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-violet-50 text-violet-700 border border-violet-100 text-xs font-semibold rounded-full max-w-[140px] truncate">
-                              <Tag size={10} className="flex-shrink-0" />
-                              <span className="truncate">{contact.subject}</span>
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 10px", background: "#f5f3ff", color: "#6d28d9", border: "1px solid #ddd6fe", fontSize: 12.5, fontWeight: 600, borderRadius: 99, maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              <Tag size={10} style={{ flexShrink: 0 }} />
+                              <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{contact.subject}</span>
                             </span>
                           ) : (
-                            <span className="text-slate-300 text-base">—</span>
+                            <span style={{ color: "#cbd5e1", fontSize: 14 }}>—</span>
                           )}
                         </td>
 
                         {/* Message preview */}
-                        <td className="px-5 py-4 hidden xl:table-cell">
-                          <span className="text-base text-slate-400 line-clamp-1 max-w-[200px] block">
-                            {contact.message || <span className="italic">No message</span>}
+                        <td style={{ padding: "15px 18px" }}>
+                          <span style={{ fontSize: 14, color: "#94a3b8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 200, display: "block" }}>
+                            {contact.message ? contact.message : <span style={{ fontStyle: "italic" }}>No message</span>}
                           </span>
                         </td>
 
                         {/* Actions */}
-                        <td className="px-5 py-4">
-                          <div className="flex items-center justify-end gap-1.5">
+                        <td style={{ padding: "15px 18px" }} onClick={(e) => e.stopPropagation()}>
+                          <div style={{ display: "flex", justifyContent: "flex-end" }}>
                             <button
+                              className="con-action-btn"
                               onClick={(e) => { e.stopPropagation(); setSelectedContact(contact); setShowViewModal(true); }}
-                              className="p-2 rounded-lg text-slate-400 hover:text-violet-600 hover:bg-violet-50 transition-all"
                               title="View Details"
                             >
                               <Eye size={15} />
@@ -379,47 +383,28 @@ export default function Contact() {
             </div>
 
             {/* Pagination */}
-            <div className="px-5 py-3.5 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
-              <span className="text-xs text-slate-400 font-medium">
-                Showing <span className="text-slate-700 font-semibold">{indexOfFirstItem + 1}–{Math.min(indexOfLastItem, filteredContacts.length)}</span> of <span className="text-slate-700 font-semibold">{filteredContacts.length}</span> contacts
+            <div style={{ padding: "13px 18px", background: "#fafafa", borderTop: "1px solid #f1f5f9", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+              <span style={{ fontSize: 13.5, color: "#94a3b8", fontWeight: 500 }}>
+                Showing{" "}
+                <strong style={{ color: "#475569" }}>{indexOfFirstItem + 1}–{Math.min(indexOfFirstItem + itemsPerPage, filteredContacts.length)}</strong>
+                {" "}of{" "}
+                <strong style={{ color: "#475569" }}>{filteredContacts.length}</strong> contacts
               </span>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                  disabled={currentPage === 1}
-                  className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white transition-colors"
-                >
-                  ← Prev
+              <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                <button className="con-page-btn" onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))} disabled={safePage === 1}>
+                  <ChevronLeft size={15} />
                 </button>
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                    let page = i + 1;
-                    if (totalPages > 5) {
-                      if (currentPage <= 3) page = i + 1;
-                      else if (currentPage >= totalPages - 2) page = totalPages - 4 + i;
-                      else page = currentPage - 2 + i;
-                    }
-                    return (
-                      <button
-                        key={page}
-                        onClick={() => setCurrentPage(page)}
-                        className={`w-8 h-8 rounded-lg text-xs font-semibold transition-colors ${
-                          currentPage === page
-                            ? "bg-violet-600 text-white shadow-sm"
-                            : "text-slate-500 hover:bg-slate-200"
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    );
-                  })}
-                </div>
-                <button
-                  onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                  className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white transition-colors"
-                >
-                  Next →
+                {getPageNumbers().map((page) => (
+                  <button
+                    key={page}
+                    className={`con-page-btn${safePage === page ? " active" : ""}`}
+                    onClick={() => setCurrentPage(page)}
+                  >
+                    {page}
+                  </button>
+                ))}
+                <button className="con-page-btn" onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))} disabled={safePage === totalPages}>
+                  <ChevronRight size={15} />
                 </button>
               </div>
             </div>
@@ -427,103 +412,101 @@ export default function Contact() {
         )}
       </div>
 
-      {/* ── View Contact Modal ── */}
+      {/* View Contact Modal */}
       {showViewModal && selectedContact && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => setShowViewModal(false)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full z-10 overflow-hidden max-h-[90vh] flex flex-col">
+        <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+          <div
+            style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.5)", backdropFilter: "blur(4px)" }}
+            onClick={() => setShowViewModal(false)}
+          />
+          <div className="con-animate" style={{ position: "relative", background: "#fff", borderRadius: 20, boxShadow: "0 20px 60px rgba(0,0,0,0.15)", maxWidth: 520, width: "100%", zIndex: 10, overflow: "hidden", maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
 
-            {/* Close */}
             <button
               onClick={() => setShowViewModal(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors z-10"
+              style={{ position: "absolute", top: 14, right: 14, background: "none", border: "none", cursor: "pointer", color: "#94a3b8", padding: 6, borderRadius: 8, display: "flex", zIndex: 10 }}
             >
-              <X size={16} />
+              <X size={15} />
             </button>
 
-            <div className="p-6 overflow-y-auto flex-1">
+            <div style={{ padding: 24, overflowY: "auto", flex: 1 }}>
+
               {/* Avatar + Name */}
-              <div className="flex items-center gap-4 mb-6">
-                <div
-                  className="w-14 h-14 rounded-2xl flex items-center justify-center text-white text-xl font-bold flex-shrink-0"
-                  style={{ backgroundColor: getColor(selectedContact.id) }}
-                >
+              <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 22 }}>
+                <div style={{ width: 52, height: 52, borderRadius: 14, background: getColor(selectedContact.id), display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 18, fontWeight: 700, flexShrink: 0 }}>
                   {getInitials(selectedContact.full_name)}
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-slate-900">{selectedContact.full_name || "No Name"}</h2>
-                  <p className="text-base text-slate-400 mt-0.5">Contact #{selectedContact.id}</p>
+                  <h2 style={{ fontSize: 20, fontWeight: 700, color: "#0f172a", margin: 0 }}>
+                    {selectedContact.full_name || "No Name"}
+                  </h2>
+                  <p style={{ fontSize: 13.5, color: "#94a3b8", margin: "3px 0 0" }}>Contact #{selectedContact.id}</p>
                 </div>
               </div>
 
-              {/* Contact info grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-                <div className="bg-slate-50 border border-slate-100 rounded-xl p-4">
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1 flex items-center gap-1">
-                    <Mail size={11} className="text-violet-500" /> Email
+              {/* Email + Phone */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 14 }}>
+                <div style={{ background: "#f8fafc", border: "1px solid #f1f5f9", borderRadius: 12, padding: 14 }}>
+                  <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#94a3b8", margin: "0 0 5px", display: "flex", alignItems: "center", gap: 4 }}>
+                    <Mail size={11} color="#7c3aed" /> Email
                   </p>
-                  <a href={`mailto:${selectedContact.email}`} className="text-base font-medium text-violet-600 hover:underline break-all">
+                  <a href={`mailto:${selectedContact.email}`} style={{ fontSize: 14, fontWeight: 600, color: "#7c3aed", textDecoration: "none", wordBreak: "break-all" }}>
                     {selectedContact.email || "—"}
                   </a>
                 </div>
-                <div className="bg-slate-50 border border-slate-100 rounded-xl p-4">
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1 flex items-center gap-1">
-                    <Phone size={11} className="text-emerald-500" /> Phone
+                <div style={{ background: "#f8fafc", border: "1px solid #f1f5f9", borderRadius: 12, padding: 14 }}>
+                  <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#94a3b8", margin: "0 0 5px", display: "flex", alignItems: "center", gap: 4 }}>
+                    <Phone size={11} color="#059669" /> Phone
                   </p>
                   {selectedContact.mobile_no ? (
-                    <a href={`tel:${selectedContact.mobile_no}`} className="text-base font-medium text-slate-800 hover:text-slate-900">
+                    <a href={`tel:${selectedContact.mobile_no}`} style={{ fontSize: 14, fontWeight: 600, color: "#1e293b", textDecoration: "none" }}>
                       {selectedContact.mobile_no}
                     </a>
                   ) : (
-                    <span className="text-base text-slate-400 italic">No phone provided</span>
+                    <span style={{ fontSize: 14, color: "#94a3b8", fontStyle: "italic" }}>No phone provided</span>
                   )}
                 </div>
               </div>
 
               {/* Subject */}
               {selectedContact.subject && (
-                <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 mb-4">
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1 flex items-center gap-1">
-                    <Tag size={11} className="text-violet-500" /> Subject
+                <div style={{ background: "#f8fafc", border: "1px solid #f1f5f9", borderRadius: 12, padding: 14, marginBottom: 14 }}>
+                  <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#94a3b8", margin: "0 0 5px", display: "flex", alignItems: "center", gap: 4 }}>
+                    <Tag size={11} color="#7c3aed" /> Subject
                   </p>
-                  <p className="text-base font-semibold text-slate-800">{selectedContact.subject}</p>
+                  <p style={{ fontSize: 15, fontWeight: 600, color: "#1e293b", margin: 0 }}>{selectedContact.subject}</p>
                 </div>
               )}
 
               {/* Message */}
-              <div className="bg-slate-50 border border-slate-100 rounded-xl p-4">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2 flex items-center gap-1">
-                  <MessageSquare size={11} className="text-violet-500" /> Message
+              <div style={{ background: "#f8fafc", border: "1px solid #f1f5f9", borderRadius: 12, padding: 14 }}>
+                <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#94a3b8", margin: "0 0 8px", display: "flex", alignItems: "center", gap: 4 }}>
+                  <MessageSquare size={11} color="#7c3aed" /> Message
                 </p>
-                <p className="text-base text-slate-600 leading-relaxed whitespace-pre-wrap">
+                <p style={{ fontSize: 14.5, color: "#475569", lineHeight: 1.65, margin: 0, whiteSpace: "pre-wrap" }}>
                   {selectedContact.message || "No message provided."}
                 </p>
               </div>
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex flex-wrap items-center justify-end gap-3 flex-shrink-0">
+            <div style={{ padding: "14px 24px", background: "#f8fafc", borderTop: "1px solid #f1f5f9", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "flex-end", gap: 10, flexShrink: 0 }}>
               <button
+                className="con-copy-btn"
                 onClick={() => handleCopy(selectedContact.email, `modal-${selectedContact.id}`)}
-                className="px-4 py-2 border border-slate-200 text-slate-600 text-base font-medium rounded-xl hover:bg-slate-100 transition-colors flex items-center gap-2"
               >
-                <Copy size={14} />
+                <Copy size={13} />
                 {copied === `modal-${selectedContact.id}` ? "Copied!" : "Copy Email"}
               </button>
-              <button
-                onClick={() => setShowViewModal(false)}
-                className="px-4 py-2 border border-slate-200 text-slate-600 text-base font-medium rounded-xl hover:bg-slate-100 transition-colors"
-              >
+              <button className="con-close-btn" onClick={() => setShowViewModal(false)}>
                 Close
               </button>
               <a
                 href={`mailto:${selectedContact.email}?subject=Re: ${selectedContact.subject || "Your inquiry"}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-5 py-2 bg-violet-600 text-white text-base font-medium rounded-xl hover:bg-violet-700 transition-colors flex items-center gap-2 shadow-sm shadow-violet-200"
+                style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "9px 18px", background: "#7c3aed", color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 600, textDecoration: "none" }}
               >
-                <Mail size={14} />
-                Reply via Email
+                <Mail size={14} /> Reply via Email
               </a>
             </div>
           </div>
