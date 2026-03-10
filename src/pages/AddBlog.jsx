@@ -1387,6 +1387,7 @@ export default function AddBlog() {
   const [success, setSuccess] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
   const [dragOver, setDragOver] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
   const [toast, setToast] = useState({
     show: false,
     message: "",
@@ -1398,6 +1399,10 @@ export default function AddBlog() {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    // Clear error for this field when user types
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
     setError("");
   };
 
@@ -1413,6 +1418,10 @@ export default function AddBlog() {
       reader.onloadend = () => setImagePreview(reader.result);
       reader.readAsDataURL(file);
       setError("");
+      // Clear image error if any
+      if (fieldErrors.featured_image) {
+        setFieldErrors((prev) => ({ ...prev, featured_image: undefined }));
+      }
     }
   };
 
@@ -1429,25 +1438,54 @@ export default function AddBlog() {
     setFormData((prev) => ({ ...prev, featured_image: null }));
     setImagePreview(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
+    // Mark image as missing
+    if (!formData.featured_image) {
+      setFieldErrors((prev) => ({ ...prev, featured_image: "Featured image is required" }));
+    }
   };
 
   const validateForm = () => {
-    if (!formData.title.trim()) return "Title is required";
-    if (!formData.content.trim()) return "Content is required";
-    if (!formData.slug.trim()) return "Slug is required";
-    if (!formData.status) return "Status is required";
-    if (!formData.publish_date) return "Publish date is required";
-    if (!formData.featured_image) return "Featured image is required";
-    return "";
+    const errors = {};
+
+    if (!formData.title.trim()) {
+      errors.title = "Title is required";
+    }
+    if (!formData.content.trim()) {
+      errors.content = "Content is required";
+    }
+    if (!formData.slug.trim()) {
+      errors.slug = "Slug is required";
+    }
+    if (!formData.status) {
+      errors.status = "Status is required";
+    }
+    if (!formData.publish_date) {
+      errors.publish_date = "Publish date is required";
+    }
+    if (!formData.hashtag.trim()) {
+      errors.hashtag = "Hashtag is required";
+    }
+    if (!formData.featured_image) {
+      errors.featured_image = "Featured image is required";
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const validationError = validateForm();
-    if (validationError) {
-      setError(validationError);
+
+    if (!validateForm()) {
+      const missingFields = Object.keys(fieldErrors).join(", ");
+      setToast({
+        show: true,
+        message: `Please fill required fields`,
+        type: "error",
+      });
       return;
     }
+
     setSaving(true);
     setError("");
     setSuccess("");
@@ -1473,11 +1511,26 @@ export default function AddBlog() {
         "https://codingcloud.pythonanywhere.com/blogs/",
         { method: "POST", body: payload }
       );
+
       if (!response.ok) {
+        const errorText = await response.text();
         let errorMessage;
         try {
-          const errorText = await response.text();
           const errorData = JSON.parse(errorText);
+          // Handle structured field errors from backend
+          if (errorData.errors) {
+            const backendErrors = {};
+            Object.keys(errorData.errors).forEach((key) => {
+              backendErrors[key] = errorData.errors[key].join(", ");
+            });
+            setFieldErrors(backendErrors);
+            setToast({
+              show: true,
+              message: "Please correct the errors below",
+              type: "error",
+            });
+            return; // exit early, keep saving false
+          }
           errorMessage =
             errorData.message || errorData.detail || JSON.stringify(errorData);
         } catch {
@@ -1485,6 +1538,7 @@ export default function AddBlog() {
         }
         throw new Error(errorMessage);
       }
+
       setToast({
         show: true,
         message: "Blog added successfully!",
@@ -1547,7 +1601,7 @@ export default function AddBlog() {
         />
       )}
       {/* ── Header ── */}
-      <header className=" top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+      <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
@@ -1562,9 +1616,7 @@ export default function AddBlog() {
               <h1 className="text-base sm:text-lg font-bold text-gray-900 leading-tight">
                 Add New Blog
               </h1>
-              <p className="text-xs text-gray-400 hidden sm:block">
-                Create a new blog post article
-              </p>
+             
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -1591,7 +1643,7 @@ export default function AddBlog() {
 
       {/* ── Main ── */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 pb-28 sm:pb-12">
-        {/* Error Alert */}
+        {/* Error Alert (still kept for non-field errors) */}
         {error && (
           <div className="flex items-start gap-3 p-4 mb-6 bg-red-50 border border-red-200 rounded-2xl text-base text-red-700">
             <AlertCircle
@@ -1635,7 +1687,6 @@ export default function AddBlog() {
               <SectionHeader
                 icon={FileText}
                 label="General Information"
-                description="Title, slug, description and full content"
                 iconBg="bg-indigo-50"
                 iconColor="text-indigo-600"
               />
@@ -1648,9 +1699,7 @@ export default function AddBlog() {
                 >
                   Blog Title <span className="text-red-500">*</span>
                 </label>
-                <p className="text-xs text-gray-400 mb-3">
-                  Give your blog post a clear, engaging title
-                </p>
+                
                 <div className="relative">
                   <FileText
                     size={16}
@@ -1663,10 +1712,15 @@ export default function AddBlog() {
                     value={formData.title}
                     onChange={handleInputChange}
                     placeholder="Enter the title of the blog post"
-                    className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                    className={`w-full pl-11 pr-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
+                      fieldErrors.title ? "border-red-500" : "border-gray-200"
+                    }`}
                     required
                   />
                 </div>
+                {fieldErrors.title && (
+                  <p className="text-xs text-red-500 mt-1">{fieldErrors.title}</p>
+                )}
               </div>
 
               {/* Slug */}
@@ -1677,9 +1731,7 @@ export default function AddBlog() {
                 >
                   Slug / URL Path <span className="text-red-500">*</span>
                 </label>
-                <p className="text-xs text-gray-400 mb-3">
-                  URL-friendly identifier for this post
-                </p>
+               
                 <div className="flex rounded-xl overflow-hidden border border-gray-200 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-transparent transition-all">
                   <span className="inline-flex items-center px-4 py-3 bg-gray-100 text-xs text-gray-500 font-medium border-r border-gray-200 whitespace-nowrap">
                     /blog/
@@ -1694,16 +1746,21 @@ export default function AddBlog() {
                         .toLowerCase()
                         .replace(/[^a-z0-9-]/g, "-");
                       setFormData((prev) => ({ ...prev, slug: val }));
+                      if (fieldErrors.slug) {
+                        setFieldErrors((prev) => ({ ...prev, slug: undefined }));
+                      }
                     }}
                     placeholder="how-to-learn-react"
-                    className="flex-1 px-4 py-3 bg-gray-50 text-gray-900 text-base placeholder-gray-400 outline-none focus:bg-white transition-all"
+                    className={`flex-1 px-4 py-3 bg-gray-50 text-gray-900 text-base placeholder-gray-400 outline-none focus:bg-white transition-all ${
+                      fieldErrors.slug ? "border-red-500" : ""
+                    }`}
                     required
                   />
                 </div>
-                <p className="flex items-center gap-1.5 text-xs text-gray-400 mt-2">
-                  <Link size={11} />
-                  Final URL: /blog/{formData.slug || "your-slug"}
-                </p>
+                {fieldErrors.slug && (
+                  <p className="text-xs text-red-500 mt-1">{fieldErrors.slug}</p>
+                )}
+                
               </div>
 
               {/* Short Description */}
@@ -1714,9 +1771,7 @@ export default function AddBlog() {
                 >
                   Short Description
                 </label>
-                <p className="text-xs text-gray-400 mb-3">
-                  A brief summary shown in blog listings
-                </p>
+               
                 <textarea
                   id="short_description"
                   name="short_description"
@@ -1768,79 +1823,87 @@ export default function AddBlog() {
                   </div>
                 </div>
 
-                <p className="text-xs text-gray-400 mb-3">
-                  {editorMode === "tinymce"
-                    ? "Rich text editor with formatting tools"
-                    : "Edit raw HTML source code"}
-                </p>
+                
 
                 {/* Conditional Editor */}
                 {editorMode === "tinymce" ? (
-                  <Editor
-                    apiKey="x5ikrjt2xexo2x73y0uzybqhbjq29owf8drai57qhtew5e0j"
-                    onInit={(evt, editor) => (editorRef.current = editor)}
-                    value={formData.content}
-                    onEditorChange={(content) =>
-                      setFormData((prev) => ({ ...prev, content }))
-                    }
-                    init={{
-                      height: 500,
-                      menubar: true,
-                      plugins: [
-                        "advlist",
-                        "autolink",
-                        "lists",
-                        "link",
-                        "image",
-                        "charmap",
-                        "preview",
-                        "anchor",
-                        "searchreplace",
-                        "visualblocks",
-                        "code",
-                        "fullscreen",
-                        "insertdatetime",
-                        "media",
-                        "table",
-                        "help",
-                        "wordcount",
-                      ],
-                      toolbar:
-                        "undo redo | blocks | " +
-                        "bold italic forecolor | alignleft aligncenter " +
-                        "alignright alignjustify | bullist numlist outdent indent | " +
-                        "removeformat | code | help",
-                      content_style:
-                        "body { font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.6; }",
-                      placeholder:
-                        "Write the full content of the blog post here…",
-                    }}
-                  />
+                  <div
+                    className={`border rounded-xl overflow-hidden ${
+                      fieldErrors.content ? "border-red-500" : "border-gray-200"
+                    }`}
+                  >
+                    <Editor
+                      apiKey="x5ikrjt2xexo2x73y0uzybqhbjq29owf8drai57qhtew5e0j"
+                      onInit={(evt, editor) => (editorRef.current = editor)}
+                      value={formData.content}
+                      onEditorChange={(content) => {
+                        setFormData((prev) => ({ ...prev, content }));
+                        if (fieldErrors.content) {
+                          setFieldErrors((prev) => ({ ...prev, content: undefined }));
+                        }
+                      }}
+                      init={{
+                        height: 500,
+                        menubar: true,
+                        plugins: [
+                          "advlist",
+                          "autolink",
+                          "lists",
+                          "link",
+                          "image",
+                          "charmap",
+                          "preview",
+                          "anchor",
+                          "searchreplace",
+                          "visualblocks",
+                          "code",
+                          "fullscreen",
+                          "insertdatetime",
+                          "media",
+                          "table",
+                          "help",
+                          "wordcount",
+                        ],
+                        toolbar:
+                          "undo redo | blocks | " +
+                          "bold italic forecolor | alignleft aligncenter " +
+                          "alignright alignjustify | bullist numlist outdent indent | " +
+                          "removeformat | code | help",
+                        content_style:
+                          "body { font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.6; }",
+                        placeholder:
+                          "Write the full content of the blog post here…",
+                      }}
+                    />
+                  </div>
                 ) : (
                   <textarea
                     value={formData.content}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, content: e.target.value }))
-                    }
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base font-mono placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                    onChange={(e) => {
+                      setFormData((prev) => ({ ...prev, content: e.target.value }));
+                      if (fieldErrors.content) {
+                        setFieldErrors((prev) => ({ ...prev, content: undefined }));
+                      }
+                    }}
+                    className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base font-mono placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
+                      fieldErrors.content ? "border-red-500" : "border-gray-200"
+                    }`}
                     rows={16}
                     placeholder="<!-- Write HTML here -->"
                   />
                 )}
-
-                <p className="text-xs text-gray-400 text-right mt-1">
-                  {formData.content.length} characters
-                </p>
+                {fieldErrors.content && (
+                  <p className="text-xs text-red-500 mt-1">{fieldErrors.content}</p>
+                )}
+               
               </div>
 
               {/* ── SEO & Metadata ── */}
               <SectionHeader
                 icon={Search}
                 label="SEO & Metadata"
-                description="Help search engines find your blog post"
                 iconBg="bg-emerald-50"
                 iconColor="text-emerald-600"
-                badge="(Optional)"
               />
 
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-5">
@@ -1855,9 +1918,7 @@ export default function AddBlog() {
                       Meta Title
                     </label>
                   </div>
-                  <p className="text-xs text-gray-400 mb-2">
-                    Recommended: 50–60 characters
-                  </p>
+                  
                   <input
                     id="meta_title"
                     type="text"
@@ -1882,9 +1943,7 @@ export default function AddBlog() {
                   >
                     Meta Description
                   </label>
-                  <p className="text-xs text-gray-400 mb-2">
-                    Recommended: 150–160 characters
-                  </p>
+                 
                   <textarea
                     id="meta_descrtiption"
                     name="meta_descrtiption"
@@ -1912,9 +1971,7 @@ export default function AddBlog() {
                       Meta Keywords
                     </label>
                   </div>
-                  <p className="text-xs text-gray-400 mb-2">
-                    Comma-separated keywords for SEO
-                  </p>
+                 
                   <input
                     id="meta_keyword"
                     type="text"
@@ -1936,12 +1993,10 @@ export default function AddBlog() {
                       htmlFor="hashtag"
                       className="text-base font-semibold text-gray-800"
                     >
-                      Hashtags
+                      Hashtags <span className="text-red-500">*</span>
                     </label>
                   </div>
-                  <p className="text-xs text-gray-400 mb-2">
-                    Space-separated hashtags for social media
-                  </p>
+                 
                   <input
                     id="hashtag"
                     type="text"
@@ -1949,8 +2004,13 @@ export default function AddBlog() {
                     value={formData.hashtag}
                     onChange={handleInputChange}
                     placeholder="#coding #cloud #blog"
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                    className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
+                      fieldErrors.hashtag ? "border-red-500" : "border-gray-200"
+                    }`}
                   />
+                  {fieldErrors.hashtag && (
+                    <p className="text-xs text-red-500 mt-1">{fieldErrors.hashtag}</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -1963,7 +2023,6 @@ export default function AddBlog() {
               <SectionHeader
                 icon={Calendar}
                 label="Publishing"
-                description="Status and publish date"
                 iconBg="bg-amber-50"
                 iconColor="text-amber-600"
               />
@@ -1977,16 +2036,16 @@ export default function AddBlog() {
                   >
                     Status <span className="text-red-500">*</span>
                   </label>
-                  <p className="text-xs text-gray-400 mb-2">
-                    Choose the publication state
-                  </p>
+                 
                   <div className="relative">
                     <select
                       id="status"
                       name="status"
                       value={formData.status}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none cursor-pointer"
+                      className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none cursor-pointer ${
+                        fieldErrors.status ? "border-red-500" : "border-gray-200"
+                      }`}
                     >
                       {statusOptions.map((status) => (
                         <option key={status} value={status}>
@@ -1999,6 +2058,9 @@ export default function AddBlog() {
                       className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
                     />
                   </div>
+                  {fieldErrors.status && (
+                    <p className="text-xs text-red-500 mt-1">{fieldErrors.status}</p>
+                  )}
                 </div>
 
                 <div className="h-px bg-gray-100" />
@@ -2011,18 +2073,21 @@ export default function AddBlog() {
                   >
                     Publish Date <span className="text-red-500">*</span>
                   </label>
-                  <p className="text-xs text-gray-400 mb-2">
-                    When should this post go live?
-                  </p>
+                  
                   <input
                     id="publish_date"
                     type="date"
                     name="publish_date"
                     value={formData.publish_date}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                    className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
+                      fieldErrors.publish_date ? "border-red-500" : "border-gray-200"
+                    }`}
                     required
                   />
+                  {fieldErrors.publish_date && (
+                    <p className="text-xs text-red-500 mt-1">{fieldErrors.publish_date}</p>
+                  )}
                 </div>
 
                 {/* Status Preview Badge */}
@@ -2055,12 +2120,15 @@ export default function AddBlog() {
               <SectionHeader
                 icon={ImagePlus}
                 label="Featured Image"
-                description="Required — displayed at top of post"
                 iconBg="bg-pink-50"
                 iconColor="text-pink-500"
               />
 
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+              <div
+                className={`bg-white rounded-2xl border shadow-sm p-6 ${
+                  fieldErrors.featured_image ? "border-red-500" : "border-gray-200"
+                }`}
+              >
                 {!imagePreview ? (
                   <div
                     onClick={triggerFileInput}
@@ -2134,6 +2202,9 @@ export default function AddBlog() {
                       <X size={15} />
                     </button>
                   </div>
+                )}
+                {fieldErrors.featured_image && (
+                  <p className="text-xs text-red-500 mt-2">{fieldErrors.featured_image}</p>
                 )}
                 <input
                   ref={fileInputRef}

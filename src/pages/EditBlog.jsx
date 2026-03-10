@@ -691,7 +691,6 @@
 //         </div>
 //     );
 // }
-
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { Editor } from "@tinymce/tinymce-react";
@@ -743,6 +742,7 @@ export default function EditBlog() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
   const [imagePreview, setImagePreview] = useState(null);
   const [originalImage, setOriginalImage] = useState(null);
   const [dragOver, setDragOver] = useState(false);
@@ -812,6 +812,10 @@ export default function EditBlog() {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    // Clear error for this field when user types
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
     setError("");
   };
 
@@ -827,6 +831,10 @@ export default function EditBlog() {
       reader.onloadend = () => setImagePreview(reader.result);
       reader.readAsDataURL(file);
       setError("");
+      // Clear image error
+      if (fieldErrors.featured_image) {
+        setFieldErrors((prev) => ({ ...prev, featured_image: undefined }));
+      }
     }
   };
 
@@ -843,30 +851,65 @@ export default function EditBlog() {
     setFormData((prev) => ({ ...prev, featured_image: null }));
     setImagePreview(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
+    // If there is no original image, mark as error
+    if (!originalImage) {
+      setFieldErrors((prev) => ({ ...prev, featured_image: "Featured image is required" }));
+    }
   };
 
   const restoreOriginalImage = () => {
     setFormData((prev) => ({ ...prev, featured_image: null }));
     setImagePreview(originalImage);
     if (fileInputRef.current) fileInputRef.current.value = "";
+    // Clear any image error
+    if (fieldErrors.featured_image) {
+      setFieldErrors((prev) => ({ ...prev, featured_image: undefined }));
+    }
   };
 
   const validateForm = () => {
-    if (!formData.title.trim()) return "Title is required";
-    if (!formData.content.trim()) return "Content is required";
-    if (!formData.slug.trim()) return "Slug is required";
-    if (!formData.status) return "Status is required";
-    if (!formData.publish_date) return "Publish date is required";
-    return "";
+    const errors = {};
+
+    if (!formData.title.trim()) {
+      errors.title = "Title is required";
+    }
+    if (!formData.content.trim()) {
+      errors.content = "Content is required";
+    }
+    if (!formData.slug.trim()) {
+      errors.slug = "Slug is required";
+    }
+    if (!formData.status) {
+      errors.status = "Status is required";
+    }
+    if (!formData.publish_date) {
+      errors.publish_date = "Publish date is required";
+    }
+    if (!formData.hashtag.trim()) {
+      errors.hashtag = "Hashtag is required";
+    }
+    // Image is required if there is no original and no new file
+    if (!originalImage && !formData.featured_image) {
+      errors.featured_image = "Featured image is required";
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const validationError = validateForm();
-    if (validationError) {
-      setError(validationError);
+
+    if (!validateForm()) {
+      const missingFields = Object.keys(fieldErrors).join(", ");
+      setToast({
+        show: true,
+        message: `Please fill required fields`,
+        type: "error",
+      });
       return;
     }
+
     setSaving(true);
     setError("");
     try {
@@ -890,7 +933,7 @@ export default function EditBlog() {
       if (formData.hashtag !== undefined)
         payload.append("hashtag", formData.hashtag.trim());
 
-      // Handle image: if new file, append it; if removed, send empty string to clear
+      // Handle image: if new file, append it; if removed and no original, send empty to clear
       if (formData.featured_image && formData.featured_image instanceof File) {
         payload.append("featured_image", formData.featured_image);
       } else if (imagePreview === null && originalImage) {
@@ -901,11 +944,26 @@ export default function EditBlog() {
         `https://codingcloud.pythonanywhere.com/blogs/${id}/`,
         { method: "PATCH", body: payload },
       );
+
       if (!response.ok) {
+        const errorText = await response.text();
         let errorMessage;
         try {
-          const errorText = await response.text();
           const errorData = JSON.parse(errorText);
+          // Handle structured field errors from backend
+          if (errorData.errors) {
+            const backendErrors = {};
+            Object.keys(errorData.errors).forEach((key) => {
+              backendErrors[key] = errorData.errors[key].join(", ");
+            });
+            setFieldErrors(backendErrors);
+            setToast({
+              show: true,
+              message: "Please correct the errors below",
+              type: "error",
+            });
+            return; // exit early, keep saving false
+          }
           errorMessage =
             errorData.message || errorData.detail || JSON.stringify(errorData);
         } catch {
@@ -913,6 +971,7 @@ export default function EditBlog() {
         }
         throw new Error(errorMessage);
       }
+
       setToast({
         show: true,
         message: "Blog updated successfully!",
@@ -991,7 +1050,7 @@ export default function EditBlog() {
       )}
 
       {/* Header */}
-      <header className=" top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+      <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
@@ -1006,9 +1065,7 @@ export default function EditBlog() {
               <h1 className="text-base sm:text-lg font-bold text-gray-900 leading-tight">
                 Edit Blog
               </h1>
-              <p className="text-xs text-gray-400 hidden sm:block">
-                ID: {id} · Update blog post
-              </p>
+              
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -1063,7 +1120,6 @@ export default function EditBlog() {
               <SectionHeader
                 icon={FileText}
                 label="General Information"
-                description="Title, slug, description and full content"
                 iconBg="bg-indigo-50"
                 iconColor="text-indigo-600"
               />
@@ -1076,9 +1132,7 @@ export default function EditBlog() {
                 >
                   Blog Title <span className="text-red-500">*</span>
                 </label>
-                <p className="text-xs text-gray-400 mb-3">
-                  Give your blog post a clear, engaging title
-                </p>
+               
                 <div className="relative">
                   <FileText
                     size={16}
@@ -1091,10 +1145,15 @@ export default function EditBlog() {
                     value={formData.title}
                     onChange={handleInputChange}
                     placeholder="Enter the title of the blog post"
-                    className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                    className={`w-full pl-11 pr-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
+                      fieldErrors.title ? "border-red-500" : "border-gray-200"
+                    }`}
                     required
                   />
                 </div>
+                {fieldErrors.title && (
+                  <p className="text-xs text-red-500 mt-1">{fieldErrors.title}</p>
+                )}
               </div>
 
               {/* Slug */}
@@ -1105,9 +1164,7 @@ export default function EditBlog() {
                 >
                   Slug / URL Path <span className="text-red-500">*</span>
                 </label>
-                <p className="text-xs text-gray-400 mb-3">
-                  URL-friendly identifier for this post
-                </p>
+               
                 <div className="flex rounded-xl overflow-hidden border border-gray-200 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-transparent transition-all">
                   <span className="inline-flex items-center px-4 py-3 bg-gray-100 text-xs text-gray-500 font-medium border-r border-gray-200 whitespace-nowrap">
                     /blog/
@@ -1122,16 +1179,21 @@ export default function EditBlog() {
                         .toLowerCase()
                         .replace(/[^a-z0-9-]/g, "-");
                       setFormData((prev) => ({ ...prev, slug: val }));
+                      if (fieldErrors.slug) {
+                        setFieldErrors((prev) => ({ ...prev, slug: undefined }));
+                      }
                     }}
                     placeholder="how-to-learn-react"
-                    className="flex-1 px-4 py-3 bg-gray-50 text-gray-900 text-base placeholder-gray-400 outline-none focus:bg-white transition-all"
+                    className={`flex-1 px-4 py-3 bg-gray-50 text-gray-900 text-base placeholder-gray-400 outline-none focus:bg-white transition-all ${
+                      fieldErrors.slug ? "border-red-500" : ""
+                    }`}
                     required
                   />
                 </div>
-                <p className="flex items-center gap-1.5 text-xs text-gray-400 mt-2">
-                  <Link size={11} />
-                  Final URL: /blog/{formData.slug || "your-slug"}
-                </p>
+                {fieldErrors.slug && (
+                  <p className="text-xs text-red-500 mt-1">{fieldErrors.slug}</p>
+                )}
+                
               </div>
 
               {/* Short Description */}
@@ -1142,9 +1204,7 @@ export default function EditBlog() {
                 >
                   Short Description
                 </label>
-                <p className="text-xs text-gray-400 mb-3">
-                  A brief summary shown in blog listings
-                </p>
+               
                 <textarea
                   id="short_description"
                   name="short_description"
@@ -1154,9 +1214,7 @@ export default function EditBlog() {
                   placeholder="A brief summary of the blog post…"
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-y"
                 />
-                <p className="text-xs text-gray-400 text-right mt-1">
-                  {formData.short_description.length} characters
-                </p>
+                
               </div>
 
               {/* Main Content with tabs */}
@@ -1196,79 +1254,87 @@ export default function EditBlog() {
                   </div>
                 </div>
 
-                <p className="text-xs text-gray-400 mb-3">
-                  {editorMode === "tinymce"
-                    ? "Rich text editor with formatting tools"
-                    : "Edit raw HTML source code"}
-                </p>
+                
 
                 {/* Conditional Editor */}
                 {editorMode === "tinymce" ? (
-                  <Editor
-                    apiKey="x5ikrjt2xexo2x73y0uzybqhbjq29owf8drai57qhtew5e0j"
-                    onInit={(evt, editor) => (editorRef.current = editor)}
-                    value={formData.content}
-                    onEditorChange={(content) =>
-                      setFormData((prev) => ({ ...prev, content }))
-                    }
-                    init={{
-                      height: 500,
-                      menubar: true,
-                      plugins: [
-                        "advlist",
-                        "autolink",
-                        "lists",
-                        "link",
-                        "image",
-                        "charmap",
-                        "preview",
-                        "anchor",
-                        "searchreplace",
-                        "visualblocks",
-                        "code",
-                        "fullscreen",
-                        "insertdatetime",
-                        "media",
-                        "table",
-                        "help",
-                        "wordcount",
-                      ],
-                      toolbar:
-                        "undo redo | blocks | " +
-                        "bold italic forecolor | alignleft aligncenter " +
-                        "alignright alignjustify | bullist numlist outdent indent | " +
-                        "removeformat | code | help",
-                      content_style:
-                        "body { font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.6; }",
-                      placeholder:
-                        "Write the full content of the blog post here…",
-                    }}
-                  />
+                  <div
+                    className={`border rounded-xl overflow-hidden ${
+                      fieldErrors.content ? "border-red-500" : "border-gray-200"
+                    }`}
+                  >
+                    <Editor
+                      apiKey="x5ikrjt2xexo2x73y0uzybqhbjq29owf8drai57qhtew5e0j"
+                      onInit={(evt, editor) => (editorRef.current = editor)}
+                      value={formData.content}
+                      onEditorChange={(content) => {
+                        setFormData((prev) => ({ ...prev, content }));
+                        if (fieldErrors.content) {
+                          setFieldErrors((prev) => ({ ...prev, content: undefined }));
+                        }
+                      }}
+                      init={{
+                        height: 500,
+                        menubar: true,
+                        plugins: [
+                          "advlist",
+                          "autolink",
+                          "lists",
+                          "link",
+                          "image",
+                          "charmap",
+                          "preview",
+                          "anchor",
+                          "searchreplace",
+                          "visualblocks",
+                          "code",
+                          "fullscreen",
+                          "insertdatetime",
+                          "media",
+                          "table",
+                          "help",
+                          "wordcount",
+                        ],
+                        toolbar:
+                          "undo redo | blocks | " +
+                          "bold italic forecolor | alignleft aligncenter " +
+                          "alignright alignjustify | bullist numlist outdent indent | " +
+                          "removeformat | code | help",
+                        content_style:
+                          "body { font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.6; }",
+                        placeholder:
+                          "Write the full content of the blog post here…",
+                      }}
+                    />
+                  </div>
                 ) : (
                   <textarea
                     value={formData.content}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, content: e.target.value }))
-                    }
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base font-mono placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                    onChange={(e) => {
+                      setFormData((prev) => ({ ...prev, content: e.target.value }));
+                      if (fieldErrors.content) {
+                        setFieldErrors((prev) => ({ ...prev, content: undefined }));
+                      }
+                    }}
+                    className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base font-mono placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
+                      fieldErrors.content ? "border-red-500" : "border-gray-200"
+                    }`}
                     rows={16}
                     placeholder="<!-- Write HTML here -->"
                   />
                 )}
-
-                <p className="text-xs text-gray-400 text-right mt-1">
-                  {formData.content.length} characters
-                </p>
+                {fieldErrors.content && (
+                  <p className="text-xs text-red-500 mt-1">{fieldErrors.content}</p>
+                )}
+               
               </div>
 
               {/* SEO & Metadata */}
               <SectionHeader
                 icon={Search}
                 label="SEO & Metadata"
-                description="Help search engines find your blog post"
                 iconBg="bg-emerald-50"
                 iconColor="text-emerald-600"
-                badge="(Optional)"
               />
 
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-5">
@@ -1283,9 +1349,7 @@ export default function EditBlog() {
                       Meta Title
                     </label>
                   </div>
-                  <p className="text-xs text-gray-400 mb-2">
-                    Recommended: 50–60 characters
-                  </p>
+                 
                   <input
                     id="meta_title"
                     type="text"
@@ -1310,9 +1374,7 @@ export default function EditBlog() {
                   >
                     Meta Description
                   </label>
-                  <p className="text-xs text-gray-400 mb-2">
-                    Recommended: 150–160 characters
-                  </p>
+                 
                   <textarea
                     id="meta_descrtiption"
                     name="meta_descrtiption"
@@ -1340,9 +1402,7 @@ export default function EditBlog() {
                       Meta Keywords
                     </label>
                   </div>
-                  <p className="text-xs text-gray-400 mb-2">
-                    Comma-separated keywords for SEO
-                  </p>
+                 
                   <input
                     id="meta_keyword"
                     type="text"
@@ -1364,12 +1424,10 @@ export default function EditBlog() {
                       htmlFor="hashtag"
                       className="text-base font-semibold text-gray-800"
                     >
-                      Hashtags
+                      Hashtags <span className="text-red-500">*</span>
                     </label>
                   </div>
-                  <p className="text-xs text-gray-400 mb-2">
-                    Space-separated hashtags for social media
-                  </p>
+                 
                   <input
                     id="hashtag"
                     type="text"
@@ -1377,8 +1435,13 @@ export default function EditBlog() {
                     value={formData.hashtag}
                     onChange={handleInputChange}
                     placeholder="#coding #cloud #blog"
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                    className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
+                      fieldErrors.hashtag ? "border-red-500" : "border-gray-200"
+                    }`}
                   />
+                  {fieldErrors.hashtag && (
+                    <p className="text-xs text-red-500 mt-1">{fieldErrors.hashtag}</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -1403,16 +1466,16 @@ export default function EditBlog() {
                   >
                     Status <span className="text-red-500">*</span>
                   </label>
-                  <p className="text-xs text-gray-400 mb-2">
-                    Choose the publication state
-                  </p>
+                
                   <div className="relative">
                     <select
                       id="status"
                       name="status"
                       value={formData.status}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none cursor-pointer"
+                      className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none cursor-pointer ${
+                        fieldErrors.status ? "border-red-500" : "border-gray-200"
+                      }`}
                     >
                       {statusOptions.map((status) => (
                         <option key={status} value={status}>
@@ -1425,6 +1488,9 @@ export default function EditBlog() {
                       className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
                     />
                   </div>
+                  {fieldErrors.status && (
+                    <p className="text-xs text-red-500 mt-1">{fieldErrors.status}</p>
+                  )}
                 </div>
 
                 <div className="h-px bg-gray-100" />
@@ -1437,59 +1503,39 @@ export default function EditBlog() {
                   >
                     Publish Date <span className="text-red-500">*</span>
                   </label>
-                  <p className="text-xs text-gray-400 mb-2">
-                    When should this post go live?
-                  </p>
+                 
                   <input
                     id="publish_date"
                     type="date"
                     name="publish_date"
                     value={formData.publish_date}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                    className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
+                      fieldErrors.publish_date ? "border-red-500" : "border-gray-200"
+                    }`}
                     required
                   />
+                  {fieldErrors.publish_date && (
+                    <p className="text-xs text-red-500 mt-1">{fieldErrors.publish_date}</p>
+                  )}
                 </div>
 
-                {/* Status Preview Badge */}
-                {formData.status && (
-                  <div className="bg-gray-50 border border-gray-100 rounded-xl p-3">
-                    <p className="text-xs text-gray-400 mb-2 font-medium">
-                      Preview
-                    </p>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span
-                        className={`px-2.5 py-1 text-xs font-semibold rounded-full ${statusColor[formData.status] || "bg-gray-100 text-gray-600"}`}
-                      >
-                        {formData.status}
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        {formData.publish_date
-                          ? new Date(formData.publish_date).toLocaleDateString(
-                              "en-US",
-                              {
-                                year: "numeric",
-                                month: "short",
-                                day: "numeric",
-                              },
-                            )
-                          : "—"}
-                      </span>
-                    </div>
-                  </div>
-                )}
+               
               </div>
 
               {/* Featured Image Card */}
               <SectionHeader
                 icon={ImagePlus}
                 label="Featured Image"
-                description="Change or restore existing image"
                 iconBg="bg-pink-50"
                 iconColor="text-pink-500"
               />
 
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+              <div
+                className={`bg-white rounded-2xl border shadow-sm p-6 ${
+                  fieldErrors.featured_image ? "border-red-500" : "border-gray-200"
+                }`}
+              >
                 {!imagePreview ? (
                   /* No image: upload zone */
                   <div
@@ -1525,7 +1571,6 @@ export default function EditBlog() {
                       <span className="text-indigo-500 font-medium">
                         Browse files
                       </span>{" "}
-                      · PNG, JPG, WEBP up to 5MB
                     </p>
                   </div>
                 ) : (
@@ -1610,6 +1655,9 @@ export default function EditBlog() {
                       </button>
                     )}
                   </div>
+                )}
+                {fieldErrors.featured_image && (
+                  <p className="text-xs text-red-500 mt-2">{fieldErrors.featured_image}</p>
                 )}
                 <input
                   ref={fileInputRef}
