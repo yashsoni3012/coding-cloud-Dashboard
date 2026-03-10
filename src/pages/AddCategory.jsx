@@ -382,7 +382,7 @@ import Toasts from "../pages/Toasts";
 export default function AddCategory() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
-  const timeoutRef = useRef(null); // for delayed navigation
+  const timeoutRef = useRef(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -392,6 +392,7 @@ export default function AddCategory() {
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
   const [toast, setToast] = useState({
     show: false,
     message: "",
@@ -400,18 +401,11 @@ export default function AddCategory() {
   const [imagePreview, setImagePreview] = useState(null);
   const [dragOver, setDragOver] = useState(false);
 
-  // Clear timeout if component unmounts while waiting
   useEffect(() => {
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
   }, []);
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    setError("");
-  };
 
   const generateSlug = (name) => {
     return name
@@ -422,25 +416,39 @@ export default function AddCategory() {
       .replace(/--+/g, "-");
   };
 
-const handleNameChange = (e) => {
-  let value = e.target.value;
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    // Clear error for this field when user types
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
+    setError("");
+  };
 
-  // Allow only letters and spaces
-  if (!/^[A-Za-z\s,-]*$/.test(value)) {
-    return;
-  }
+  const handleNameChange = (e) => {
+    let value = e.target.value;
 
-  setFormData((prev) => ({
-    ...prev,
-    name: value,
-    slug:
-      prev.slug === generateSlug(prev.name) || !prev.slug
-        ? generateSlug(value)
-        : prev.slug,
-  }));
+    // Allow only letters, spaces, comma, hyphen
+    if (!/^[A-Za-z\s,-]*$/.test(value)) {
+      return;
+    }
 
-  setError("");
-};
+    setFormData((prev) => ({
+      ...prev,
+      name: value,
+      slug:
+        prev.slug === generateSlug(prev.name) || !prev.slug
+          ? generateSlug(value)
+          : prev.slug,
+    }));
+
+    // Clear name error if it exists
+    if (fieldErrors.name) {
+      setFieldErrors((prev) => ({ ...prev, name: undefined }));
+    }
+    setError("");
+  };
 
   const processFile = (file) => {
     if (!file) return;
@@ -475,56 +483,85 @@ const handleNameChange = (e) => {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
- if (!/^[A-Za-z\s,-]+$/.test(formData.name.trim())) {
-  setError("Category name can contain letters, spaces, comma (,) and hyphen (-)");
-  return;
-}
+  const validateForm = () => {
+    const errors = {};
 
-  // Clear any pending navigation
-  if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    if (!formData.name.trim()) {
+      errors.name = "Category name is required";
+    } else if (!/^[A-Za-z\s,-]+$/.test(formData.name.trim())) {
+      errors.name =
+        "Category name can contain letters, spaces, comma (,) and hyphen (-)";
+    }
 
-  setSaving(true);
-  setError("");
+    if (!formData.text.trim()) {
+      errors.text = "Description is required";
+    }
 
-  try {
-    const payload = new FormData();
-    payload.append("name", formData.name.trim());
-    payload.append("text", formData.text.trim() || "");
-    if (formData.image) payload.append("image", formData.image);
-    payload.append("slug", formData.slug.trim() || generateSlug(formData.name));
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
-    const response = await fetch(
-      "https://codingcloud.pythonanywhere.com/category/",
-      {
-        method: "POST",
-        body: payload,
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!validateForm()) {
+      const missingFields = Object.keys(fieldErrors).join(", ");
+      setToast({
+        show: true,
+        message: `Please fill required fields: ${missingFields}`,
+        type: "error",
+      });
+      return;
+    }
+
+    // Clear any pending navigation
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+
+    setSaving(true);
+    setError("");
+
+    try {
+      const payload = new FormData();
+      payload.append("name", formData.name.trim());
+      payload.append("text", formData.text.trim());
+      if (formData.image) payload.append("image", formData.image);
+      payload.append(
+        "slug",
+        formData.slug.trim() || generateSlug(formData.name)
+      );
+
+      const response = await fetch(
+        "https://codingcloud.pythonanywhere.com/category/",
+        {
+          method: "POST",
+          body: payload,
+        }
+      );
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(
+          data.message || data.detail || "Failed to create category"
+        );
       }
-    );
-    if (!response.ok)throw new Error(data.message || data.detail || "Failed to create category");
 
-    // Show success toast
-    setToast({
-      show: true,
-      message: "Category created successfully!",
-      type: "success",
-    });
+      setToast({
+        show: true,
+        message: "Category created successfully!",
+        type: "success",
+      });
 
-    // Delay navigation for 1.4 seconds so the toast can be seen
-    timeoutRef.current = setTimeout(() => {
-      navigate("/category");
-    }, 1400); // 👈 changed to 1400ms
-  } catch (err) {
-    setError(err.message || "Failed to create category");
-    setSaving(false); // Re-enable button on error
-  }
-  // On success, saving remains true → button stays disabled during the 1.4s delay
-};
+      timeoutRef.current = setTimeout(() => {
+        navigate("/category");
+      }, 1400);
+    } catch (err) {
+      setError(err.message || "Failed to create category");
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Toast container */}
       {toast.show && (
         <Toasts
           message={toast.message}
@@ -549,9 +586,7 @@ const handleSubmit = async (e) => {
               <h1 className="text-base sm:text-lg font-bold text-gray-900 leading-tight">
                 Add Category
               </h1>
-              <p className="text-xs text-gray-400 hidden sm:block">
-                Create a new content category
-              </p>
+             
             </div>
           </div>
 
@@ -602,9 +637,7 @@ const handleSubmit = async (e) => {
                 >
                   Category Name <span className="text-red-500">*</span>
                 </label>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  Choose a clear, descriptive name
-                </p>
+                
               </div>
             </div>
             <input
@@ -613,11 +646,15 @@ const handleSubmit = async (e) => {
               name="name"
               value={formData.name}
               onChange={handleNameChange}
-             pattern="[A-Za-z\s,-]+"
               placeholder="e.g., Web Development, Design, Marketing…"
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+              className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
+                fieldErrors.name ? "border-red-500" : "border-gray-200"
+              }`}
               required
             />
+            {fieldErrors.name && (
+              <p className="text-xs text-red-500 mt-1">{fieldErrors.name}</p>
+            )}
           </div>
 
           {/* Slug Card */}
@@ -633,9 +670,7 @@ const handleSubmit = async (e) => {
                 >
                   Slug
                 </label>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  URL-friendly version of the name (auto-generated from name)
-                </p>
+                
               </div>
             </div>
             <div className="relative">
@@ -652,10 +687,7 @@ const handleSubmit = async (e) => {
                 className="w-full pl-8 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
               />
             </div>
-            <p className="text-xs text-gray-400 mt-2">
-              Slug is used in URLs. Only lowercase letters, numbers, and hyphens
-              allowed.
-            </p>
+          
           </div>
 
           {/* Description Card */}
@@ -669,8 +701,7 @@ const handleSubmit = async (e) => {
                   htmlFor="text"
                   className="block text-base font-semibold text-gray-800"
                 >
-                  Description
-                  <span className="text-red-500">*</span>
+                  Description <span className="text-red-500">*</span>
                 </label>
                 
               </div>
@@ -682,8 +713,13 @@ const handleSubmit = async (e) => {
               onChange={handleInputChange}
               rows={4}
               placeholder="Write a brief description about this category…"
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-none"
+              className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-none ${
+                fieldErrors.text ? "border-red-500" : "border-gray-200"
+              }`}
             />
+            {fieldErrors.text && (
+              <p className="text-xs text-red-500 mt-1">{fieldErrors.text}</p>
+            )}
             <p className="text-xs text-gray-400 text-right mt-2">
               {formData.text.length} characters
             </p>
@@ -699,9 +735,7 @@ const handleSubmit = async (e) => {
                 <p className="text-base font-semibold text-gray-800">
                   Cover Image
                 </p>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  Optional — PNG, JPG, GIF · Max 5MB
-                </p>
+                
               </div>
             </div>
 
@@ -739,7 +773,7 @@ const handleSubmit = async (e) => {
                   <span className="text-indigo-500 font-medium">
                     Browse files
                   </span>{" "}
-                  · PNG, JPG, GIF up to 5MB
+                  
                 </p>
                 <input
                   type="file"

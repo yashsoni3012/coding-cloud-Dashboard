@@ -490,6 +490,7 @@ export default function EditCategory() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
   const [toast, setToast] = useState({
     show: false,
     message: "",
@@ -552,6 +553,10 @@ export default function EditCategory() {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    // Clear error for this field when user types
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
     setError("");
   };
 
@@ -566,6 +571,12 @@ export default function EditCategory() {
 
   const handleNameChange = (e) => {
     const value = e.target.value;
+
+    // Allow only letters, spaces, comma, hyphen
+    if (!/^[A-Za-z\s,-]*$/.test(value)) {
+      return;
+    }
+
     setFormData((prev) => {
       // Only auto‑generate slug if the slug hasn't been manually edited
       // or if it matches the previously generated slug from the old name
@@ -577,6 +588,11 @@ export default function EditCategory() {
         slug: shouldAutoGenerate ? generateSlug(value) : prev.slug,
       };
     });
+
+    // Clear name error if it exists
+    if (fieldErrors.name) {
+      setFieldErrors((prev) => ({ ...prev, name: undefined }));
+    }
     setError("");
   };
 
@@ -619,10 +635,34 @@ export default function EditCategory() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  const validateForm = () => {
+    const errors = {};
+
+    if (!formData.name.trim()) {
+      errors.name = "Category name is required";
+    } else if (!/^[A-Za-z\s,-]+$/.test(formData.name.trim())) {
+      errors.name =
+        "Category name can contain letters, spaces, comma (,) and hyphen (-)";
+    }
+
+    if (!formData.text.trim()) {
+      errors.text = "Description is required";
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.name.trim()) {
-      setError("Category name is required");
+
+    if (!validateForm()) {
+      const missingFields = Object.keys(fieldErrors).join(", ");
+      setToast({
+        show: true,
+        message: `Please fill required fields: ${missingFields}`,
+        type: "error",
+      });
       return;
     }
 
@@ -635,13 +675,9 @@ export default function EditCategory() {
     try {
       const payload = new FormData();
       payload.append("name", formData.name.trim());
-      if (formData.text?.trim()) payload.append("text", formData.text.trim());
-
-      // Always send slug (even empty) to allow clearing it
+      payload.append("text", formData.text.trim()); // now required, always send
       payload.append("slug", formData.slug?.trim() || "");
-
-      if (formData.image instanceof File)
-        payload.append("image", formData.image);
+      if (formData.image instanceof File) payload.append("image", formData.image);
 
       const response = await fetch(
         `https://codingcloud.pythonanywhere.com/category/${id}/`,
@@ -649,20 +685,30 @@ export default function EditCategory() {
       );
 
       if (!response.ok) {
-  const data = await response.json();
+        const data = await response.json();
 
-  let message = "Enter a valid \"slug\" consisting of letters, numbers, underscores or hyphens.";
+        // Handle structured field errors from backend
+        if (data.errors) {
+          const backendErrors = {};
+          Object.keys(data.errors).forEach((key) => {
+            backendErrors[key] = data.errors[key].join(", ");
+          });
+          setFieldErrors(backendErrors);
+          throw new Error("Please correct the errors below");
+        }
 
-  if (data.slug && data.slug.length > 0) {
-    message = data.slug[0];
-  } else if (data.name && data.name.length > 0) {
-    message = data.name[0];
-  } else if (data.detail) {
-    message = data.detail;
-  }
-
-  throw new Error(message);
-}
+        // Fallback error message
+        let message =
+          data.message ||
+          data.detail ||
+          "Enter a valid slug consisting of letters, numbers, underscores or hyphens.";
+        if (data.slug && data.slug.length > 0) {
+          message = data.slug[0];
+        } else if (data.name && data.name.length > 0) {
+          message = data.name[0];
+        }
+        throw new Error(message);
+      }
 
       setToast({
         show: true,
@@ -674,7 +720,7 @@ export default function EditCategory() {
         navigate("/category");
       }, 1500);
     } catch (err) {
-      setError(err.message || "Enter a valid \"slug\" consisting of letters, numbers, underscores or hyphens.");
+      setError(err.message || "Update failed");
       setSaving(false);
     }
   };
@@ -702,7 +748,7 @@ export default function EditCategory() {
         />
       )}
 
-      <header className="top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+      <header className=" top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
@@ -717,9 +763,7 @@ export default function EditCategory() {
               <h1 className="text-base sm:text-lg font-bold text-gray-900 leading-tight">
                 Edit Category
               </h1>
-              <p className="text-xs text-gray-400 hidden sm:block">
-                Update category details
-              </p>
+              
             </div>
           </div>
           <button
@@ -767,9 +811,7 @@ export default function EditCategory() {
                 >
                   Category Name <span className="text-red-500">*</span>
                 </label>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  Choose a clear, descriptive name
-                </p>
+               
               </div>
             </div>
             <input
@@ -779,9 +821,14 @@ export default function EditCategory() {
               value={formData.name}
               onChange={handleNameChange}
               placeholder="e.g., Web Development, Design, Marketing…"
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+              className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
+                fieldErrors.name ? "border-red-500" : "border-gray-200"
+              }`}
               required
             />
+            {fieldErrors.name && (
+              <p className="text-xs text-red-500 mt-1">{fieldErrors.name}</p>
+            )}
           </div>
 
           {/* Slug Card */}
@@ -797,10 +844,7 @@ export default function EditCategory() {
                 >
                   Slug
                 </label>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  URL-friendly version of the name (auto-generated from name,
-                  but you can edit it manually)
-                </p>
+                
               </div>
             </div>
             <div className="relative">
@@ -814,13 +858,15 @@ export default function EditCategory() {
                 value={formData.slug}
                 onChange={handleInputChange}
                 placeholder="web-development"
-                className="w-full pl-8 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                className={`w-full pl-8 pr-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
+                  fieldErrors.slug ? "border-red-500" : "border-gray-200"
+                }`}
               />
             </div>
-            <p className="text-xs text-gray-400 mt-2">
-              Slug is used in URLs. Only lowercase letters, numbers, and hyphens
-              allowed.
-            </p>
+            {fieldErrors.slug && (
+              <p className="text-xs text-red-500 mt-1">{fieldErrors.slug}</p>
+            )}
+           
           </div>
 
           {/* Description Card */}
@@ -834,11 +880,9 @@ export default function EditCategory() {
                   htmlFor="text"
                   className="block text-base font-semibold text-gray-800"
                 >
-                  Description
+                  Description <span className="text-red-500">*</span>
                 </label>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  Optional — give context about this category
-                </p>
+                
               </div>
             </div>
             <textarea
@@ -848,8 +892,13 @@ export default function EditCategory() {
               onChange={handleInputChange}
               rows={4}
               placeholder="Write a brief description about this category…"
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-none"
+              className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-none ${
+                fieldErrors.text ? "border-red-500" : "border-gray-200"
+              }`}
             />
+            {fieldErrors.text && (
+              <p className="text-xs text-red-500 mt-1">{fieldErrors.text}</p>
+            )}
             <p className="text-xs text-gray-400 text-right mt-2">
               {formData.text.length} characters
             </p>
@@ -865,9 +914,7 @@ export default function EditCategory() {
                 <p className="text-base font-semibold text-gray-800">
                   Cover Image
                 </p>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  Optional — PNG, JPG, GIF · Max 5MB
-                </p>
+                
               </div>
             </div>
 

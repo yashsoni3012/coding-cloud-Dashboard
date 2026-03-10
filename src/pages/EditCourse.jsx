@@ -1967,7 +1967,6 @@ if (Object.keys(errors).length > 0) {
               inputId="image-upload"
               inputName="image"
               label="Course Image *"
-              hint="Required · PNG, JPG · Max 5MB"
               iconBg="bg-pink-50"
               iconColor="text-pink-500"
               error={!!fieldErrors.image}
@@ -1979,7 +1978,6 @@ if (Object.keys(errors).length > 0) {
               inputId="banner-upload"
               inputName="banner_img"
               label="Banner Image *"
-              hint="Required · PNG, JPG · Max 5MB"
               iconBg="bg-indigo-50"
               iconColor="text-indigo-500"
               error={!!fieldErrors.banner_img}
@@ -1991,7 +1989,6 @@ if (Object.keys(errors).length > 0) {
               inputId="icon-upload"
               inputName="icon"
               label="Course Icon *"
-              hint="Required · PNG, JPG · Max 2MB"
               iconBg="bg-violet-50"
               iconColor="text-violet-500"
               error={!!fieldErrors.icon}
@@ -2003,7 +2000,6 @@ if (Object.keys(errors).length > 0) {
               inputId="image2-upload"
               inputName="image2"
               label="Additional Image *"
-              hint="Required · PNG, JPG · Max 5MB"
               iconBg="bg-orange-50"
               iconColor="text-orange-500"
               error={!!fieldErrors.image2}
