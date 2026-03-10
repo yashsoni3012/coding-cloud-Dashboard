@@ -25,13 +25,14 @@ export default function AddTestimonial() {
   const [courses, setCourses] = useState([]);
   const [coursesLoading, setCoursesLoading] = useState(true);
   const [coursesError, setCoursesError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const [formData, setFormData] = useState({
     name: "",
     review: "",
     rating: 5,
     image: null,
-    course: "",
+    course: "", // 👈 initial empty (no pre‑selection)
   });
 
   const [loading, setLoading] = useState(false);
@@ -61,9 +62,8 @@ export default function AddTestimonial() {
       const data = await response.json();
       if (data.success && Array.isArray(data.data)) {
         setCourses(data.data);
-        if (data.data.length > 0) {
-          setFormData((prev) => ({ ...prev, course: data.data[0].id }));
-        }
+        // ❌ Do NOT automatically select the first course
+        // Leave course empty – user must select one.
       } else {
         throw new Error("Invalid courses format");
       }
@@ -82,6 +82,10 @@ export default function AddTestimonial() {
       [name]:
         name === "rating" || name === "course" ? parseInt(value) || 0 : value,
     }));
+    // Clear error for this field when user types
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
     setError("");
   };
 
@@ -102,6 +106,10 @@ export default function AddTestimonial() {
       reader.onloadend = () => setImagePreview(reader.result);
       reader.readAsDataURL(file);
       setError("");
+      // Clear image error if any (image is optional)
+      if (fieldErrors.image) {
+        setFieldErrors((prev) => ({ ...prev, image: undefined }));
+      }
     }
   };
 
@@ -119,31 +127,49 @@ export default function AddTestimonial() {
   };
 
   const validateForm = () => {
+    const errors = {};
+
     if (!formData.name.trim()) {
-      setError("Name is required");
-      return false;
+      errors.name = "Name is required";
     }
+
     if (!formData.review.trim()) {
-      setError("Review is required");
-      return false;
+      errors.review = "Review is required";
     }
+
     if (formData.rating < 1 || formData.rating > 5) {
-      setError("Rating must be between 1 and 5");
-      return false;
+      errors.rating = "Rating must be between 1 and 5";
     }
+
     if (!formData.course) {
-      setError("Please select a course");
-      return false;
+      errors.course = "Please select a course";
     }
-    return true;
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
-  const handleRatingClick = (rating) =>
+  const handleRatingClick = (rating) => {
     setFormData((prev) => ({ ...prev, rating }));
+    // Clear rating error if any
+    if (fieldErrors.rating) {
+      setFieldErrors((prev) => ({ ...prev, rating: undefined }));
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
+
+    if (!validateForm()) {
+      const missingFields = Object.keys(fieldErrors).join(", ");
+      setToast({
+        show: true,
+        message: `Please fill required fields`,
+        type: "error",
+      });
+      return;
+    }
+
     setLoading(true);
     setError("");
     setSuccess("");
@@ -179,20 +205,35 @@ export default function AddTestimonial() {
           review: "",
           rating: 5,
           image: null,
-          course: courses.length > 0 ? courses[0].id : "",
+          course: "", // reset to empty (no pre‑selection)
         });
 
         setImagePreview(null);
+        setFieldErrors({});
 
         if (fileInputRef.current) fileInputRef.current.value = "";
 
         setTimeout(() => navigate("/testimonials"), 2000);
       } else {
-        setToast({
-          show: true,
-          message: data.message || "Failed to add testimonial",
-          type: "error",
-        });
+        // Handle structured field errors from backend
+        if (data.errors) {
+          const backendErrors = {};
+          Object.keys(data.errors).forEach((key) => {
+            backendErrors[key] = data.errors[key].join(", ");
+          });
+          setFieldErrors(backendErrors);
+          setToast({
+            show: true,
+            message: "Please correct the errors below",
+            type: "error",
+          });
+        } else {
+          setToast({
+            show: true,
+            message: data.message || "Failed to add testimonial",
+            type: "error",
+          });
+        }
       }
     } catch (err) {
       console.error("Error adding testimonial:", err);
@@ -218,7 +259,7 @@ export default function AddTestimonial() {
         />
       )}
       {/* ── Header ── */}
-      <header className=" top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+      <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
@@ -233,9 +274,6 @@ export default function AddTestimonial() {
               <h1 className="text-base sm:text-lg font-bold text-gray-900 leading-tight">
                 Add New Testimonial
               </h1>
-              <p className="text-xs text-gray-400 hidden sm:block">
-                Create a customer testimonial
-              </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -299,9 +337,59 @@ export default function AddTestimonial() {
           </div>
         )}
 
-        {/* Success Alert */}
-
         <form onSubmit={handleSubmit} className="space-y-5">
+          {/* ── Course Selection Card ── */}
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-9 h-9 bg-pink-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Layers size={16} className="text-pink-500" />
+              </div>
+              <div>
+                <label className="block text-base font-semibold text-gray-800">
+                  Course <span className="text-red-500">*</span>
+                </label>
+              </div>
+            </div>
+
+            {coursesLoading ? (
+              <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-base text-gray-500">
+                <div className="w-4 h-4 border-2 border-indigo-300 border-t-indigo-600 rounded-full animate-spin flex-shrink-0" />
+                Loading courses…
+              </div>
+            ) : (
+              <>
+                <div className="relative">
+                  <select
+                    name="course"
+                    value={formData.course}
+                    onChange={handleChange}
+                    className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none cursor-pointer ${
+                      fieldErrors.course ? "border-red-500" : "border-gray-200"
+                    }`}
+                    required
+                  >
+                    <option value="">— Select a course —</option>
+                    {courses.map((course) => (
+                      <option key={course.id} value={course.id}>
+                        {course.name} (
+                        {course.category_details?.name || "No Category"})
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown
+                    size={16}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                  />
+                </div>
+                {fieldErrors.course && (
+                  <p className="text-xs text-red-500 mt-1">
+                    {fieldErrors.course}
+                  </p>
+                )}
+              </>
+            )}
+          </div>
+
           {/* ── Name Card ── */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <div className="flex items-center gap-3 mb-4">
@@ -315,9 +403,6 @@ export default function AddTestimonial() {
                 >
                   Customer Name <span className="text-red-500">*</span>
                 </label>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  Full name of the person giving the testimonial
-                </p>
               </div>
             </div>
             <input
@@ -327,9 +412,14 @@ export default function AddTestimonial() {
               value={formData.name}
               onChange={handleChange}
               placeholder="Enter customer name"
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+              className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
+                fieldErrors.name ? "border-red-500" : "border-gray-200"
+              }`}
               required
             />
+            {fieldErrors.name && (
+              <p className="text-xs text-red-500 mt-1">{fieldErrors.name}</p>
+            )}
           </div>
 
           {/* ── Rating Card ── */}
@@ -341,9 +431,6 @@ export default function AddTestimonial() {
               <div>
                 <p className="text-base font-semibold text-gray-800">
                   Rating <span className="text-red-500">*</span>
-                </p>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  Click a star to set the rating
                 </p>
               </div>
             </div>
@@ -400,6 +487,9 @@ export default function AddTestimonial() {
                         : "Very Poor"}
               </span>
             </div>
+            {fieldErrors.rating && (
+              <p className="text-xs text-red-500 mt-2">{fieldErrors.rating}</p>
+            )}
           </div>
 
           {/* ── Review Card ── */}
@@ -415,9 +505,6 @@ export default function AddTestimonial() {
                 >
                   Review <span className="text-red-500">*</span>
                 </label>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  Customer's feedback about the course
-                </p>
               </div>
             </div>
             <textarea
@@ -427,77 +514,17 @@ export default function AddTestimonial() {
               onChange={handleChange}
               placeholder="Write the customer's review…"
               rows={4}
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-y"
+              className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-y ${
+                fieldErrors.review ? "border-red-500" : "border-gray-200"
+              }`}
               required
             />
+            {fieldErrors.review && (
+              <p className="text-xs text-red-500 mt-1">{fieldErrors.review}</p>
+            )}
             <p className="text-xs text-gray-400 text-right mt-1">
               {formData.review.length} characters
             </p>
-          </div>
-
-          {/* ── Course Selection Card ── */}
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-9 h-9 bg-pink-50 rounded-xl flex items-center justify-center flex-shrink-0">
-                <Layers size={16} className="text-pink-500" />
-              </div>
-              <div>
-                <label className="block text-base font-semibold text-gray-800">
-                  Course <span className="text-red-500">*</span>
-                </label>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  Select the course this testimonial is for
-                </p>
-              </div>
-            </div>
-
-            {coursesLoading ? (
-              <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-base text-gray-500">
-                <div className="w-4 h-4 border-2 border-indigo-300 border-t-indigo-600 rounded-full animate-spin flex-shrink-0" />
-                Loading courses…
-              </div>
-            ) : (
-              <>
-                <div className="relative">
-                  <select
-                    name="course"
-                    value={formData.course}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none cursor-pointer"
-                    required
-                  >
-                    <option value="">— Select a course —</option>
-                    {courses.map((course) => (
-                      <option key={course.id} value={course.id}>
-                        {course.name} (
-                        {course.category_details?.name || "No Category"})
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown
-                    size={16}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                  />
-                </div>
-
-                {selectedCourse && (
-                  <div className="mt-3 flex items-center gap-2 p-3 bg-pink-50 border border-pink-100 rounded-xl">
-                    <div className="w-6 h-6 bg-pink-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Layers size={12} className="text-pink-500" />
-                    </div>
-                    <p className="text-xs text-pink-700">
-                      <span className="font-semibold">Selected:</span>{" "}
-                      {selectedCourse.name}
-                      {selectedCourse.category_details?.name && (
-                        <span className="text-pink-400 ml-1">
-                          · {selectedCourse.category_details.name}
-                        </span>
-                      )}
-                    </p>
-                  </div>
-                )}
-              </>
-            )}
           </div>
 
           {/* ── Profile Image Card ── */}
@@ -509,9 +536,6 @@ export default function AddTestimonial() {
               <div>
                 <p className="text-base font-semibold text-gray-800">
                   Profile Image
-                </p>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  Optional · PNG, JPG, GIF, WEBP up to 5MB
                 </p>
               </div>
             </div>
@@ -548,7 +572,6 @@ export default function AddTestimonial() {
                   <span className="text-indigo-500 font-medium">
                     Browse files
                   </span>{" "}
-                  · PNG, JPG, GIF, WEBP up to 5MB
                 </p>
               </div>
             ) : (

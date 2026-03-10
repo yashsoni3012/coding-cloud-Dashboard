@@ -1898,7 +1898,7 @@ export default function AddCourse() {
     name: "",
     slug: "",
     category: "",
-    text: "", // Will be populated with default example
+    text: "",
     short_description: "",
     duration: "",
     lecture: "",
@@ -1917,18 +1917,6 @@ export default function AddCourse() {
     icon: null,
     image2: null,
   });
-
-  // ------------------------------------------------------------------------
-  // Default HTML content (from the image)
-  // ------------------------------------------------------------------------
-// REMOVE THIS BLOCK
-useEffect(() => {
-  if (!formData.text) {
-    setFormData((prev) => ({
-      ...prev,
-    }));
-  }
-}, []);
 
   const [imagePreview, setImagePreview] = useState("");
   const [bannerPreview, setBannerPreview] = useState("");
@@ -1959,9 +1947,13 @@ useEffect(() => {
   // Handle toggle changes for boolean fields
   const handleToggleChange = (name, checked) => {
     setFormData((prev) => ({ ...prev, [name]: checked }));
+    // Clear error for this field if any (though toggles are always valid)
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
   };
 
-  // 🟥 NEW VALIDATION: Clear file field error when a file is selected
+  // 🟥 Clear file field error when a file is selected
   const handleFileChange = (e) => {
     const { name, files } = e.target;
     const file = files[0];
@@ -1987,7 +1979,7 @@ useEffect(() => {
       else if (name === "image2") setImage2Preview(URL.createObjectURL(file));
       else if (name === "pdf_file") setPdfName(file.name);
 
-      // 🟥 Clear error for this file field
+      // Clear error for this file field
       if (fieldErrors[name]) {
         setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
       }
@@ -2016,13 +2008,13 @@ useEffect(() => {
       document.getElementById("pdf-upload").value = "";
     }
 
-    // 🟥 Clear error for this field
+    // Clear error for this field
     if (fieldErrors[field]) {
       setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
     }
   };
 
-  // 🟥 NEW VALIDATION: Added checks for image, banner_img, pdf_file, icon, image2
+  // 🟥 Validate all required fields
   const validateForm = () => {
     const errors = {};
 
@@ -2062,7 +2054,7 @@ useEffect(() => {
       errors.keywords = "Keywords are required";
     }
 
-    // 🟥 File fields are now ALL required (except maybe future additions)
+    // File fields are required
     if (!formData.image) {
       errors.image = "Course image is required";
     }
@@ -2079,12 +2071,14 @@ useEffect(() => {
       errors.image2 = "Additional image is required";
     }
 
-    setFieldErrors(errors);
+    // Certificate is already "No" or "Yes", but ensure it's set (it always is)
+    // Optionally we could require it, but it defaults to "No"
 
+    setFieldErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
-  // 🟥 Helper to build a user‑friendly list of empty fields
+  // Helper to build a user‑friendly list of empty fields
   const getEmptyFieldsList = (errors) => {
     const fieldLabels = {
       name: "Course name",
@@ -2108,9 +2102,14 @@ useEffect(() => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const isValid = validateForm();
-    if (!isValid) {
-      setError("Please fill the required fields.");
+
+    if (!validateForm()) {
+      const missingFields = getEmptyFieldsList(fieldErrors);
+      setToast({
+        show: true,
+        message: `Please fill required fields: ${missingFields}`,
+        type: "error",
+      });
       return;
     }
 
@@ -2174,13 +2173,27 @@ useEffect(() => {
           navigate("/course");
         }, 1500);
       } else {
-        const errorMsg =
-          data.message ||
-          data.detail ||
-          data.error ||
-          data.non_field_errors?.[0] ||
-          JSON.stringify(data);
-        setError(errorMsg || "Failed to create course.");
+        // Handle structured field errors from backend
+        if (data.errors) {
+          const backendErrors = {};
+          Object.keys(data.errors).forEach((key) => {
+            backendErrors[key] = data.errors[key].join(", ");
+          });
+          setFieldErrors(backendErrors);
+          setToast({
+            show: true,
+            message: "Please correct the errors below",
+            type: "error",
+          });
+        } else {
+          const errorMsg =
+            data.message ||
+            data.detail ||
+            data.error ||
+            data.non_field_errors?.[0] ||
+            JSON.stringify(data);
+          setError(errorMsg || "Failed to create course.");
+        }
         setLoading(false);
       }
     } catch (err) {
@@ -2194,11 +2207,11 @@ useEffect(() => {
   // Generate short description from main description (plain text)
   // ------------------------------------------------------------------------
   const generateShortDescription = () => {
-    // Simple HTML-to-text conversion (strip tags)
+    // Simple HTML‑to‑text conversion (strip tags)
     const plainText = formData.text.replace(/<[^>]*>/g, "");
     const truncated = plainText.slice(0, 200);
     setFormData((prev) => ({ ...prev, short_description: truncated }));
-    // 🟥 Clear any error for short_description
+    // Clear any error for short_description
     if (fieldErrors.short_description) {
       setFieldErrors((prev) => ({ ...prev, short_description: undefined }));
     }
@@ -2209,7 +2222,7 @@ useEffect(() => {
     });
   };
 
-  // 🟥 RED BORDER LOGIC: Clear text error when editor content changes
+  // 🟥 Clear text error when editor content changes
   const handleEditorChange = (content) => {
     setFormData((prev) => ({ ...prev, text: content }));
     if (fieldErrors.text) {
@@ -2227,7 +2240,7 @@ useEffect(() => {
     hint,
     iconBg,
     iconColor,
-    error, // 🟥 new prop
+    error,
   }) => (
     <div
       className={`bg-white rounded-2xl border shadow-sm p-6 ${
@@ -2308,8 +2321,12 @@ useEffect(() => {
           <FileText size={16} className="text-red-500" />
         </div>
         <div>
-          <p className="text-base font-semibold text-gray-800">Syllabus PDF </p>
-          
+          <p className="text-base font-semibold text-gray-800">
+            Syllabus PDF <span className="text-red-500">*</span>
+          </p>
+          <p className="text-xs text-gray-400 mt-0.5">
+            Required · PDF only · Max 10MB
+          </p>
         </div>
       </div>
 
@@ -2351,6 +2368,7 @@ useEffect(() => {
           </button>
         </div>
       )}
+      {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
       <input
         type="file"
         name="pdf_file"
@@ -2426,7 +2444,7 @@ useEffect(() => {
       )}
 
       {/* Header */}
-      <header className=" top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+      <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
@@ -2441,7 +2459,6 @@ useEffect(() => {
               <h1 className="text-base sm:text-lg font-bold text-gray-900 leading-tight">
                 Create New Course
               </h1>
-              
             </div>
           </div>
           <button
@@ -2509,7 +2526,6 @@ useEffect(() => {
             >
               Course Name <span className="text-red-500">*</span>
             </label>
-           
             <input
               id="name"
               type="text"
@@ -2522,6 +2538,9 @@ useEffect(() => {
               }`}
               required
             />
+            {fieldErrors.name && (
+              <p className="text-xs text-red-500 mt-1">{fieldErrors.name}</p>
+            )}
           </div>
 
           {/* Slug */}
@@ -2533,7 +2552,6 @@ useEffect(() => {
             >
               Course Slug <span className="text-red-500">*</span>
             </label>
-           
             <div className="flex rounded-xl overflow-hidden border border-gray-200 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-transparent transition-all">
               <span className="inline-flex items-center px-4 py-3 bg-gray-100 text-xs text-gray-500 font-medium border-r border-gray-200 whitespace-nowrap">
                 /course/
@@ -2551,6 +2569,9 @@ useEffect(() => {
                 required
               />
             </div>
+            {fieldErrors.slug && (
+              <p className="text-xs text-red-500 mt-1">{fieldErrors.slug}</p>
+            )}
           </div>
 
           {/* Category */}
@@ -2562,7 +2583,6 @@ useEffect(() => {
             >
               Category <span className="text-red-500">*</span>
             </label>
-            
             <div className="relative">
               <select
                 id="category"
@@ -2587,6 +2607,9 @@ useEffect(() => {
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
               />
             </div>
+            {fieldErrors.category && (
+              <p className="text-xs text-red-500 mt-1">{fieldErrors.category}</p>
+            )}
           </div>
 
           {/* Description with tabs */}
@@ -2625,8 +2648,6 @@ useEffect(() => {
                 </button>
               </div>
             </div>
-
-           
 
             {/* Conditional Editor */}
             {editorMode === "tinymce" ? (
@@ -2688,22 +2709,9 @@ useEffect(() => {
                 placeholder="<!-- Write HTML here -->"
               />
             )}
-
-            <div className="flex justify-between text-xs mt-2">
-              <span
-                className={
-                  formData.text.length > MAX_DESCRIPTION_LENGTH
-                    ? "text-red-500"
-                    : "text-gray-400"
-                }
-              >
-              </span>
-              {formData.text.length > MAX_DESCRIPTION_LENGTH && (
-                <span className="text-red-500 font-medium">
-                  Exceeds recommended limit ({MAX_DESCRIPTION_LENGTH})
-                </span>
-              )}
-            </div>
+            {fieldErrors.text && (
+              <p className="text-xs text-red-500 mt-1">{fieldErrors.text}</p>
+            )}
           </div>
 
           {/* Short Description with auto‑generate button */}
@@ -2713,20 +2721,18 @@ useEffect(() => {
                 htmlFor="short_description"
                 className="block text-base font-semibold text-gray-800"
               >
-                Short Description
-                <span className="text-red-400 ml-1">*</span>
+                Short Description <span className="text-red-500">*</span>
               </label>
-              {/* <button
+              <button
                 type="button"
                 onClick={generateShortDescription}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-lg transition-all"
                 title="Generate from main description"
               >
                 <Sparkles size={14} />
-                Generate from Description
-              </button> */}
+                Generate
+              </button>
             </div>
-            
             <input
               id="short_description"
               type="text"
@@ -2740,6 +2746,9 @@ useEffect(() => {
                   : "border-gray-200"
               }`}
             />
+            {fieldErrors.short_description && (
+              <p className="text-xs text-red-500 mt-1">{fieldErrors.short_description}</p>
+            )}
           </div>
 
           {/* SECTION 2 — Course Details */}
@@ -2864,7 +2873,7 @@ useEffect(() => {
                     <Award size={12} className="text-yellow-500" />
                   </div>
                   <label className="text-xs font-semibold text-gray-700">
-                    Certificate
+                    Certificate <span className="text-red-500">*</span>
                   </label>
                 </div>
                 <div className="flex gap-2">
@@ -2890,6 +2899,9 @@ useEffect(() => {
                     </label>
                   ))}
                 </div>
+                {fieldErrors.certificate && (
+                  <p className="text-xs text-red-500 mt-1">{fieldErrors.certificate}</p>
+                )}
               </div>
             </div>
           </div>
@@ -2904,7 +2916,6 @@ useEffect(() => {
                 <p className="text-base font-semibold text-gray-800">
                   Additional Options
                 </p>
-                
               </div>
             </div>
             <div className="space-y-3 divide-y divide-gray-100">
@@ -2938,7 +2949,8 @@ useEffect(() => {
               onRemove={() => removeFile("image")}
               inputId="image-upload"
               inputName="image"
-              label="Course Image "
+              label="Course Image *"
+              hint="Required · PNG, JPG · Max 5MB"
               iconBg="bg-pink-50"
               iconColor="text-pink-500"
               error={!!fieldErrors.image}
@@ -2948,7 +2960,8 @@ useEffect(() => {
               onRemove={() => removeFile("banner_img")}
               inputId="banner-upload"
               inputName="banner_img"
-              label="Banner Image "
+              label="Banner Image *"
+              hint="Required · PNG, JPG · Max 5MB"
               iconBg="bg-indigo-50"
               iconColor="text-indigo-500"
               error={!!fieldErrors.banner_img}
@@ -2958,7 +2971,8 @@ useEffect(() => {
               onRemove={() => removeFile("icon")}
               inputId="icon-upload"
               inputName="icon"
-              label="Course Icon "
+              label="Course Icon *"
+              hint="Required · PNG, JPG · Max 2MB"
               iconBg="bg-violet-50"
               iconColor="text-violet-500"
               error={!!fieldErrors.icon}
@@ -2968,12 +2982,13 @@ useEffect(() => {
               onRemove={() => removeFile("image2")}
               inputId="image2-upload"
               inputName="image2"
-              label="Additional Image "
+              label="Additional Image *"
+              hint="Required · PNG, JPG · Max 5MB"
               iconBg="bg-orange-50"
               iconColor="text-orange-500"
               error={!!fieldErrors.image2}
             />
-            <PdfUploadBox error={!!fieldErrors.pdf_file} />
+            <PdfUploadBox error={fieldErrors.pdf_file} />
           </div>
 
           {/* SECTION 4 — SEO & Metadata */}
@@ -2991,10 +3006,8 @@ useEffect(() => {
                 htmlFor="meta_title"
                 className="block text-base font-semibold text-gray-800 mb-1"
               >
-                Meta Title
-                <span className="text-red-400 ml-1">*</span>
+                Meta Title <span className="text-red-500">*</span>
               </label>
-              
               <input
                 id="meta_title"
                 type="text"
@@ -3006,6 +3019,9 @@ useEffect(() => {
                   fieldErrors.meta_title ? "border-red-500" : "border-gray-200"
                 }`}
               />
+              {fieldErrors.meta_title && (
+                <p className="text-xs text-red-500 mt-1">{fieldErrors.meta_title}</p>
+              )}
               <p className="text-xs text-gray-400 text-right mt-1">
                 {formData.meta_title.length} / 60
               </p>
@@ -3018,12 +3034,9 @@ useEffect(() => {
               <label
                 htmlFor="meta_description"
                 className="block text-base font-semibold text-gray-800 mb-1"
-                required
               >
-                Meta Description
-                <span className="text-red-400 ml-1">*</span>
+                Meta Description <span className="text-red-500">*</span>
               </label>
-              
               <textarea
                 id="meta_description"
                 name="meta_description"
@@ -3037,6 +3050,9 @@ useEffect(() => {
                     : "border-gray-200"
                 }`}
               />
+              {fieldErrors.meta_description && (
+                <p className="text-xs text-red-500 mt-1">{fieldErrors.meta_description}</p>
+              )}
               <p className="text-xs text-gray-400 text-right mt-1">
                 {formData.meta_description.length} / 160
               </p>
@@ -3049,12 +3065,9 @@ useEffect(() => {
               <label
                 htmlFor="keywords"
                 className="block text-base font-semibold text-gray-800 mb-1"
-                required
               >
-                Keywords
-                <span className="text-red-400 ml-1">*</span>
+                Keywords <span className="text-red-500">*</span>
               </label>
-              
               <input
                 id="keywords"
                 type="text"
@@ -3066,6 +3079,9 @@ useEffect(() => {
                   fieldErrors.keywords ? "border-red-500" : "border-gray-200"
                 }`}
               />
+              {fieldErrors.keywords && (
+                <p className="text-xs text-red-500 mt-1">{fieldErrors.keywords}</p>
+              )}
             </div>
           </div>
 
