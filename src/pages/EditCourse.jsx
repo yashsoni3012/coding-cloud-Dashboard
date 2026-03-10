@@ -1292,7 +1292,6 @@ export default function EditCourse() {
             <p className="text-base font-semibold text-gray-800">
               Syllabus PDF
             </p>
-            <p className="text-xs text-gray-400 mt-0.5">PDF only · Max 10MB</p>
           </div>
         </div>
 
@@ -1444,9 +1443,7 @@ export default function EditCourse() {
               <h1 className="text-base sm:text-lg font-bold text-gray-900 leading-tight">
                 Edit Course
               </h1>
-              <p className="text-xs text-gray-400 hidden sm:block">
-                ID: {id} · Update course information
-              </p>
+             
             </div>
           </div>
           <button
@@ -1478,7 +1475,6 @@ export default function EditCourse() {
           <SectionHeader
             icon={Tag}
             label="Basic Information"
-            description="Core details about your course"
             iconBg="bg-indigo-50"
             iconColor="text-indigo-600"
           />
@@ -1491,9 +1487,7 @@ export default function EditCourse() {
             >
               Course Name <span className="text-red-500">*</span>
             </label>
-            <p className="text-xs text-gray-400 mb-3">
-              Give your course a clear, descriptive title
-            </p>
+            
             <input
               id="name"
               type="text"
@@ -1514,9 +1508,7 @@ export default function EditCourse() {
             >
               Course Slug <span className="text-red-500">*</span>
             </label>
-            <p className="text-xs text-gray-400 mb-3">
-              URL-friendly version of the name
-            </p>
+           
             <div className="flex rounded-xl overflow-hidden border border-gray-200 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-transparent transition-all">
               <span className="inline-flex items-center px-4 py-3 bg-gray-100 text-xs text-gray-500 font-medium border-r border-gray-200 whitespace-nowrap">
                 /course/
@@ -1542,9 +1534,7 @@ export default function EditCourse() {
             >
               Category <span className="text-red-500">*</span>
             </label>
-            <p className="text-xs text-gray-400 mb-3">
-              Select the category that best fits your course
-            </p>
+           
             <div className="relative">
               <select
                 id="category"
@@ -1605,12 +1595,7 @@ export default function EditCourse() {
               </div>
             </div>
 
-            <p className="text-xs text-gray-400 mb-3">
-              {editorMode === "tinymce"
-                ? "Rich text editor with formatting tools"
-                : "Edit raw HTML source code"}
-            </p>
-
+                  
             {/* Conditional Editor */}
             {editorMode === "tinymce" ? (
               <Editor
@@ -1677,7 +1662,7 @@ export default function EditCourse() {
               >
                 Short Description
               </label>
-              <button
+              {/* <button
                 type="button"
                 onClick={generateShortDescription}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-lg transition-all"
@@ -1685,11 +1670,9 @@ export default function EditCourse() {
               >
                 <Sparkles size={14} />
                 Generate from Description
-              </button>
+              </button> */}
             </div>
-            <p className="text-xs text-gray-400 mb-3">
-              A brief summary of the course (auto‑generated from description)
-            </p>
+           
             <input
               id="short_description"
               type="text"
@@ -1707,7 +1690,6 @@ export default function EditCourse() {
           <SectionHeader
             icon={BookMarked}
             label="Course Details"
-            description="Duration, lectures, audience and difficulty"
             iconBg="bg-violet-50"
             iconColor="text-violet-600"
           />
@@ -1871,22 +1853,18 @@ export default function EditCourse() {
                 <p className="text-base font-semibold text-gray-800">
                   Additional Options
                 </p>
-                <p className="text-xs text-gray-400">
-                  Mark this course as featured or for kids
-                </p>
+                
               </div>
             </div>
             <div className="space-y-3 divide-y divide-gray-100">
               <ToggleSwitch
                 label="Featured Course"
-                description="Show this course in featured sections"
                 name="featured"
                 checked={formData.featured}
                 onChange={handleToggleChange}
               />
               <ToggleSwitch
                 label="Kids Course"
-                description="Suitable for younger audiences"
                 name="kids_course"
                 checked={formData.kids_course}
                 onChange={handleToggleChange}
@@ -1900,7 +1878,6 @@ export default function EditCourse() {
           <SectionHeader
             icon={ImagePlus}
             label="Media Files"
-            description="Images, icons, and course syllabus"
             iconBg="bg-pink-50"
             iconColor="text-pink-500"
           />
@@ -1913,7 +1890,6 @@ export default function EditCourse() {
               inputId="image-upload"
               inputName="image"
               label="Course Image"
-              hint="PNG, JPG · Max 5MB"
               iconBg="bg-pink-50"
               iconColor="text-pink-500"
             />
@@ -1924,7 +1900,6 @@ export default function EditCourse() {
               inputId="banner-upload"
               inputName="banner_img"
               label="Banner Image"
-              hint="PNG, JPG · Max 5MB"
               iconBg="bg-indigo-50"
               iconColor="text-indigo-500"
             />
@@ -1935,7 +1910,6 @@ export default function EditCourse() {
               inputId="icon-upload"
               inputName="icon"
               label="Course Icon"
-              hint="PNG, JPG · Max 2MB"
               iconBg="bg-violet-50"
               iconColor="text-violet-500"
             />
@@ -1947,7 +1921,6 @@ export default function EditCourse() {
               inputId="image2-upload"
               inputName="image2"
               label="Additional Image"
-              hint="PNG, JPG · Max 5MB"
               iconBg="bg-orange-50"
               iconColor="text-orange-500"
             />
@@ -1960,7 +1933,6 @@ export default function EditCourse() {
           <SectionHeader
             icon={Search}
             label="SEO & Metadata"
-            description="Help search engines find your course"
             iconBg="bg-emerald-50"
             iconColor="text-emerald-600"
           />
@@ -1974,9 +1946,7 @@ export default function EditCourse() {
               >
                 Meta Title
               </label>
-              <p className="text-xs text-gray-400 mb-2">
-                Recommended: 50–60 characters
-              </p>
+              
               <input
                 id="meta_title"
                 type="text"
@@ -2001,9 +1971,7 @@ export default function EditCourse() {
               >
                 Meta Description
               </label>
-              <p className="text-xs text-gray-400 mb-2">
-                Recommended: 150–160 characters
-              </p>
+              
               <textarea
                 id="meta_description"
                 name="meta_description"
@@ -2028,9 +1996,7 @@ export default function EditCourse() {
               >
                 Keywords
               </label>
-              <p className="text-xs text-gray-400 mb-2">
-                Comma-separated keywords for better searchability
-              </p>
+             
               <input
                 id="keywords"
                 type="text"

@@ -1926,7 +1926,6 @@ useEffect(() => {
   if (!formData.text) {
     setFormData((prev) => ({
       ...prev,
-      text: `...`
     }));
   }
 }, []);
@@ -2309,10 +2308,8 @@ useEffect(() => {
           <FileText size={16} className="text-red-500" />
         </div>
         <div>
-          <p className="text-base font-semibold text-gray-800">Syllabus PDF *</p>
-          <p className="text-xs text-gray-400 mt-0.5">
-            Required — PDF only · Max 10MB
-          </p>
+          <p className="text-base font-semibold text-gray-800">Syllabus PDF </p>
+          
         </div>
       </div>
 
@@ -2444,9 +2441,7 @@ useEffect(() => {
               <h1 className="text-base sm:text-lg font-bold text-gray-900 leading-tight">
                 Create New Course
               </h1>
-              <p className="text-xs text-gray-400 hidden sm:block">
-                Add a new course to your platform
-              </p>
+              
             </div>
           </div>
           <button
@@ -2501,7 +2496,6 @@ useEffect(() => {
           <SectionHeader
             icon={Tag}
             label="Basic Information"
-            description="Core details about your course"
             iconBg="bg-indigo-50"
             iconColor="text-indigo-600"
           />
@@ -2515,9 +2509,7 @@ useEffect(() => {
             >
               Course Name <span className="text-red-500">*</span>
             </label>
-            <p className="text-xs text-gray-400 mb-3">
-              Give your course a clear, descriptive title
-            </p>
+           
             <input
               id="name"
               type="text"
@@ -2541,9 +2533,7 @@ useEffect(() => {
             >
               Course Slug <span className="text-red-500">*</span>
             </label>
-            <p className="text-xs text-gray-400 mb-3">
-              Auto-generated from course name — you can customize it
-            </p>
+           
             <div className="flex rounded-xl overflow-hidden border border-gray-200 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-transparent transition-all">
               <span className="inline-flex items-center px-4 py-3 bg-gray-100 text-xs text-gray-500 font-medium border-r border-gray-200 whitespace-nowrap">
                 /course/
@@ -2572,9 +2562,7 @@ useEffect(() => {
             >
               Category <span className="text-red-500">*</span>
             </label>
-            <p className="text-xs text-gray-400 mb-3">
-              Select the category that best fits your course
-            </p>
+            
             <div className="relative">
               <select
                 id="category"
@@ -2638,11 +2626,7 @@ useEffect(() => {
               </div>
             </div>
 
-            <p className="text-xs text-gray-400 mb-3">
-              {editorMode === "tinymce"
-                ? "Rich text editor with formatting tools"
-                : "Edit raw HTML source code"}
-            </p>
+           
 
             {/* Conditional Editor */}
             {editorMode === "tinymce" ? (
@@ -2713,7 +2697,6 @@ useEffect(() => {
                     : "text-gray-400"
                 }
               >
-                {formData.text.length} characters
               </span>
               {formData.text.length > MAX_DESCRIPTION_LENGTH && (
                 <span className="text-red-500 font-medium">
@@ -2733,7 +2716,7 @@ useEffect(() => {
                 Short Description
                 <span className="text-red-400 ml-1">*</span>
               </label>
-              <button
+              {/* <button
                 type="button"
                 onClick={generateShortDescription}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-lg transition-all"
@@ -2741,11 +2724,9 @@ useEffect(() => {
               >
                 <Sparkles size={14} />
                 Generate from Description
-              </button>
+              </button> */}
             </div>
-            <p className="text-xs text-gray-400 mb-3">
-              A brief summary of the course (auto‑generated from description)
-            </p>
+            
             <input
               id="short_description"
               type="text"
@@ -2765,7 +2746,6 @@ useEffect(() => {
           <SectionHeader
             icon={BookMarked}
             label="Course Details"
-            description="Duration, lectures, audience and difficulty"
             iconBg="bg-violet-50"
             iconColor="text-violet-600"
             required={true}
@@ -2924,22 +2904,18 @@ useEffect(() => {
                 <p className="text-base font-semibold text-gray-800">
                   Additional Options
                 </p>
-                <p className="text-xs text-gray-400">
-                  Mark this course as featured or for kids
-                </p>
+                
               </div>
             </div>
             <div className="space-y-3 divide-y divide-gray-100">
               <ToggleSwitch
                 label="Featured Course"
-                description="Show this course in featured sections"
                 name="featured"
                 checked={formData.featured}
                 onChange={handleToggleChange}
               />
               <ToggleSwitch
                 label="Kids Course"
-                description="Suitable for younger audiences"
                 name="kids_course"
                 checked={formData.kids_course}
                 onChange={handleToggleChange}
@@ -2951,7 +2927,6 @@ useEffect(() => {
           <SectionHeader
             icon={ImagePlus}
             label="Media Files"
-            description="Images, icons, and course syllabus"
             iconBg="bg-pink-50"
             iconColor="text-pink-500"
             required={true}
@@ -2963,8 +2938,7 @@ useEffect(() => {
               onRemove={() => removeFile("image")}
               inputId="image-upload"
               inputName="image"
-              label="Course Image *"
-              hint="Required · PNG, JPG · Max 5MB"
+              label="Course Image "
               iconBg="bg-pink-50"
               iconColor="text-pink-500"
               error={!!fieldErrors.image}
@@ -2974,8 +2948,7 @@ useEffect(() => {
               onRemove={() => removeFile("banner_img")}
               inputId="banner-upload"
               inputName="banner_img"
-              label="Banner Image *"
-              hint="Required · PNG, JPG · Max 5MB"
+              label="Banner Image "
               iconBg="bg-indigo-50"
               iconColor="text-indigo-500"
               error={!!fieldErrors.banner_img}
@@ -2985,8 +2958,7 @@ useEffect(() => {
               onRemove={() => removeFile("icon")}
               inputId="icon-upload"
               inputName="icon"
-              label="Course Icon *"
-              hint="Required · PNG, JPG · Max 2MB"
+              label="Course Icon "
               iconBg="bg-violet-50"
               iconColor="text-violet-500"
               error={!!fieldErrors.icon}
@@ -2996,8 +2968,7 @@ useEffect(() => {
               onRemove={() => removeFile("image2")}
               inputId="image2-upload"
               inputName="image2"
-              label="Additional Image *"
-              hint="Required · PNG, JPG · Max 5MB"
+              label="Additional Image "
               iconBg="bg-orange-50"
               iconColor="text-orange-500"
               error={!!fieldErrors.image2}
@@ -3009,7 +2980,6 @@ useEffect(() => {
           <SectionHeader
             icon={Search}
             label="SEO & Metadata"
-            description="Help search engines find your course"
             iconBg="bg-emerald-50"
             iconColor="text-emerald-600"
           />
@@ -3024,9 +2994,7 @@ useEffect(() => {
                 Meta Title
                 <span className="text-red-400 ml-1">*</span>
               </label>
-              <p className="text-xs text-gray-400 mb-2">
-                Recommended: 50–60 characters
-              </p>
+              
               <input
                 id="meta_title"
                 type="text"
@@ -3055,9 +3023,7 @@ useEffect(() => {
                 Meta Description
                 <span className="text-red-400 ml-1">*</span>
               </label>
-              <p className="text-xs text-gray-400 mb-2">
-                Recommended: 150–160 characters
-              </p>
+              
               <textarea
                 id="meta_description"
                 name="meta_description"
@@ -3088,9 +3054,7 @@ useEffect(() => {
                 Keywords
                 <span className="text-red-400 ml-1">*</span>
               </label>
-              <p className="text-xs text-gray-400 mb-2">
-                Comma-separated keywords for better searchability
-              </p>
+              
               <input
                 id="keywords"
                 type="text"
