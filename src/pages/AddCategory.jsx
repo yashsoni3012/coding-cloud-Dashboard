@@ -508,7 +508,7 @@ export default function AddCategory() {
       const missingFields = Object.keys(fieldErrors).join(", ");
       setToast({
         show: true,
-        message: `Please fill required fields: ${missingFields}`,
+        message: `Please fill required fields`,
         type: "error",
       });
       return;

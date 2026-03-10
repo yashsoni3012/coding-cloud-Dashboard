@@ -622,7 +622,7 @@ import {
     MessageSquare,
     AlertCircle,
 } from "lucide-react";
-import Toasts from "./Toasts"; // <-- import toast component
+import Toasts from "./Toasts";
 
 export default function EditFAQ() {
     const navigate = useNavigate();
@@ -634,6 +634,7 @@ export default function EditFAQ() {
     const [courses, setCourses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [fieldErrors, setFieldErrors] = useState({});
 
     // Toast state
     const [toast, setToast] = useState({
@@ -703,22 +704,40 @@ export default function EditFAQ() {
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
+        // Clear error for this field when user types
+        if (fieldErrors[name]) {
+            setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
+        }
     };
 
     const validateForm = () => {
-        if (!formData.course) return "Please select a course";
-        if (!formData.question.trim()) return "Question is required";
-        if (!formData.answer.trim()) return "Answer is required";
-        return "";
+        const errors = {};
+
+        if (!formData.course) {
+            errors.course = "Please select a course";
+        }
+
+        if (!formData.question.trim()) {
+            errors.question = "Question is required";
+        }
+
+        if (!formData.answer.trim()) {
+            errors.answer = "Answer is required";
+        }
+
+        setFieldErrors(errors);
+        return Object.keys(errors).length === 0;
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const validationError = validateForm();
-        if (validationError) {
-            showToast(validationError, "error");
+
+        if (!validateForm()) {
+            const missingFields = Object.keys(fieldErrors).join(", ");
+            showToast(`Please fill required fields`, "error");
             return;
         }
+
         setSaving(true);
         try {
             const payload = {
@@ -731,17 +750,29 @@ export default function EditFAQ() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
             });
+
             if (!response.ok) {
                 const errorText = await response.text();
                 let errorMessage;
                 try {
                     const errorData = JSON.parse(errorText);
+                    // Handle structured field errors from backend
+                    if (errorData.errors) {
+                        const backendErrors = {};
+                        Object.keys(errorData.errors).forEach((key) => {
+                            backendErrors[key] = errorData.errors[key].join(", ");
+                        });
+                        setFieldErrors(backendErrors);
+                        showToast("Please correct the errors below", "error");
+                        return; // exit early, keep saving false
+                    }
                     errorMessage = errorData.message || errorData.detail || JSON.stringify(errorData);
                 } catch {
                     errorMessage = errorText || `HTTP error ${response.status}`;
                 }
                 throw new Error(errorMessage);
             }
+
             showToast("FAQ updated successfully!", "success");
             setTimeout(() => navigate("/faq"), 2000);
         } catch (err) {
@@ -779,7 +810,7 @@ export default function EditFAQ() {
             )}
 
             {/* ── Header ── */}
-            <header className=" top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+            <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <button
@@ -792,7 +823,6 @@ export default function EditFAQ() {
                         <div className="w-px h-6 bg-gray-200" />
                         <div>
                             <h1 className="text-base sm:text-lg font-bold text-gray-900 leading-tight">Edit FAQ</h1>
-                            <p className="text-xs text-gray-400 hidden sm:block">ID: {id} · Update frequently asked question</p>
                         </div>
                     </div>
                     <button
@@ -818,8 +848,6 @@ export default function EditFAQ() {
             {/* ── Main ── */}
             <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 pb-28 sm:pb-12">
 
-                {/* Removed inline error/success alerts — now using toast */}
-
                 <form onSubmit={handleSubmit} className="space-y-5">
 
                     {/* ── Course Selection Card ── */}
@@ -832,7 +860,6 @@ export default function EditFAQ() {
                                 <label className="block text-base font-semibold text-gray-800">
                                     Related Course <span className="text-red-500">*</span>
                                 </label>
-                                <p className="text-xs text-gray-400 mt-0.5">Select the course this FAQ belongs to</p>
                             </div>
                         </div>
 
@@ -841,7 +868,9 @@ export default function EditFAQ() {
                                 name="course"
                                 value={formData.course}
                                 onChange={handleInputChange}
-                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none cursor-pointer"
+                                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none cursor-pointer ${
+                                    fieldErrors.course ? "border-red-500" : "border-gray-200"
+                                }`}
                                 required
                             >
                                 <option value="" disabled>— Select a Course —</option>
@@ -853,19 +882,11 @@ export default function EditFAQ() {
                             </select>
                             <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                         </div>
-
-                        {/* Selected course confirmation badge */}
-                        {selectedCourse && (
-                            <div className="mt-3 flex items-center gap-2 p-3 bg-violet-50 border border-violet-100 rounded-xl">
-                                <div className="w-6 h-6 bg-violet-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                    <Layers size={12} className="text-violet-600" />
-                                </div>
-                                <p className="text-xs text-violet-700">
-                                    <span className="font-semibold">Selected:</span> {selectedCourse.name}
-                                    <span className="text-violet-400 ml-1">· ID: {selectedCourse.id}</span>
-                                </p>
-                            </div>
+                        {fieldErrors.course && (
+                            <p className="text-xs text-red-500 mt-1">{fieldErrors.course}</p>
                         )}
+
+                       
                     </div>
 
                     {/* ── Question Card ── */}
@@ -878,7 +899,6 @@ export default function EditFAQ() {
                                 <label htmlFor="question" className="block text-base font-semibold text-gray-800">
                                     Question <span className="text-red-500">*</span>
                                 </label>
-                                <p className="text-xs text-gray-400 mt-0.5">Write a clear, concise question students might ask</p>
                             </div>
                         </div>
                         <input
@@ -888,9 +908,14 @@ export default function EditFAQ() {
                             value={formData.question}
                             onChange={handleInputChange}
                             placeholder="e.g., What is Python used for?"
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                            className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
+                                fieldErrors.question ? "border-red-500" : "border-gray-200"
+                            }`}
                             required
                         />
+                        {fieldErrors.question && (
+                            <p className="text-xs text-red-500 mt-1">{fieldErrors.question}</p>
+                        )}
                     </div>
 
                     {/* ── Answer Card ── */}
@@ -903,7 +928,6 @@ export default function EditFAQ() {
                                 <label htmlFor="answer" className="block text-base font-semibold text-gray-800">
                                     Answer <span className="text-red-500">*</span>
                                 </label>
-                                <p className="text-xs text-gray-400 mt-0.5">Provide a clear and detailed answer to help students</p>
                             </div>
                         </div>
                         <textarea
@@ -913,16 +937,17 @@ export default function EditFAQ() {
                             onChange={handleInputChange}
                             rows={5}
                             placeholder="Enter the comprehensive answer here…"
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-none"
+                            className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-none ${
+                                fieldErrors.answer ? "border-red-500" : "border-gray-200"
+                            }`}
                             required
                         />
-                        <p className="flex items-center gap-1.5 text-xs text-gray-400 mt-2">
-                            <Info size={11} />
-                            Provide a clear and detailed answer to help students · {formData.answer.length} characters
-                        </p>
+                        {fieldErrors.answer && (
+                            <p className="text-xs text-red-500 mt-1">{fieldErrors.answer}</p>
+                        )}
+                       
                     </div>
 
-                  
                     {/* ── Mobile Submit ── */}
                     <div className="sm:hidden">
                         <button
