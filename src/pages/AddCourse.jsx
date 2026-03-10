@@ -1921,18 +1921,15 @@ export default function AddCourse() {
   // ------------------------------------------------------------------------
   // Default HTML content (from the image)
   // ------------------------------------------------------------------------
-  useEffect(() => {
-    // Only set default if text is empty (first load)
-    if (!formData.text) {
-      setFormData((prev) => ({
-        ...prev,
-        text: `<p><img style="float: right;" title="Tiny Logo" src="https://www.tiny.cloud/docs/tinymce/latest/images/tiny-logo.png" alt="Tiny Logo" /></p>
-<h2>The world’s first rich text editor in the cloud</h2>
-<p>Have you heard about Tiny Cloud? It’s the first step in our journey to help you deliver great content creation experiences, no matter your level of expertise. 50,000 developers already agree. They get free access to our global CDN, image proxy services and auto updates to the TinyMCE editor. They’re also ready for some exciting updates coming soon.</p>
-<p>One of these enhancements is <strong>Tiny Drive</strong>: imagine file management for TinyMCE, in the cloud, made super easy.</p>`,
-      }));
-    }
-  }, []);
+// REMOVE THIS BLOCK
+useEffect(() => {
+  if (!formData.text) {
+    setFormData((prev) => ({
+      ...prev,
+      text: `...`
+    }));
+  }
+}, []);
 
   const [imagePreview, setImagePreview] = useState("");
   const [bannerPreview, setBannerPreview] = useState("");
@@ -2026,7 +2023,7 @@ export default function AddCourse() {
     }
   };
 
-  // 🟥 NEW VALIDATION: Added checks for image, banner_img, pdf_file
+  // 🟥 NEW VALIDATION: Added checks for image, banner_img, pdf_file, icon, image2
   const validateForm = () => {
     const errors = {};
 
@@ -2066,7 +2063,7 @@ export default function AddCourse() {
       errors.keywords = "Keywords are required";
     }
 
-    // 🟥 NEW: File fields are now required
+    // 🟥 File fields are now ALL required (except maybe future additions)
     if (!formData.image) {
       errors.image = "Course image is required";
     }
@@ -2075,6 +2072,12 @@ export default function AddCourse() {
     }
     if (!formData.pdf_file) {
       errors.pdf_file = "Syllabus PDF is required";
+    }
+    if (!formData.icon) {
+      errors.icon = "Course icon is required";
+    }
+    if (!formData.image2) {
+      errors.image2 = "Additional image is required";
     }
 
     setFieldErrors(errors);
@@ -2096,6 +2099,8 @@ export default function AddCourse() {
       image: "Course image",
       banner_img: "Banner image",
       pdf_file: "Syllabus PDF",
+      icon: "Course icon",
+      image2: "Additional image",
     };
     return Object.keys(errors)
       .map((key) => fieldLabels[key] || key)
@@ -2105,10 +2110,10 @@ export default function AddCourse() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const isValid = validateForm();
-if (!isValid) {
-  setError("Please fill the required fields.");
-  return;
-}
+    if (!isValid) {
+      setError("Please fill the required fields.");
+      return;
+    }
 
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
 
@@ -2304,7 +2309,7 @@ if (!isValid) {
           <FileText size={16} className="text-red-500" />
         </div>
         <div>
-          <p className="text-base font-semibold text-gray-800">Syllabus PDF</p>
+          <p className="text-base font-semibold text-gray-800">Syllabus PDF *</p>
           <p className="text-xs text-gray-400 mt-0.5">
             Required — PDF only · Max 10MB
           </p>
@@ -2958,47 +2963,46 @@ if (!isValid) {
               onRemove={() => removeFile("image")}
               inputId="image-upload"
               inputName="image"
-              label="Course Image"
+              label="Course Image *"
               hint="Required · PNG, JPG · Max 5MB"
               iconBg="bg-pink-50"
               iconColor="text-pink-500"
-              error={!!fieldErrors.image} // 🟥 pass error prop
+              error={!!fieldErrors.image}
             />
             <ImageUploadBox
               preview={bannerPreview}
               onRemove={() => removeFile("banner_img")}
               inputId="banner-upload"
               inputName="banner_img"
-              label="Banner Image"
+              label="Banner Image *"
               hint="Required · PNG, JPG · Max 5MB"
               iconBg="bg-indigo-50"
               iconColor="text-indigo-500"
-              error={!!fieldErrors.banner_img} // 🟥 pass error prop
+              error={!!fieldErrors.banner_img}
             />
             <ImageUploadBox
               preview={iconPreview}
               onRemove={() => removeFile("icon")}
               inputId="icon-upload"
               inputName="icon"
-              label="Course Icon"
-              hint="Optional · PNG, JPG · Max 2MB"
+              label="Course Icon *"
+              hint="Required · PNG, JPG · Max 2MB"
               iconBg="bg-violet-50"
               iconColor="text-violet-500"
-              // icon is not required, so no error prop
+              error={!!fieldErrors.icon}
             />
             <ImageUploadBox
               preview={image2Preview}
               onRemove={() => removeFile("image2")}
               inputId="image2-upload"
               inputName="image2"
-              label="Additional Image"
-              hint="Optional · PNG, JPG · Max 5MB"
+              label="Additional Image *"
+              hint="Required · PNG, JPG · Max 5MB"
               iconBg="bg-orange-50"
               iconColor="text-orange-500"
-              // image2 is not required
+              error={!!fieldErrors.image2}
             />
-            <PdfUploadBox error={!!fieldErrors.pdf_file} />{" "}
-            {/* 🟥 pass error prop */}
+            <PdfUploadBox error={!!fieldErrors.pdf_file} />
           </div>
 
           {/* SECTION 4 — SEO & Metadata */}
