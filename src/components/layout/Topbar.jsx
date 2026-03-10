@@ -46,8 +46,8 @@ export default function Topbar() {
   return (
     <>
       <header className="sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 bg-white border-b border-slate-200/80 shrink-0 shadow-[0_1px_12px_rgba(0,0,0,0.06)]">
-        {/* Left section */}
-        <div className="flex items-center gap-3">
+        {/* Left section — added pl-12 on mobile to clear the sidebar toggle button */}
+        <div className="flex items-center gap-3 pl-12 sm:pl-0">
           <div>
             <h1 className="text-[15px] sm:text-base font-bold text-slate-800 leading-tight">
               {title}
@@ -93,39 +93,6 @@ export default function Topbar() {
                 </div>
               )}
             </button>
-
-            {/* {showProfileMenu && (
-              <>
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setShowProfileMenu(false)}
-                />
-                <div className="absolute right-0 mt-2 w-52 bg-white rounded-2xl shadow-xl border border-slate-200/80 z-50 overflow-hidden">
-                  <div className="px-4 py-3.5 border-b border-slate-100">
-                    <p className="text-[13px] font-semibold text-slate-800">
-                      Admin Kumar
-                    </p>
-                    <p className="text-[11px] text-slate-400 mt-0.5">
-                      admin@example.com
-                    </p>
-                  </div>
-                  <div className="py-1">
-                    {["Profile"].map((item) => (
-                      <button
-                        key={item}
-                        className="w-full px-4 py-2.5 text-[13px] text-slate-600 hover:bg-slate-50 hover:text-slate-800 text-left transition-colors font-medium"
-                        onClick={() => {
-                          setShowProfileMenu(false);
-                          navigate("/profile");
-                        }}
-                      >
-                        {item}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </>
-            )} */}
           </div>
         </div>
       </header>

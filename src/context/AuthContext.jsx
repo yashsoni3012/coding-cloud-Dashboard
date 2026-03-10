@@ -3,14 +3,18 @@ import { createContext, useContext, useState } from 'react'
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => {
-    try {
-      const stored = localStorage.getItem('admin_user')
-      return stored ? JSON.parse(stored) : null
-    } catch {
-      return null
-    }
-  })
+ const [user, setUser] = useState(() => {
+  try {
+    const stored =
+      typeof window !== "undefined"
+        ? localStorage.getItem("admin_user")
+        : null;
+
+    return stored ? JSON.parse(stored) : null
+  } catch {
+    return null
+  }
+})
 
   const login = (userData) => {
     setUser(userData)
