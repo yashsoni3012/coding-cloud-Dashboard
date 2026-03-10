@@ -1447,25 +1447,33 @@ if (Object.keys(errors).length > 0) {
   };
 
   // ── Section Header ──
-  const SectionHeader = ({
-    icon: Icon,
-    label,
-    iconBg,
-    iconColor,
-    description,
-  }) => (
-    <div className="flex items-center gap-3 pt-2">
-      <div
-        className={`w-9 h-9 ${iconBg} rounded-xl flex items-center justify-center flex-shrink-0`}
-      >
-        <Icon size={16} className={iconColor} />
-      </div>
-      <div>
-        <p className="text-base font-bold text-gray-800">{label}</p>
-        {description && <p className="text-xs text-gray-400">{description}</p>}
-      </div>
+const SectionHeader = ({
+  icon: Icon,
+  label,
+  iconBg,
+  iconColor,
+  description,
+  required,
+}) => (
+  <div className="flex items-center gap-3 pt-2">
+    <div
+      className={`w-9 h-9 ${iconBg} rounded-xl flex items-center justify-center flex-shrink-0`}
+    >
+      <Icon size={16} className={iconColor} />
     </div>
-  );
+
+    <div>
+      <p className="text-base font-bold text-gray-800 flex items-center">
+        {label}
+        {required && <span className="text-red-500 ml-1">*</span>}
+      </p>
+
+      {description && (
+        <p className="text-xs text-gray-400">{description}</p>
+      )}
+    </div>
+  </div>
+);
 
   // ── Loading State ──
   if (loading || categoriesLoading) {
@@ -1957,6 +1965,8 @@ if (Object.keys(errors).length > 0) {
             label="Media Files"
             iconBg="bg-pink-50"
             iconColor="text-pink-500"
+            required={true}
+            
           />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -1966,7 +1976,7 @@ if (Object.keys(errors).length > 0) {
               onRemove={() => removeFile("image", !imagePreview)}
               inputId="image-upload"
               inputName="image"
-              label="Course Image *"
+              label="Course Image "
               iconBg="bg-pink-50"
               iconColor="text-pink-500"
               error={!!fieldErrors.image}
@@ -1977,7 +1987,7 @@ if (Object.keys(errors).length > 0) {
               onRemove={() => removeFile("banner_img", !bannerPreview)}
               inputId="banner-upload"
               inputName="banner_img"
-              label="Banner Image *"
+              label="Banner Image "
               iconBg="bg-indigo-50"
               iconColor="text-indigo-500"
               error={!!fieldErrors.banner_img}
@@ -1988,7 +1998,7 @@ if (Object.keys(errors).length > 0) {
               onRemove={() => removeFile("icon", !iconPreview)}
               inputId="icon-upload"
               inputName="icon"
-              label="Course Icon *"
+              label="Course Icon "
               iconBg="bg-violet-50"
               iconColor="text-violet-500"
               error={!!fieldErrors.icon}
@@ -1999,7 +2009,7 @@ if (Object.keys(errors).length > 0) {
               onRemove={() => removeFile("image2", !image2Preview)}
               inputId="image2-upload"
               inputName="image2"
-              label="Additional Image *"
+              label="Additional Image "
               iconBg="bg-orange-50"
               iconColor="text-orange-500"
               error={!!fieldErrors.image2}
@@ -2023,6 +2033,7 @@ if (Object.keys(errors).length > 0) {
                 className="block text-base font-semibold text-gray-800 mb-1"
               >
                 Meta Title
+                <span className="text-red-500 ml-1 font-semibold">*</span>
               </label>
               <input
                 id="meta_title"
@@ -2049,6 +2060,7 @@ if (Object.keys(errors).length > 0) {
                 className="block text-base font-semibold text-gray-800 mb-1"
               >
                 Meta Description
+                <span className="text-red-500 ml-1 font-semibold">*</span>
               </label>
               <textarea
                 id="meta_description"
@@ -2077,6 +2089,7 @@ if (Object.keys(errors).length > 0) {
                 className="block text-base font-semibold text-gray-800 mb-1"
               >
                 Keywords
+                <span className="text-red-500 ml-1 font-semibold">*</span>
               </label>
               <input
                 id="keywords"

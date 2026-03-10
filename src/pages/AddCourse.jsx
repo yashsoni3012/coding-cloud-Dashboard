@@ -2324,9 +2324,7 @@ export default function AddCourse() {
           <p className="text-base font-semibold text-gray-800">
             Syllabus PDF <span className="text-red-500">*</span>
           </p>
-          <p className="text-xs text-gray-400 mt-0.5">
-            Required · PDF only · Max 10MB
-          </p>
+         
         </div>
       </div>
 
@@ -2342,8 +2340,7 @@ export default function AddCourse() {
             Upload Syllabus
           </p>
           <p className="text-xs text-gray-400">
-            <span className="text-indigo-500 font-medium">Browse files</span> ·
-            PDF only up to 10MB
+            <span className="text-indigo-500 font-medium">Browse files</span>
           </p>
         </div>
       ) : (
@@ -2949,8 +2946,7 @@ export default function AddCourse() {
               onRemove={() => removeFile("image")}
               inputId="image-upload"
               inputName="image"
-              label="Course Image *"
-              hint="Required · PNG, JPG · Max 5MB"
+              label="Course Image"
               iconBg="bg-pink-50"
               iconColor="text-pink-500"
               error={!!fieldErrors.image}
@@ -2960,8 +2956,7 @@ export default function AddCourse() {
               onRemove={() => removeFile("banner_img")}
               inputId="banner-upload"
               inputName="banner_img"
-              label="Banner Image *"
-              hint="Required · PNG, JPG · Max 5MB"
+              label="Banner Image "
               iconBg="bg-indigo-50"
               iconColor="text-indigo-500"
               error={!!fieldErrors.banner_img}
@@ -2971,8 +2966,7 @@ export default function AddCourse() {
               onRemove={() => removeFile("icon")}
               inputId="icon-upload"
               inputName="icon"
-              label="Course Icon *"
-              hint="Required · PNG, JPG · Max 2MB"
+              label="Course Icon "
               iconBg="bg-violet-50"
               iconColor="text-violet-500"
               error={!!fieldErrors.icon}
@@ -2982,8 +2976,7 @@ export default function AddCourse() {
               onRemove={() => removeFile("image2")}
               inputId="image2-upload"
               inputName="image2"
-              label="Additional Image *"
-              hint="Required · PNG, JPG · Max 5MB"
+              label="Additional Image "
               iconBg="bg-orange-50"
               iconColor="text-orange-500"
               error={!!fieldErrors.image2}
