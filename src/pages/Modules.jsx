@@ -1371,9 +1371,9 @@ export default function Modules() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState({
-    key: "name",
-    direction: "asc",
-  });
+  key: "display_id",
+  direction: "desc",
+});
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({ course: "all" });
   const [itemsPerPage, setItemsPerPage] = useState(10);
