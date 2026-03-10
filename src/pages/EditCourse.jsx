@@ -799,6 +799,8 @@
 //         </div>
 //     );
 // }
+
+
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Editor } from "@tinymce/tinymce-react";
@@ -820,6 +822,7 @@ import {
   BookMarked,
   Search,
   Sparkles,
+  AlertCircle,
 } from "lucide-react";
 import Toasts from "./Toasts";
 
@@ -831,24 +834,19 @@ export default function EditCourse() {
   const [saving, setSaving] = useState(false);
   const [categories, setCategories] = useState([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
-
-  // ------------------------------------------------------------------------
-  // Editor mode: "tinymce" or "html"
-  // ------------------------------------------------------------------------
   const [editorMode, setEditorMode] = useState("tinymce");
-
-  // Toast state
   const [toast, setToast] = useState({
     show: false,
     message: "",
     type: "success",
   });
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const [formData, setFormData] = useState({
     id: "",
     name: "",
     slug: "",
-    category: "", // will be a number after fetch
+    category: "",
     text: "",
     short_description: "",
     duration: "",
@@ -897,11 +895,8 @@ export default function EditCourse() {
     setToast((prev) => ({ ...prev, show: false }));
   };
 
-  // ------------------------------------------------------------------------
   // Generate short description from main description (plain text)
-  // ------------------------------------------------------------------------
   const generateShortDescription = () => {
-    // Simple HTML‑to‑text conversion (strip tags)
     const plainText = formData.text.replace(/<[^>]*>/g, "");
     const truncated = plainText.slice(0, 200);
     setFormData((prev) => ({ ...prev, short_description: truncated }));
@@ -933,6 +928,7 @@ export default function EditCourse() {
     fetchCategories();
   }, []);
 
+  // Fetch course data
   useEffect(() => {
     const fetchCourseData = async () => {
       try {
@@ -948,7 +944,7 @@ export default function EditCourse() {
             id: course.id,
             name: course.name || "",
             slug: course.slug || "",
-            category: course.category || "", // keep as number (if exists)
+            category: course.category || "",
             text: course.text || "",
             short_description: course.short_description || "",
             duration: course.duration || "",
@@ -987,11 +983,16 @@ export default function EditCourse() {
     if (id) fetchCourseData();
   }, [id]);
 
+  // Clear error for a field when user types
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    // Convert category to number so that select matching works
     const newValue = name === "category" ? Number(value) : value;
     setFormData((prev) => ({ ...prev, [name]: newValue }));
+
+    // Clear error for this field
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
 
     // Auto-generate slug from name if slug is empty
     if (name === "name" && !formData.slug) {
@@ -1003,11 +1004,15 @@ export default function EditCourse() {
     }
   };
 
-  // Handle toggle changes for boolean fields
   const handleToggleChange = (name, checked) => {
     setFormData((prev) => ({ ...prev, [name]: checked }));
+    // Toggles are always valid – clear any previous error
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
   };
 
+  // Handle file selection – clear error for that field
   const handleFileChange = (e) => {
     const { name, files } = e.target;
     const file = files[0];
@@ -1030,6 +1035,12 @@ export default function EditCourse() {
       }
       setFormData((prev) => ({ ...prev, [name]: file }));
       setFilesChanged((prev) => ({ ...prev, [name]: true }));
+
+      // Clear error for this file field
+      if (fieldErrors[name]) {
+        setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
+      }
+
       if (name === "image") setImagePreview(URL.createObjectURL(file));
       else if (name === "banner_img")
         setBannerPreview(URL.createObjectURL(file));
@@ -1039,6 +1050,7 @@ export default function EditCourse() {
     }
   };
 
+  // Remove file – if no existing file remains, mark field as error
   const removeFile = (field, isExisting = false) => {
     if (isExisting) {
       setFormData((prev) => ({ ...prev, [`existing_${field}`]: "" }));
@@ -1063,29 +1075,69 @@ export default function EditCourse() {
         document.getElementById("pdf-upload").value = "";
       }
     }
+
+    // After removal, check if the field is now empty and set error accordingly
+    const hasExisting = formData[`existing_${field}`] && !isExisting; // if we are removing existing, we already set it to ""
+    const hasNew = formData[field] && !isExisting;
+    const empty = !hasExisting && !hasNew;
+    if (empty) {
+      setFieldErrors((prev) => ({ ...prev, [field]: `${field} is required` }));
+    } else {
+      // Clear error if field becomes non-empty (e.g., there is still existing file)
+      setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
   };
 
+  // Validate the entire form before submission
   const validateForm = () => {
-    if (!formData.name.trim()) return "Course name is required";
-    if (!formData.slug.trim()) return "Course slug is required";
-    if (!formData.category) return "Category is required";
-    if (!formData.text.trim()) return "Description is required";
-    return "";
+    const errors = {};
+
+    // Basic required fields
+    if (!formData.name.trim()) errors.name = "Course name is required";
+    if (!formData.slug.trim()) errors.slug = "Course slug is required";
+    if (!formData.category) errors.category = "Category is required";
+    if (!formData.text.trim()) errors.text = "Description is required";
+
+    // Certificate – ensure it's one of the two values (it always is, but we can enforce)
+    if (!formData.certificate) errors.certificate = "Certificate is required";
+
+    // File fields – valid if existing OR new file is present
+    if (!formData.existing_image && !formData.image) {
+      errors.image = "Course image is required";
+    }
+    if (!formData.existing_banner && !formData.banner_img) {
+      errors.banner_img = "Banner image is required";
+    }
+    if (!formData.existing_icon && !formData.icon) {
+      errors.icon = "Course icon is required";
+    }
+    if (!formData.existing_image2 && !formData.image2) {
+      errors.image2 = "Additional image is required";
+    }
+    if (!formData.existing_pdf && !formData.pdf_file) {
+      errors.pdf_file = "Syllabus PDF is required";
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const validationError = validateForm();
-    if (validationError) {
-      showToast(validationError, "error");
-      return;
-    }
+   const errors = validateForm();
+
+if (Object.keys(errors).length > 0) {
+  showToast("Please fill required fields", "error");
+  return;
+}
+
     setSaving(true);
     try {
       const submitData = new FormData();
       submitData.append("name", formData.name);
       submitData.append("slug", formData.slug);
-      submitData.append("category", formData.category); // now a number
+      submitData.append("category", formData.category);
       submitData.append("text", formData.text);
       if (formData.short_description)
         submitData.append("short_description", formData.short_description);
@@ -1105,9 +1157,10 @@ export default function EditCourse() {
       if (formData.meta_description)
         submitData.append("meta_description", formData.meta_description);
       if (formData.keywords) submitData.append("keywords", formData.keywords);
+
+      // Only append files if they have been changed (new file selected)
       if (formData.image) submitData.append("image", formData.image);
-      if (formData.banner_img)
-        submitData.append("banner_img", formData.banner_img);
+      if (formData.banner_img) submitData.append("banner_img", formData.banner_img);
       if (formData.pdf_file) submitData.append("pdf_file", formData.pdf_file);
       if (formData.icon) submitData.append("icon", formData.icon);
       if (formData.image2) submitData.append("image2", formData.image2);
@@ -1124,18 +1177,23 @@ export default function EditCourse() {
         showToast("Course updated successfully!", "success");
         setTimeout(() => navigate("/course"), 2000);
       } else {
-        showToast(
-          data.message ||
-            data.detail ||
-            "Failed to update course. Please try again.",
-          "error",
-        );
+        // Backend validation errors – map to fields if possible
+        if (data.errors) {
+          const backendErrors = {};
+          Object.keys(data.errors).forEach((key) => {
+            backendErrors[key] = data.errors[key].join(", ");
+          });
+          setFieldErrors(backendErrors);
+          showToast("Please fill required fields", "error");
+        } else {
+          showToast(
+            data.message || data.detail || "Failed to update course.",
+            "error",
+          );
+        }
       }
     } catch (err) {
-      showToast(
-        "Network error. Please check your connection and try again.",
-        "error",
-      );
+      showToast("Network error. Please check your connection.", "error");
     } finally {
       setSaving(false);
     }
@@ -1166,7 +1224,7 @@ export default function EditCourse() {
     </div>
   );
 
-  // ── Reusable Image Upload Box ──
+  // ── Reusable Image Upload Box with error styling ──
   const ImageUploadBox = ({
     preview,
     existingUrl,
@@ -1177,6 +1235,7 @@ export default function EditCourse() {
     hint,
     iconBg,
     iconColor,
+    error, // new prop
   }) => {
     const hasPreview = preview || existingUrl;
     const previewSrc =
@@ -1187,7 +1246,11 @@ export default function EditCourse() {
     const isNew = !!preview;
 
     return (
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+      <div
+        className={`bg-white rounded-2xl border shadow-sm p-6 ${
+          error ? "border-red-500" : "border-gray-200"
+        }`}
+      >
         <div className="flex items-center gap-3 mb-4">
           <div
             className={`w-9 h-9 ${iconBg} rounded-xl flex items-center justify-center flex-shrink-0`}
@@ -1274,8 +1337,8 @@ export default function EditCourse() {
     );
   };
 
-  // ── PDF Upload Box ──
-  const PdfUploadBox = () => {
+  // ── PDF Upload Box with error styling ──
+  const PdfUploadBox = ({ error }) => {
     const hasPdf = pdfName || formData.existing_pdf;
     const pdfDisplayName =
       pdfName ||
@@ -1283,14 +1346,18 @@ export default function EditCourse() {
     const isNew = !!pdfName;
 
     return (
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+      <div
+        className={`bg-white rounded-2xl border shadow-sm p-6 ${
+          error ? "border-red-500" : "border-gray-200"
+        }`}
+      >
         <div className="flex items-center gap-3 mb-4">
           <div className="w-9 h-9 bg-red-50 rounded-xl flex items-center justify-center flex-shrink-0">
             <FileText size={16} className="text-red-500" />
           </div>
           <div>
             <p className="text-base font-semibold text-gray-800">
-              Syllabus PDF
+              Syllabus PDF <span className="text-red-500">*</span>
             </p>
           </div>
         </div>
@@ -1298,19 +1365,17 @@ export default function EditCourse() {
         {!hasPdf ? (
           <div
             onClick={() => document.getElementById("pdf-upload")?.click()}
-            className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center cursor-pointer hover:border-blue-200 hover:bg-blue-50/40 transition-all select-none"
+            className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center cursor-pointer hover:border-indigo-300 hover:bg-indigo-50/50 transition-all select-none"
           >
-            <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center mx-auto mb-3">
-              <Upload size={20} className="text-blue-400" />
+            <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center mx-auto mb-3">
+              <Upload size={20} className="text-indigo-500" />
             </div>
-
             <p className="text-base font-semibold text-gray-700 mb-1">
               Upload Syllabus
             </p>
-
             <p className="text-xs text-gray-400">
-              <span className="text-blue-400 font-medium">Browse files</span> ·
-              PDF only up to 10MB
+              <span className="text-indigo-500 font-medium">Browse files</span>{" "}
+              · PDF only up to 10MB
             </p>
           </div>
         ) : (
@@ -1319,17 +1384,17 @@ export default function EditCourse() {
               className={`relative flex items-center gap-3 p-4 rounded-xl border ${
                 isNew
                   ? "bg-emerald-50 border-emerald-100"
-                  : "bg-blue-50 border-blue-100"
+                  : "bg-indigo-50 border-indigo-100"
               }`}
             >
               <div
                 className={`w-10 h-10 ${
-                  isNew ? "bg-emerald-100" : "bg-blue-100"
+                  isNew ? "bg-emerald-100" : "bg-indigo-100"
                 } rounded-xl flex items-center justify-center flex-shrink-0`}
               >
                 <FileText
                   size={18}
-                  className={isNew ? "text-emerald-600" : "text-blue-600"}
+                  className={isNew ? "text-emerald-600" : "text-indigo-600"}
                 />
               </div>
 
@@ -1340,7 +1405,7 @@ export default function EditCourse() {
 
                 <p
                   className={`text-xs mt-0.5 ${
-                    isNew ? "text-emerald-500" : "text-blue-400"
+                    isNew ? "text-emerald-500" : "text-indigo-400"
                   }`}
                 >
                   {isNew
@@ -1352,7 +1417,7 @@ export default function EditCourse() {
               <button
                 type="button"
                 onClick={() => removeFile("pdf_file", !pdfName)}
-                className="w-8 h-8 bg-white rounded-full shadow-sm flex items-center justify-center text-gray-400 hover:text-blue-500 transition-all flex-shrink-0"
+                className="w-8 h-8 bg-white rounded-full shadow-sm flex items-center justify-center text-gray-400 hover:text-indigo-500 transition-all flex-shrink-0"
               >
                 <X size={15} />
               </button>
@@ -1362,7 +1427,7 @@ export default function EditCourse() {
             <button
               type="button"
               onClick={() => document.getElementById("pdf-upload")?.click()}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-500 hover:bg-blue-100 rounded-xl text-xs font-semibold transition-all"
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-500 hover:bg-indigo-100 rounded-xl text-xs font-semibold transition-all"
             >
               <Upload size={13} />
               Replace PDF
@@ -1428,7 +1493,7 @@ export default function EditCourse() {
       )}
 
       {/* ── Header ── */}
-      <header className=" top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+      <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
@@ -1443,7 +1508,6 @@ export default function EditCourse() {
               <h1 className="text-base sm:text-lg font-bold text-gray-900 leading-tight">
                 Edit Course
               </h1>
-             
             </div>
           </div>
           <button
@@ -1469,9 +1533,7 @@ export default function EditCourse() {
       {/* ── Main ── */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 pb-28 sm:pb-12">
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* ════════════════════════════════
-                        SECTION 1 — Basic Information
-                    ════════════════════════════════ */}
+          {/* SECTION 1 — Basic Information */}
           <SectionHeader
             icon={Tag}
             label="Basic Information"
@@ -1487,7 +1549,6 @@ export default function EditCourse() {
             >
               Course Name <span className="text-red-500">*</span>
             </label>
-            
             <input
               id="name"
               type="text"
@@ -1495,7 +1556,9 @@ export default function EditCourse() {
               value={formData.name}
               onChange={handleInputChange}
               placeholder="e.g., Advanced React Development"
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+              className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
+                fieldErrors.name ? "border-red-500" : "border-gray-200"
+              }`}
               required
             />
           </div>
@@ -1508,7 +1571,6 @@ export default function EditCourse() {
             >
               Course Slug <span className="text-red-500">*</span>
             </label>
-           
             <div className="flex rounded-xl overflow-hidden border border-gray-200 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-transparent transition-all">
               <span className="inline-flex items-center px-4 py-3 bg-gray-100 text-xs text-gray-500 font-medium border-r border-gray-200 whitespace-nowrap">
                 /course/
@@ -1520,7 +1582,9 @@ export default function EditCourse() {
                 value={formData.slug}
                 onChange={handleInputChange}
                 placeholder="advanced-react-development"
-                className="flex-1 px-4 py-3 bg-gray-50 text-gray-900 text-base placeholder-gray-400 outline-none focus:bg-white transition-all"
+                className={`flex-1 px-4 py-3 bg-gray-50 text-gray-900 text-base placeholder-gray-400 outline-none focus:bg-white transition-all ${
+                  fieldErrors.slug ? "border-red-500" : ""
+                }`}
                 required
               />
             </div>
@@ -1534,14 +1598,15 @@ export default function EditCourse() {
             >
               Category <span className="text-red-500">*</span>
             </label>
-           
             <div className="relative">
               <select
                 id="category"
                 name="category"
                 value={formData.category}
                 onChange={handleInputChange}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none"
+                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none ${
+                  fieldErrors.category ? "border-red-500" : "border-gray-200"
+                }`}
                 required
               >
                 <option value="">Select a category</option>
@@ -1567,8 +1632,6 @@ export default function EditCourse() {
               >
                 Description <span className="text-red-500">*</span>
               </label>
-
-              {/* Tab Switcher */}
               <div className="flex gap-1 p-1 bg-gray-100 rounded-lg">
                 <button
                   type="button"
@@ -1595,54 +1658,67 @@ export default function EditCourse() {
               </div>
             </div>
 
-                  
             {/* Conditional Editor */}
             {editorMode === "tinymce" ? (
-              <Editor
-                apiKey="x5ikrjt2xexo2x73y0uzybqhbjq29owf8drai57qhtew5e0j"
-                value={formData.text}
-                onEditorChange={(content) =>
-                  setFormData((prev) => ({ ...prev, text: content }))
-                }
-                init={{
-                  height: 400,
-                  menubar: true,
-                  plugins: [
-                    "advlist",
-                    "autolink",
-                    "lists",
-                    "link",
-                    "image",
-                    "charmap",
-                    "preview",
-                    "anchor",
-                    "searchreplace",
-                    "visualblocks",
-                    "code",
-                    "fullscreen",
-                    "insertdatetime",
-                    "media",
-                    "table",
-                    "help",
-                    "wordcount",
-                  ],
-                  toolbar:
-                    "undo redo | blocks | " +
-                    "bold italic forecolor | alignleft aligncenter " +
-                    "alignright alignjustify | bullist numlist outdent indent | " +
-                    "removeformat | code | help",
-                  content_style:
-                    "body { font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.6; }",
-                  placeholder: "Write a detailed description of your course…",
-                }}
-              />
+              <div
+                className={`border rounded-xl overflow-hidden ${
+                  fieldErrors.text ? "border-red-500" : "border-gray-200"
+                }`}
+              >
+                <Editor
+                  apiKey="x5ikrjt2xexo2x73y0uzybqhbjq29owf8drai57qhtew5e0j"
+                  value={formData.text}
+                  onEditorChange={(content) => {
+                    setFormData((prev) => ({ ...prev, text: content }));
+                    if (fieldErrors.text) {
+                      setFieldErrors((prev) => ({ ...prev, text: undefined }));
+                    }
+                  }}
+                  init={{
+                    height: 400,
+                    menubar: true,
+                    plugins: [
+                      "advlist",
+                      "autolink",
+                      "lists",
+                      "link",
+                      "image",
+                      "charmap",
+                      "preview",
+                      "anchor",
+                      "searchreplace",
+                      "visualblocks",
+                      "code",
+                      "fullscreen",
+                      "insertdatetime",
+                      "media",
+                      "table",
+                      "help",
+                      "wordcount",
+                    ],
+                    toolbar:
+                      "undo redo | blocks | " +
+                      "bold italic forecolor | alignleft aligncenter " +
+                      "alignright alignjustify | bullist numlist outdent indent | " +
+                      "removeformat | code | help",
+                    content_style:
+                      "body { font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.6; }",
+                    placeholder: "Write a detailed description of your course…",
+                  }}
+                />
+              </div>
             ) : (
               <textarea
                 value={formData.text}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, text: e.target.value }))
-                }
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base font-mono placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                onChange={(e) => {
+                  setFormData((prev) => ({ ...prev, text: e.target.value }));
+                  if (fieldErrors.text) {
+                    setFieldErrors((prev) => ({ ...prev, text: undefined }));
+                  }
+                }}
+                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base font-mono placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
+                  fieldErrors.text ? "border-red-500" : "border-gray-200"
+                }`}
                 rows={12}
                 placeholder="<!-- Write HTML here -->"
               />
@@ -1653,7 +1729,7 @@ export default function EditCourse() {
             </p>
           </div>
 
-          {/* ✨ Short Description with auto‑generate button */}
+          {/* Short Description with auto‑generate button */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <div className="flex items-center justify-between mb-1">
               <label
@@ -1662,17 +1738,16 @@ export default function EditCourse() {
               >
                 Short Description
               </label>
-              {/* <button
+              <button
                 type="button"
                 onClick={generateShortDescription}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-lg transition-all"
                 title="Generate from main description"
               >
                 <Sparkles size={14} />
-                Generate from Description
-              </button> */}
+                Generate
+              </button>
             </div>
-           
             <input
               id="short_description"
               type="text"
@@ -1680,13 +1755,15 @@ export default function EditCourse() {
               value={formData.short_description}
               onChange={handleInputChange}
               placeholder="e.g., Learn React from scratch in 40 hours"
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+              className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
+                fieldErrors.short_description
+                  ? "border-red-500"
+                  : "border-gray-200"
+              }`}
             />
           </div>
 
-          {/* ════════════════════════════════
-                        SECTION 2 — Course Details
-                    ════════════════════════════════ */}
+          {/* SECTION 2 — Course Details */}
           <SectionHeader
             icon={BookMarked}
             label="Course Details"
@@ -1808,7 +1885,7 @@ export default function EditCourse() {
                     <Award size={12} className="text-yellow-500" />
                   </div>
                   <label className="text-xs font-semibold text-gray-700">
-                    Certificate
+                    Certificate <span className="text-red-500">*</span>
                   </label>
                 </div>
                 <div className="flex gap-2">
@@ -1826,12 +1903,15 @@ export default function EditCourse() {
                         name="certificate"
                         value={val}
                         checked={formData.certificate === val}
-                        onChange={(e) =>
+                        onChange={(e) => {
                           setFormData((prev) => ({
                             ...prev,
                             certificate: e.target.value,
-                          }))
-                        }
+                          }));
+                          if (fieldErrors.certificate) {
+                            setFieldErrors((prev) => ({ ...prev, certificate: undefined }));
+                          }
+                        }}
                         className="hidden"
                       />
                       {val === "Yes" ? <Award size={12} /> : <X size={12} />}
@@ -1853,7 +1933,6 @@ export default function EditCourse() {
                 <p className="text-base font-semibold text-gray-800">
                   Additional Options
                 </p>
-                
               </div>
             </div>
             <div className="space-y-3 divide-y divide-gray-100">
@@ -1872,9 +1951,7 @@ export default function EditCourse() {
             </div>
           </div>
 
-          {/* ════════════════════════════════
-                        SECTION 3 — Media Files
-                    ════════════════════════════════ */}
+          {/* SECTION 3 — Media Files */}
           <SectionHeader
             icon={ImagePlus}
             label="Media Files"
@@ -1889,9 +1966,11 @@ export default function EditCourse() {
               onRemove={() => removeFile("image", !imagePreview)}
               inputId="image-upload"
               inputName="image"
-              label="Course Image"
+              label="Course Image *"
+              hint="Required · PNG, JPG · Max 5MB"
               iconBg="bg-pink-50"
               iconColor="text-pink-500"
+              error={!!fieldErrors.image}
             />
             <ImageUploadBox
               preview={bannerPreview}
@@ -1899,9 +1978,11 @@ export default function EditCourse() {
               onRemove={() => removeFile("banner_img", !bannerPreview)}
               inputId="banner-upload"
               inputName="banner_img"
-              label="Banner Image"
+              label="Banner Image *"
+              hint="Required · PNG, JPG · Max 5MB"
               iconBg="bg-indigo-50"
               iconColor="text-indigo-500"
+              error={!!fieldErrors.banner_img}
             />
             <ImageUploadBox
               preview={iconPreview}
@@ -1909,27 +1990,28 @@ export default function EditCourse() {
               onRemove={() => removeFile("icon", !iconPreview)}
               inputId="icon-upload"
               inputName="icon"
-              label="Course Icon"
+              label="Course Icon *"
+              hint="Required · PNG, JPG · Max 2MB"
               iconBg="bg-violet-50"
               iconColor="text-violet-500"
+              error={!!fieldErrors.icon}
             />
-            {/* NEW IMAGE2 FIELD */}
             <ImageUploadBox
               preview={image2Preview}
               existingUrl={formData.existing_image2}
               onRemove={() => removeFile("image2", !image2Preview)}
               inputId="image2-upload"
               inputName="image2"
-              label="Additional Image"
+              label="Additional Image *"
+              hint="Required · PNG, JPG · Max 5MB"
               iconBg="bg-orange-50"
               iconColor="text-orange-500"
+              error={!!fieldErrors.image2}
             />
-            <PdfUploadBox />
+            <PdfUploadBox error={!!fieldErrors.pdf_file} />
           </div>
 
-          {/* ════════════════════════════════
-                        SECTION 4 — SEO & Metadata
-                    ════════════════════════════════ */}
+          {/* SECTION 4 — SEO & Metadata */}
           <SectionHeader
             icon={Search}
             label="SEO & Metadata"
@@ -1946,7 +2028,6 @@ export default function EditCourse() {
               >
                 Meta Title
               </label>
-              
               <input
                 id="meta_title"
                 type="text"
@@ -1954,7 +2035,9 @@ export default function EditCourse() {
                 value={formData.meta_title}
                 onChange={handleInputChange}
                 placeholder="SEO optimized title for your course"
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
+                  fieldErrors.meta_title ? "border-red-500" : "border-gray-200"
+                }`}
               />
               <p className="text-xs text-gray-400 text-right mt-1">
                 {formData.meta_title.length} / 60
@@ -1971,7 +2054,6 @@ export default function EditCourse() {
               >
                 Meta Description
               </label>
-              
               <textarea
                 id="meta_description"
                 name="meta_description"
@@ -1979,7 +2061,11 @@ export default function EditCourse() {
                 onChange={handleInputChange}
                 rows={3}
                 placeholder="Brief description for search engines…"
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-none"
+                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-none ${
+                  fieldErrors.meta_description
+                    ? "border-red-500"
+                    : "border-gray-200"
+                }`}
               />
               <p className="text-xs text-gray-400 text-right mt-1">
                 {formData.meta_description.length} / 160
@@ -1996,7 +2082,6 @@ export default function EditCourse() {
               >
                 Keywords
               </label>
-             
               <input
                 id="keywords"
                 type="text"
@@ -2004,12 +2089,14 @@ export default function EditCourse() {
                 value={formData.keywords}
                 onChange={handleInputChange}
                 placeholder="react, javascript, web development, frontend"
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
+                  fieldErrors.keywords ? "border-red-500" : "border-gray-200"
+                }`}
               />
             </div>
           </div>
 
-          {/* ── Mobile Submit ── */}
+          {/* Mobile Submit */}
           <div className="sm:hidden">
             <button
               type="submit"
