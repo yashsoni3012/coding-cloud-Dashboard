@@ -353,6 +353,7 @@ import {
   LogOut,
   Menu,
   X,
+  
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
@@ -361,7 +362,7 @@ const navItems = [
   { to: "category", icon: Layers, label: "Category" },
   { to: "/course", icon: BookOpen, label: "Courses" },
   { to: "/modules", icon: Layers, label: "Modules" },
-  { to: "/topics", icon: Tag, label: "Topics" },
+  // { to: "/topics", icon: Tag, label: "Topics" },
   { to: "/contact", icon: Mail, label: "Contact" },
   { to: "enroll", icon: UserPlus, label: "Enroll" },
   { to: "faq", icon: HelpCircle, label: "FAQ" },

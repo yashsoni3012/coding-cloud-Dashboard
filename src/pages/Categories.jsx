@@ -605,7 +605,7 @@ export default function Categories() {
     onSuccess: () => {
       // Invalidate cache so categories refresh automatically
       queryClient.invalidateQueries({ queryKey: ["categories"] });
-      setToast({ show: true, message: "Category deleted successfully!", type: "success" });
+      setToast({ show: true, message: "Category deleted successfully!", type: "error" });
       setShowDeleteModal(false);
       setCategoryToDelete(null);
     },
