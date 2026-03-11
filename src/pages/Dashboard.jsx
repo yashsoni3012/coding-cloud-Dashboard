@@ -747,7 +747,7 @@ export default function Dashboard() {
     <div className="min-h-screen">
       <div className="max-w-7xl mx-auto">
         {/* Welcome Banner */}
-        <div className="bg-gradient-to-r from-violet-600 to-purple-600 rounded-2xl shadow-lg mb-8 overflow-hidden">
+        <div className="bg-gradient-to-r from-violet-600 to-purple-600 rounded-xl shadow-lg mb-8 overflow-hidden">
           <div className="px-6 py-6 sm:px-8 sm:py-8 text-white">
             <h2 className="text-xl sm:text-3xl font-bold mb-2">
               Welcome, Coding Cloud
@@ -787,14 +787,14 @@ export default function Dashboard() {
                     <p className="text-2xl font-bold text-slate-900">
                       {card.value}
                     </p>
-                    <div
+                    {/* <div
                       className={`h-1 w-16 bg-gradient-to-r ${card.gradient} rounded-full opacity-50 group-hover:opacity-100 transition-opacity`}
-                    />
+                    /> */}
                   </div>
                 </div>
 
                 {/* Progress bar (percentage of total) */}
-                <div className="h-1 w-full bg-slate-100">
+                {/* <div className="h-1 w-full bg-slate-100">
                   <div
                     className={`h-full bg-gradient-to-r ${card.gradient} transition-all duration-300`}
                     style={{
@@ -804,7 +804,7 @@ export default function Dashboard() {
                           : "0%",
                     }}
                   />
-                </div>
+                </div> */}
               </div>
             );
           })}
@@ -887,14 +887,14 @@ export default function Dashboard() {
                   {totalItems}
                 </span>
               </div>
-              <div className="pt-2">
+              {/* <div className="pt-2">
                 <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-violet-500 to-purple-600 rounded-full"
                     style={{ width: "100%" }}
                   />
                 </div>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>
