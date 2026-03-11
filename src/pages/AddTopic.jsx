@@ -856,7 +856,7 @@ export default function AddTopic() {
             )}
 
             {/* ── Header ── */}
-            <header className=" top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+            <header className=" top-0 z-50 bg-white border-b border-gray-200 shadow-sm sticky">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <button
@@ -869,7 +869,6 @@ export default function AddTopic() {
                         <div className="w-px h-6 bg-gray-200" />
                         <div>
                             <h1 className="text-base sm:text-lg font-bold text-gray-900 leading-tight">Add New Topic</h1>
-                            <p className="text-xs text-gray-400 hidden sm:block">Create a new topic for a module</p>
                         </div>
                     </div>
                     <button
@@ -909,7 +908,6 @@ export default function AddTopic() {
                                 <label htmlFor="name" className="block text-base font-semibold text-gray-800">
                                     Topic Name <span className="text-red-500">*</span>
                                 </label>
-                                <p className="text-xs text-gray-400 mt-0.5">Enter a clear and descriptive name for the topic</p>
                             </div>
                         </div>
                         <input
@@ -934,7 +932,6 @@ export default function AddTopic() {
                                 <label className="block text-base font-semibold text-gray-800">
                                     Select Course <span className="text-red-500">*</span>
                                 </label>
-                                <p className="text-xs text-gray-400 mt-0.5">Filter modules by selecting a course first</p>
                             </div>
                         </div>
                         <div className="relative">
@@ -970,13 +967,7 @@ export default function AddTopic() {
                                 <label className="block text-base font-semibold text-gray-800">
                                     Select Module <span className="text-red-500">*</span>
                                 </label>
-                                <p className="text-xs text-gray-400 mt-0.5">
-                                    {!selectedCourse
-                                        ? "Select a course above to see available modules"
-                                        : filteredModules.length === 0
-                                        ? "No modules found for this course"
-                                        : "Choose the module this topic belongs to"}
-                                </p>
+                              
                             </div>
                         </div>
 
