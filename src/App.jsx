@@ -6,13 +6,13 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Course from "./pages/Course";
 import Modules from "./pages/Modules";
-import Topics from "./pages/Topics";
+// import Topics from "./pages/Topics";
 import AddCourse from "./pages/AddCourse";
 import EditCourse from "./pages/EditCourse";
 import AddModule from "./pages/AddModule";
 import EditModule from "./pages/EditModule";
-import AddTopic from "./pages/AddTopic";
-import EditTopic from "./pages/EditTopic";
+// import AddTopic from "./pages/AddTopic";
+// import EditTopic from "./pages/EditTopic";
 import ContactUs from "./pages/ContactUs";
 import Enroll from "./pages/Enroll";
 import Faq from "./pages/Faq";
@@ -64,9 +64,9 @@ export default function App() {
           <Route path="/edit-module/:id" element={<EditModule />} />
 
           {/* Topics */}
-          <Route path="/topics" element={<Topics />} />
+          {/* <Route path="/topics" element={<Topics />} />
           <Route path="/add-topic" element={<AddTopic />} />
-          <Route path="/edit-topic/:id" element={<EditTopic />} />
+          <Route path="/edit-topic/:id" element={<EditTopic />} /> */}
 
           <Route path="/contact" element={<ContactUs />} />
           <Route path="/enroll" element={<Enroll />} />

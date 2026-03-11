@@ -563,8 +563,9 @@
 //   );
 // }
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { Editor } from "@tinymce/tinymce-react";
 import {
     ArrowLeft,
     Save,
@@ -580,12 +581,16 @@ import Toasts from "./Toasts";
 
 export default function AddFAQ() {
     const navigate = useNavigate();
+    const editorRef = useRef(null);
 
     const [formData, setFormData] = useState({ course: "", question: "", answer: "" });
     const [courses, setCourses] = useState([]);
     const [loadingCourses, setLoadingCourses] = useState(true);
     const [saving, setSaving] = useState(false);
     const [fieldErrors, setFieldErrors] = useState({});
+
+    // Editor mode: "tinymce" or "html"
+    const [editorMode, setEditorMode] = useState("tinymce");
 
     // Toast state
     const [toast, setToast] = useState({
@@ -627,6 +632,13 @@ export default function AddFAQ() {
         // Clear error for this field when user types
         if (fieldErrors[name]) {
             setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
+        }
+    };
+
+    const handleAnswerChange = (content) => {
+        setFormData((prev) => ({ ...prev, answer: content }));
+        if (fieldErrors.answer) {
+            setFieldErrors((prev) => ({ ...prev, answer: undefined }));
         }
     };
 
@@ -849,34 +861,106 @@ export default function AddFAQ() {
                         )}
                     </div>
 
-                    {/* ── Answer Card ── */}
+                    {/* ── Answer Card with Editor ── */}
                     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className="w-9 h-9 bg-emerald-50 rounded-xl flex items-center justify-center flex-shrink-0">
-                                <MessageSquare size={16} className="text-emerald-600" />
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 bg-emerald-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                                    <MessageSquare size={16} className="text-emerald-600" />
+                                </div>
+                                <div>
+                                    <label htmlFor="answer" className="block text-base font-semibold text-gray-800">
+                                        Answer <span className="text-red-500">*</span>
+                                    </label>
+                                </div>
                             </div>
-                            <div>
-                                <label htmlFor="answer" className="block text-base font-semibold text-gray-800">
-                                    Answer <span className="text-red-500">*</span>
-                                </label>
+
+                            {/* Editor Mode Switcher */}
+                            <div className="flex gap-1 p-1 bg-gray-100 rounded-lg">
+                                <button
+                                    type="button"
+                                    onClick={() => setEditorMode("tinymce")}
+                                    className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
+                                        editorMode === "tinymce"
+                                            ? "bg-white text-indigo-600 shadow-sm"
+                                            : "text-gray-600 hover:text-gray-900"
+                                    }`}
+                                >
+                                    TinyMCE
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setEditorMode("html")}
+                                    className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
+                                        editorMode === "html"
+                                            ? "bg-white text-indigo-600 shadow-sm"
+                                            : "text-gray-600 hover:text-gray-900"
+                                    }`}
+                                >
+                                    HTML
+                                </button>
                             </div>
                         </div>
-                        <textarea
-                            id="answer"
-                            name="answer"
-                            value={formData.answer}
-                            onChange={handleInputChange}
-                            rows={5}
-                            placeholder="Enter the comprehensive answer here…"
-                            className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-none ${
-                                fieldErrors.answer ? "border-red-500" : "border-gray-200"
-                            }`}
-                            required
-                        />
+
+                        {/* Conditional Editor */}
+                        {editorMode === "tinymce" ? (
+                            <div
+                                className={`border rounded-xl overflow-hidden ${
+                                    fieldErrors.answer ? "border-red-500" : "border-gray-200"
+                                }`}
+                            >
+                                <Editor
+                                    apiKey="x5ikrjt2xexo2x73y0uzybqhbjq29owf8drai57qhtew5e0j"
+                                    onInit={(evt, editor) => (editorRef.current = editor)}
+                                    value={formData.answer}
+                                    onEditorChange={handleAnswerChange}
+                                    init={{
+                                        height: 400,
+                                        menubar: true,
+                                        plugins: [
+                                            "advlist",
+                                            "autolink",
+                                            "lists",
+                                            "link",
+                                            "image",
+                                            "charmap",
+                                            "preview",
+                                            "anchor",
+                                            "searchreplace",
+                                            "visualblocks",
+                                            "code",
+                                            "fullscreen",
+                                            "insertdatetime",
+                                            "media",
+                                            "table",
+                                            "help",
+                                            "wordcount",
+                                        ],
+                                        toolbar:
+                                            "undo redo | blocks | " +
+                                            "bold italic forecolor | alignleft aligncenter " +
+                                            "alignright alignjustify | bullist numlist outdent indent | " +
+                                            "removeformat | code | help",
+                                        content_style:
+                                            "body { font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.6; }",
+                                        placeholder: "Write the comprehensive answer here…",
+                                    }}
+                                />
+                            </div>
+                        ) : (
+                            <textarea
+                                value={formData.answer}
+                                onChange={(e) => handleAnswerChange(e.target.value)}
+                                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base font-mono placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
+                                    fieldErrors.answer ? "border-red-500" : "border-gray-200"
+                                }`}
+                                rows={12}
+                                placeholder="<!-- Write HTML here -->"
+                            />
+                        )}
                         {fieldErrors.answer && (
                             <p className="text-xs text-red-500 mt-1">{fieldErrors.answer}</p>
                         )}
-                       
                     </div>
 
                     {/* ── Mobile Submit ── */}
