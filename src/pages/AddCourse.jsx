@@ -501,7 +501,7 @@
 //           <p className="text-base font-semibold text-gray-800">
 //             Syllabus PDF <span className="text-red-500">*</span>
 //           </p>
-         
+
 //         </div>
 //       </div>
 
@@ -1309,7 +1309,9 @@ import Toasts from "../pages/Toasts";
 
 // Fetch categories function
 const fetchCategories = async () => {
-  const response = await fetch("https://codingcloud.pythonanywhere.com/category/");
+  const response = await fetch(
+    "https://codingcloud.pythonanywhere.com/category/",
+  );
   if (!response.ok) throw new Error("Failed to load categories");
   const data = await response.json();
   return data.data || [];
@@ -1317,10 +1319,13 @@ const fetchCategories = async () => {
 
 // Create course mutation function
 const createCourse = async (formData) => {
-  const response = await fetch("https://codingcloud.pythonanywhere.com/course/", {
-    method: "POST",
-    body: formData,
-  });
+  const response = await fetch(
+    "https://codingcloud.pythonanywhere.com/course/",
+    {
+      method: "POST",
+      body: formData,
+    },
+  );
 
   let data;
   const contentType = response.headers.get("content-type");
@@ -1337,7 +1342,10 @@ const createCourse = async (formData) => {
       Object.keys(data.errors).forEach((key) => {
         backendErrors[key] = data.errors[key].join(", ");
       });
-      throw { message: "Please correct the errors below", errors: backendErrors };
+      throw {
+        message: "Please correct the errors below",
+        errors: backendErrors,
+      };
     }
     const errorMsg =
       data.message ||
@@ -1581,22 +1589,21 @@ export default function AddCourse() {
       errors.keywords = "Keywords are required";
     }
 
-    // File fields are required
-    if (!formData.image) {
-      errors.image = "Course image is required";
+    // ✅ Duration validation
+    if (formData.duration) {
+      const durationNumber = parseFloat(formData.duration);
+
+      if (durationNumber < 0) {
+        errors.duration = "Duration cannot be negative";
+      }
     }
-    if (!formData.banner_img) {
-      errors.banner_img = "Banner image is required";
-    }
-    if (!formData.pdf_file) {
-      errors.pdf_file = "Syllabus PDF is required";
-    }
-    if (!formData.icon) {
-      errors.icon = "Course icon is required";
-    }
-    if (!formData.image2) {
-      errors.image2 = "Additional image is required";
-    }
+
+    // File fields
+    if (!formData.image) errors.image = "Course image is required";
+    if (!formData.banner_img) errors.banner_img = "Banner image is required";
+    if (!formData.pdf_file) errors.pdf_file = "Syllabus PDF is required";
+    if (!formData.icon) errors.icon = "Course icon is required";
+    if (!formData.image2) errors.image2 = "Additional image is required";
 
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
@@ -1651,7 +1658,7 @@ export default function AddCourse() {
       submitData.append("text", formData.text);
       if (formData.short_description)
         submitData.append("short_description", formData.short_description);
-      if (formData.duration) submitData.append("duration", formData.duration);
+      
       if (formData.lecture) submitData.append("lecture", formData.lecture);
       if (formData.students) submitData.append("students", formData.students);
       if (formData.level) submitData.append("level", formData.level);
@@ -2078,7 +2085,9 @@ export default function AddCourse() {
               />
             </div>
             {fieldErrors.category && (
-              <p className="text-xs text-red-500 mt-1">{fieldErrors.category}</p>
+              <p className="text-xs text-red-500 mt-1">
+                {fieldErrors.category}
+              </p>
             )}
           </div>
 
@@ -2217,7 +2226,9 @@ export default function AddCourse() {
               }`}
             />
             {fieldErrors.short_description && (
-              <p className="text-xs text-red-500 mt-1">{fieldErrors.short_description}</p>
+              <p className="text-xs text-red-500 mt-1">
+                {fieldErrors.short_description}
+              </p>
             )}
           </div>
 
@@ -2238,7 +2249,7 @@ export default function AddCourse() {
                   icon: Clock,
                   label: "Duration",
                   name: "duration",
-                  placeholder: "e.g., 40 hours",
+                  placeholder: "e.g., 40",
                   bg: "bg-blue-50",
                   color: "text-blue-500",
                 },
@@ -2246,7 +2257,7 @@ export default function AddCourse() {
                   icon: BookOpen,
                   label: "Lectures",
                   name: "lecture",
-                  placeholder: "e.g., 98 lectures",
+                  placeholder: "e.g., 98",
                   bg: "bg-emerald-50",
                   color: "text-emerald-500",
                 },
@@ -2270,14 +2281,26 @@ export default function AddCourse() {
                       {field.label}
                     </label>
                   </div>
+
                   <input
-                    type="text"
+                    type="number"
+                    min={0}
                     name={field.name}
                     value={formData[field.name]}
                     onChange={handleInputChange}
                     placeholder={field.placeholder}
-                    className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                    className={`w-full px-3 py-2.5 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
+                      fieldErrors.duration
+                        ? "border-red-500"
+                        : "border-gray-200"
+                    }`}
                   />
+
+                  {fieldErrors.duration && (
+                    <p className="text-xs text-red-500 mt-1">
+                      {fieldErrors.duration}
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
@@ -2370,7 +2393,9 @@ export default function AddCourse() {
                   ))}
                 </div>
                 {fieldErrors.certificate && (
-                  <p className="text-xs text-red-500 mt-1">{fieldErrors.certificate}</p>
+                  <p className="text-xs text-red-500 mt-1">
+                    {fieldErrors.certificate}
+                  </p>
                 )}
               </div>
             </div>
@@ -2486,7 +2511,9 @@ export default function AddCourse() {
                 }`}
               />
               {fieldErrors.meta_title && (
-                <p className="text-xs text-red-500 mt-1">{fieldErrors.meta_title}</p>
+                <p className="text-xs text-red-500 mt-1">
+                  {fieldErrors.meta_title}
+                </p>
               )}
               <p className="text-xs text-gray-400 text-right mt-1">
                 {formData.meta_title.length} / 60
@@ -2517,7 +2544,9 @@ export default function AddCourse() {
                 }`}
               />
               {fieldErrors.meta_description && (
-                <p className="text-xs text-red-500 mt-1">{fieldErrors.meta_description}</p>
+                <p className="text-xs text-red-500 mt-1">
+                  {fieldErrors.meta_description}
+                </p>
               )}
               <p className="text-xs text-gray-400 text-right mt-1">
                 {formData.meta_description.length} / 160
@@ -2546,7 +2575,9 @@ export default function AddCourse() {
                 }`}
               />
               {fieldErrors.keywords && (
-                <p className="text-xs text-red-500 mt-1">{fieldErrors.keywords}</p>
+                <p className="text-xs text-red-500 mt-1">
+                  {fieldErrors.keywords}
+                </p>
               )}
             </div>
           </div>
