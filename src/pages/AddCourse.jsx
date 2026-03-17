@@ -1631,7 +1631,7 @@ export default function AddCourse() {
       const missingFields = getEmptyFieldsList(fieldErrors);
       setToast({
         show: true,
-        message: `Please fill required fields: ${missingFields}`,
+        message: `Please fill required fields`,
         type: "error",
       });
       return;
