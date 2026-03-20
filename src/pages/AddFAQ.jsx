@@ -808,7 +808,7 @@ export default function AddFAQ() {
                                 </option>
                                 {courses.map((course) => (
                                     <option key={course.id} value={course.id}>
-                                        {course.name} (ID: {course.id})
+                                        {course.name}
                                     </option>
                                 ))}
                             </select>
@@ -818,18 +818,7 @@ export default function AddFAQ() {
                             <p className="text-xs text-red-500 mt-1">{fieldErrors.course}</p>
                         )}
 
-                        {/* Selected course confirmation badge */}
-                        {selectedCourse && (
-                            <div className="mt-3 flex items-center gap-2 p-3 bg-violet-50 border border-violet-100 rounded-xl">
-                                <div className="w-6 h-6 bg-violet-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                    <Layers size={12} className="text-violet-600" />
-                                </div>
-                                <p className="text-xs text-violet-700">
-                                    <span className="font-semibold">Selected:</span> {selectedCourse.name}
-                                    <span className="text-violet-400 ml-1">· ID: {selectedCourse.id}</span>
-                                </p>
-                            </div>
-                        )}
+                        
                     </div>
 
                     {/* ── Question Card ── */}

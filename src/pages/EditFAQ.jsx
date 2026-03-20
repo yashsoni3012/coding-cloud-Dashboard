@@ -888,7 +888,7 @@ export default function EditFAQ() {
                                 <option value="" disabled>— Select a Course —</option>
                                 {courses.map((course) => (
                                     <option key={course.id} value={course.id}>
-                                        {course.name} (ID: {course.id})
+                                        {course.name}
                                     </option>
                                 ))}
                             </select>
