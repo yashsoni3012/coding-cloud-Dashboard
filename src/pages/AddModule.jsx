@@ -677,7 +677,7 @@ export default function AddModule() {
                                     <option value="">— Select a course —</option>
                                     {courses.map((course) => (
                                         <option key={course.id} value={course.id}>
-                                            {course.id}: {course.name}
+                                            {course.name}
                                         </option>
                                     ))}
                                 </select>
