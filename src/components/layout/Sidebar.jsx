@@ -379,7 +379,6 @@ function RippleNavLink({ to, icon: Icon, label, onLinkClick }) {
     if (!el) return;
 
     const rect = el.getBoundingClientRect();
-    // Get exact mouse/touch position relative to the element
     const cx = e.clientX - rect.left;
     const cy = e.clientY - rect.top;
     const id = Date.now();
@@ -433,15 +432,23 @@ export default function Sidebar({ open, setOpen }) {
   const navigate = useNavigate();
   const [isMobile, setIsMobile] = useState(false);
 
+  // On mount: detect mobile and close sidebar if mobile (no flicker — runs once)
   useEffect(() => {
-    const checkMobile = () => {
+    const mobile = window.innerWidth < 768;
+    setIsMobile(mobile);
+    if (mobile && setOpen) setOpen(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // On resize: update mobile state; close sidebar when switching to desktop
+  useEffect(() => {
+    const handleResize = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
-      if (mobile && setOpen) setOpen(false);
+      if (!mobile && setOpen) setOpen(false);
     };
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, [setOpen]);
 
   const handleLogout = () => {

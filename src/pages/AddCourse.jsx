@@ -2238,7 +2238,6 @@ export default function AddCourse() {
             label="Course Details"
             iconBg="bg-violet-50"
             iconColor="text-violet-600"
-            required={true}
           />
 
           {/* Duration / Lectures / Students */}

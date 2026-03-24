@@ -1883,7 +1883,10 @@ export default function Blogs() {
 
   // Local UI state (unchanged)
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortConfig, setSortConfig] = useState({ key: "display_id", direction: "desc" });
+const [sortConfig, setSortConfig] = useState({
+  key: "publish_date",
+  direction: "desc",
+});
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({ status: "all" });
   const [showViewModal, setShowViewModal] = useState(false);
@@ -1928,9 +1931,9 @@ export default function Blogs() {
         aVal = a.title?.toLowerCase() || "";
         bVal = b.title?.toLowerCase() || "";
       } else if (sortConfig.key === "publish_date") {
-        aVal = a.publish_date || "";
-        bVal = b.publish_date || "";
-      } else if (sortConfig.key === "status") {
+  aVal = new Date(a.publish_date).getTime() || 0;
+  bVal = new Date(b.publish_date).getTime() || 0;
+} else if (sortConfig.key === "status") {
         aVal = a.status?.toLowerCase() || "";
         bVal = b.status?.toLowerCase() || "";
       }

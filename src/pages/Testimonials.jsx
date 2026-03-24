@@ -788,6 +788,15 @@ import {
 // API base URL – change this if your endpoint moves
 const BASE_URL = "https://codingcloud.pythonanywhere.com";
 
+const getImageUrl = (image) => {
+  if (!image) return null;
+
+  if (image.startsWith("http")) return image;
+
+  return `https://codingcloud.pythonanywhere.com${image}`;
+  
+};
+
 // Fetch testimonials function
 const fetchTestimonials = async () => {
   const response = await fetch(`${BASE_URL}/testimonials/`);
@@ -877,7 +886,10 @@ export default function Testimonials() {
 
   // Local UI state (unchanged)
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortConfig, setSortConfig] = useState({ key: "id", direction: "desc" });
+const [sortConfig, setSortConfig] = useState({
+  key: "created_at",
+  direction: "desc",
+});
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({ rating: "all" });
   const [showViewModal, setShowViewModal] = useState(false);
@@ -922,9 +934,9 @@ export default function Testimonials() {
         aVal = a.rating || 0;
         bVal = b.rating || 0;
       } else if (sortConfig.key === "created_at") {
-        aVal = a.created_at || "";
-        bVal = b.created_at || "";
-      } else {
+  aVal = new Date(a.created_at).getTime() || 0;
+  bVal = new Date(b.created_at).getTime() || 0;
+} else {
         aVal = a[sortConfig.key] || "";
         bVal = b[sortConfig.key] || "";
       }
@@ -1259,13 +1271,67 @@ export default function Testimonials() {
                           {indexOfFirstItem + index + 1}
                         </td>
 
-                        {/* Reviewer */}
+                        {/* Reviewer - with image fallback */}
                         <td style={{ padding: "15px 18px", verticalAlign: "top" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
-                            <div style={{ width: 38, height: 38, borderRadius: 10, background: color, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 12, fontWeight: 700, flexShrink: 0 }}>
-                              {getInitials(testimonial.name)}
-                            </div>
-                            <span style={{ fontSize: 15, fontWeight: 600, color: "#1e293b" }}>{testimonial.name}</span>
+                            {testimonial.image ? (
+                              <img
+                                src={getImageUrl(testimonial.image)}
+                                
+                                alt={testimonial.name}
+                                style={{
+                                  width: 38,
+                                  height: 38,
+                                  borderRadius: 10,
+                                  objectFit: "cover",
+                                  background: "#f1f5f9",
+                                  flexShrink: 0,
+                                }}
+                                onError={(e) => {
+                                  e.target.style.display = "none";
+                                  const parent = e.target.parentNode;
+                                  if (parent) {
+                                    const fallback = document.createElement("div");
+                                    fallback.style.width = "38px";
+                                    fallback.style.height = "38px";
+                                    fallback.style.borderRadius = "10px";
+                                    fallback.style.background = getColor(testimonial.id);
+                                    fallback.style.display = "flex";
+                                    fallback.style.alignItems = "center";
+                                    fallback.style.justifyContent = "center";
+                                    fallback.style.color = "#fff";
+                                    fallback.style.fontSize = "12px";
+                                    fallback.style.fontWeight = "700";
+                                    fallback.style.flexShrink = "0";
+                                    fallback.textContent = getInitials(testimonial.name);
+                                    parent.insertBefore(fallback, e.target);
+                                    e.target.remove();
+                                    console.log("Final Image URL:", getImageUrl(testimonial.image));
+                                  }
+                                }}
+                              />
+                            ) : (
+                              <div
+                                style={{
+                                  width: 38,
+                                  height: 38,
+                                  borderRadius: 10,
+                                  background: getColor(testimonial.id),
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  color: "#fff",
+                                  fontSize: 12,
+                                  fontWeight: 700,
+                                  flexShrink: 0,
+                                }}
+                              >
+                                {getInitials(testimonial.name)}
+                              </div>
+                            )}
+                            <span style={{ fontSize: 15, fontWeight: 600, color: "#1e293b" }}>
+                              {testimonial.name}
+                            </span>
                           </div>
                         </td>
 
@@ -1387,11 +1453,61 @@ export default function Testimonials() {
 
             <div style={{ padding: 24, overflowY: "auto", flex: 1 }}>
 
-              {/* Avatar + Name + Rating */}
+              {/* Avatar + Name + Rating - with image fallback */}
               <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
-                <div style={{ width: 52, height: 52, borderRadius: 14, background: getColor(selectedTestimonial.id), display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 18, fontWeight: 700, flexShrink: 0 }}>
-                  {getInitials(selectedTestimonial.name)}
-                </div>
+                {selectedTestimonial.image ? (
+                  <img
+                    src={getImageUrl(selectedTestimonial.image)}
+                    alt={selectedTestimonial.name}
+                    style={{
+                      width: 52,
+                      height: 52,
+                      borderRadius: 14,
+                      objectFit: "cover",
+                      background: "#f1f5f9",
+                      flexShrink: 0,
+                    }}
+                    onError={(e) => {
+                      e.target.style.display = "none";
+                      const parent = e.target.parentNode;
+                      if (parent) {
+                        const fallback = document.createElement("div");
+                        fallback.style.width = "52px";
+                        fallback.style.height = "52px";
+                        fallback.style.borderRadius = "14px";
+                        fallback.style.background = getColor(selectedTestimonial.id);
+                        fallback.style.display = "flex";
+                        fallback.style.alignItems = "center";
+                        fallback.style.justifyContent = "center";
+                        fallback.style.color = "#fff";
+                        fallback.style.fontSize = "18px";
+                        fallback.style.fontWeight = "700";
+                        fallback.style.flexShrink = "0";
+                        fallback.textContent = getInitials(selectedTestimonial.name);
+                        parent.insertBefore(fallback, e.target);
+                        e.target.remove();
+                      }
+                    }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: 52,
+                      height: 52,
+                      borderRadius: 14,
+                      background: getColor(selectedTestimonial.id),
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "#fff",
+                      fontSize: 18,
+                      fontWeight: 700,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {getInitials(selectedTestimonial.name)}
+                  </div>
+                )}
                 <div>
                   <h2 style={{ fontSize: 20, fontWeight: 700, color: "#0f172a", margin: 0 }}>{selectedTestimonial.name}</h2>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4 }}>

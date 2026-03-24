@@ -1504,9 +1504,9 @@ export default function Modules() {
   // Local UI state
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState({
-    key: "display_id",
-    direction: "desc",
-  });
+  key: "id",
+  direction: "desc",
+});
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({ course: "all" });
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -1568,10 +1568,10 @@ export default function Modules() {
 
     result.sort((a, b) => {
       let aVal, bVal;
-      if (sortConfig.key === "display_id") {
-        aVal = a.display_id || 0;
-        bVal = b.display_id || 0;
-      } else if (sortConfig.key === "name") {
+      if (sortConfig.key === "id") {
+  aVal = a.id || 0;
+  bVal = b.id || 0;
+} else if (sortConfig.key === "name") {
         aVal = a.name?.toLowerCase() || "";
         bVal = b.name?.toLowerCase() || "";
       } else if (sortConfig.key === "course") {
@@ -2150,9 +2150,9 @@ export default function Modules() {
                     >
                       <button
                         className="mod-th-btn"
-                        onClick={() => handleSort("display_id")}
+                        onClick={() => handleSort("id")}
                       >
-                        # <SortIcon col="display_id" />
+                        # <SortIcon col="id" />
                       </button>
                     </th>
                     <th style={{ padding: "14px 18px", textAlign: "left" }}>
