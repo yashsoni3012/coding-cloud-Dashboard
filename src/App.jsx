@@ -28,6 +28,7 @@ import Category from "./pages/Categories";
 import AddCategory from "./pages/AddCategory";
 import EditCategory from "./pages/EditCategory";
 import Profile from "./pages/Profile";
+import Register from "./pages/Register";
 
 
 // import Users from './pages/Users'
@@ -70,6 +71,7 @@ export default function App() {
 
           <Route path="/contact" element={<ContactUs />} />
           <Route path="/enroll" element={<Enroll />} />
+          <Route path="/register" element={<Register />} />
 
           {/* FAQs */}
           <Route path="/faq" element={<Faq />} />

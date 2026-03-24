@@ -521,8 +521,9 @@ import { useQuery } from "@tanstack/react-query";
 import {
   Search, Mail, Phone, Tag, X, Copy,
   MessageSquare, User, SortAsc, SortDesc,
-  Eye, ChevronLeft, ChevronRight,
+  Eye, ChevronLeft, ChevronRight, Download,
 } from "lucide-react";
+import * as XLSX from "xlsx"; // <-- Add this
 
 // Fetch contacts function
 const fetchContacts = async () => {
@@ -642,6 +643,36 @@ export default function Contact() {
     setTimeout(() => setCopied(null), 2000);
   };
 
+  // Export to Excel
+const exportToExcel = () => {
+  if (contacts.length === 0) return;
+
+  // ✅ Step 1: Sort contacts in ASCENDING order by ID
+  const sortedContacts = [...filteredContacts].sort(
+    (a, b) => (parseInt(a.id) || 0) - (parseInt(b.id) || 0)
+  );
+
+  // ✅ Step 2: Add Serial Number (1,2,3...)
+  const excelData = sortedContacts.map((contact, index) => ({
+    "No.": index + 1, // 👈 serial number
+    ID: contact.id,
+    "Full Name": contact.full_name || "",
+    Email: contact.email || "",
+    "Mobile No": contact.mobile_no || "",
+    Subject: contact.subject || "",
+    Message: contact.message || "",
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(excelData);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Contact Messages");
+
+  XLSX.writeFile(
+    workbook,
+    `contact_messages_${new Date().toISOString().slice(0, 19)}.xlsx`
+  );
+};
+
   if (isLoading) {
     return (
       <div style={{ minHeight: "100vh", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -698,23 +729,56 @@ export default function Contact() {
         .con-copy-btn:hover { background: #f1f5f9; }
         .con-close-btn { padding: 9px 16px; border: 1.5px solid #e2e8f0; background: #fff; color: #475569; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background 0.13s; }
         .con-close-btn:hover { background: #f1f5f9; }
+        .export-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 9px 18px;
+          background:#16A34A;
+          color: #fff;
+          border: none;
+          border-radius: 10px;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: background 0.13s;
+          font-family: inherit;
+          box-shadow: 0 2px 6px rgba(5,150,105,0.2);
+        }
+        .export-btn:hover {
+          background: #15803D;
+        }
+        .export-btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
       `}</style>
 
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "28px 16px" }}>
 
-        {/* Header */}
-        <div style={{ marginBottom: 24 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 5 }}>
-            <div style={{ width: 38, height: 38, background: "linear-gradient(135deg,#7c3aed,#a78bfa)", borderRadius: 11, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(124,58,237,0.25)" }}>
-              <MessageSquare size={17} color="#fff" />
+        {/* Header with Export Button */}
+        <div style={{ marginBottom: 24, display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 5 }}>
+              <div style={{ width: 38, height: 38, background: "linear-gradient(135deg,#7c3aed,#a78bfa)", borderRadius: 11, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(124,58,237,0.25)" }}>
+                <MessageSquare size={17} color="#fff" />
+              </div>
+              <h1 style={{ fontSize: 22, fontWeight: 700, color: "#0f172a", margin: 0 }}>Contact Messages</h1>
+              <span style={{ padding: "3px 11px", background: "#ede9fe", color: "#6d28d9", fontSize: 13, fontWeight: 700, borderRadius: 99 }}>{contacts.length}</span>
             </div>
-            <h1 style={{ fontSize: 22, fontWeight: 700, color: "#0f172a", margin: 0 }}>Contact Messages</h1>
-            <span style={{ padding: "3px 11px", background: "#ede9fe", color: "#6d28d9", fontSize: 13, fontWeight: 700, borderRadius: 99 }}>{contacts.length}</span>
+            <p style={{ fontSize: 14, color: "#94a3b8", margin: 0, paddingLeft: 48 }}>Manage and respond to contact form submissions</p>
           </div>
-          <p style={{ fontSize: 14, color: "#94a3b8", margin: 0, paddingLeft: 48 }}>Manage and respond to contact form submissions</p>
+          <button
+            onClick={exportToExcel}
+            disabled={contacts.length === 0}
+            className="export-btn"
+          >
+            <Download size={16} />
+            Export to Excel
+          </button>
         </div>
 
-        {/* Toolbar */}
+        {/* Toolbar (search and items per page) */}
         <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", padding: "14px 18px", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10 }}>
 

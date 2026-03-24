@@ -501,8 +501,9 @@ import { useQuery } from "@tanstack/react-query";
 import {
   Search, Mail, Phone, MapPin, BookOpen,
   X, User, SortAsc, SortDesc,
-  Eye, Calendar, ChevronLeft, ChevronRight,
+  Eye, Calendar, ChevronLeft, ChevronRight, Download, // <-- added Download
 } from "lucide-react";
+import * as XLSX from "xlsx"; // <-- added for Excel export
 
 // Fetch enrollments function
 const fetchEnrollments = async () => {
@@ -619,6 +620,31 @@ export default function EnrollmentList() {
     return `${first?.charAt(0) || ""}${last?.charAt(0) || ""}`.toUpperCase() || "??";
   };
 
+  // Export to Excel
+  const exportToExcel = () => {
+    if (enrollments.length === 0) return;
+
+    // Prepare data for Excel
+    const excelData = enrollments.map((enrollment) => ({
+      ID: enrollment.display_id,
+      "First Name": enrollment.first_name || "",
+      "Last Name": enrollment.last_name || "",
+      "Full Name": `${enrollment.first_name || ""} ${enrollment.last_name || ""}`.trim(),
+      Email: enrollment.email || "",
+      Mobile: enrollment.mobile || "",
+      City: enrollment.city || "",
+      Course: enrollment.course_name || `Course #${enrollment.course_id}`,
+      "Enrolled On": enrollment.created_at
+        ? new Date(enrollment.created_at).toLocaleDateString("en-US")
+        : "",
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Enrollments");
+    XLSX.writeFile(workbook, `enrollments_${new Date().toISOString().slice(0, 19)}.xlsx`);
+  };
+
   if (isLoading) {
     return (
       <div style={{ minHeight: "100vh", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -671,20 +697,53 @@ export default function EnrollmentList() {
         .enr-search::placeholder { color: #cbd5e1; }
         .enr-select { padding: 9px 14px; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 14px; color: #475569; background: #f8fafc; outline: none; cursor: pointer; font-family: inherit; font-weight: 500; transition: border-color 0.15s; }
         .enr-select:focus { border-color: #7c3aed; }
+        .export-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 9px 18px;
+          background: #16A34A;
+          color: #fff;
+          border: none;
+          border-radius: 10px;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: background 0.13s;
+          font-family: inherit;
+          box-shadow: 0 2px 6px rgba(5,150,105,0.2);
+        }
+        .export-btn:hover {
+          background: #15803D;
+        }
+        .export-btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
       `}</style>
 
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "28px 16px" }}>
 
-        {/* ── Header ── */}
-        <div style={{ marginBottom: 24 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 5 }}>
-            <div style={{ width: 38, height: 38, background: "linear-gradient(135deg,#7c3aed,#a78bfa)", borderRadius: 11, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(124,58,237,0.25)" }}>
-              <BookOpen size={17} color="#fff" />
+        {/* ── Header with Export Button ── */}
+        <div style={{ marginBottom: 24, display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 5 }}>
+              <div style={{ width: 38, height: 38, background: "linear-gradient(135deg,#7c3aed,#a78bfa)", borderRadius: 11, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(124,58,237,0.25)" }}>
+                <BookOpen size={17} color="#fff" />
+              </div>
+              <h1 style={{ fontSize: 22, fontWeight: 700, color: "#0f172a", margin: 0 }}>Course Enrollments</h1>
+              <span style={{ padding: "3px 11px", background: "#ede9fe", color: "#6d28d9", fontSize: 13, fontWeight: 700, borderRadius: 99 }}>{enrollments.length}</span>
             </div>
-            <h1 style={{ fontSize: 22, fontWeight: 700, color: "#0f172a", margin: 0 }}>Course Enrollments</h1>
-            <span style={{ padding: "3px 11px", background: "#ede9fe", color: "#6d28d9", fontSize: 13, fontWeight: 700, borderRadius: 99 }}>{enrollments.length}</span>
+            <p style={{ fontSize: 14, color: "#94a3b8", margin: 0, paddingLeft: 48 }}>Manage and track student enrollments</p>
           </div>
-          <p style={{ fontSize: 14, color: "#94a3b8", margin: 0, paddingLeft: 48 }}>Manage and track student enrollments</p>
+          <button
+            onClick={exportToExcel}
+            disabled={enrollments.length === 0}
+            className="export-btn"
+          >
+            <Download size={16} />
+            Export to Excel
+          </button>
         </div>
 
         {/* ── Toolbar ── */}
@@ -768,7 +827,7 @@ export default function EnrollmentList() {
                     <th style={{ padding: "14px 18px", textAlign: "right" }}>
                       <span style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#94a3b8" }}>Actions</span>
                     </th>
-                  </tr>
+                   </tr>
                 </thead>
                 <tbody>
                   {paginatedEnrollments.map((enrollment, index) => {

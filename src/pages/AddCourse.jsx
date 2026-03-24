@@ -1658,7 +1658,7 @@ export default function AddCourse() {
       submitData.append("text", formData.text);
       if (formData.short_description)
         submitData.append("short_description", formData.short_description);
-      
+
       if (formData.lecture) submitData.append("lecture", formData.lecture);
       if (formData.students) submitData.append("students", formData.students);
       if (formData.level) submitData.append("level", formData.level);
