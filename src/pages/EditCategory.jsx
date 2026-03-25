@@ -672,6 +672,14 @@ const updateCategory = async ({ id, formData }) => {
   return response.json();
 };
 
+const getImageUrl = (path) => {
+  if (!path) return "";
+
+  // If already full URL
+  if (path.startsWith("http")) return path;
+
+  return `https://codingcloudapi.codingcloud.co.in${path}`;
+};
 export default function EditCategory() {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -749,11 +757,12 @@ export default function EditCategory() {
         slug: categoryData.slug || "",
         image: null,
       });
-      if (categoryData.image) {
-        const fullImageUrl = `https://codingcloudapi.codingcloud.co.in/${categoryData.image}`;
-        setImagePreview(fullImageUrl);
-        setOriginalImage(fullImageUrl);
-      }
+     if (categoryData.image) {
+  const fullImageUrl = getImageUrl(categoryData.image);
+  console.log("Image URL:", fullImageUrl); // 👈 add this
+  setImagePreview(fullImageUrl);
+  setOriginalImage(fullImageUrl);
+}
     }
   }, [categoryData]);
 

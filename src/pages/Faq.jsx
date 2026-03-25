@@ -1429,22 +1429,24 @@ import {
   ChevronRight,
 } from "lucide-react";
 
-// Fetch FAQs
+// Fetch FAQs and normalize course field to ID
 const fetchFaqs = async () => {
-  const response = await fetch(
-    "https://codingcloudapi.codingcloud.co.in/faqs/",
-  );
+  const response = await fetch("https://codingcloudapi.codingcloud.co.in/faqs/");
   if (!response.ok) throw new Error("Failed to fetch FAQs");
   const data = await response.json();
   const actualFaqs = data.data || data;
-  return Array.isArray(actualFaqs) ? actualFaqs : [];
+  if (!Array.isArray(actualFaqs)) return [];
+
+  // Normalize: ensure faq.course is the course ID (if it's an object, extract id)
+  return actualFaqs.map((faq) => ({
+    ...faq,
+    course: faq.course?.id || faq.course,
+  }));
 };
 
-// Fetch courses and return as id->name map
+// Fetch courses and return map id -> name
 const fetchCoursesMap = async () => {
-  const response = await fetch(
-    "https://codingcloudapi.codingcloud.co.in/course/",
-  );
+  const response = await fetch("https://codingcloudapi.codingcloud.co.in/course/");
   if (!response.ok) throw new Error("Failed to fetch courses");
   const data = await response.json();
   const actualCourses = data.data || data;
@@ -1453,18 +1455,20 @@ const fetchCoursesMap = async () => {
     actualCourses.forEach((c) => {
       map[c.id] = c.name;
     });
+  } else if (typeof actualCourses === "object") {
+    // fallback if API returns object with id keys
+    Object.values(actualCourses).forEach((c) => {
+      if (c && c.id) map[c.id] = c.name;
+    });
   }
   return map;
 };
 
 // Delete FAQ mutation
 const deleteFaq = async (id) => {
-  const response = await fetch(
-    `https://codingcloudapi.codingcloud.co.in/faqs/${id}/`,
-    {
-      method: "DELETE",
-    },
-  );
+  const response = await fetch(`https://codingcloudapi.codingcloud.co.in/faqs/${id}/`, {
+    method: "DELETE",
+  });
   if (!response.ok && response.status !== 204) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.message || "Failed to delete FAQ");
@@ -1476,7 +1480,7 @@ export default function FAQs() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  // --- TanStack Query for FAQs (with display_id added) ---
+  // --- TanStack Query for FAQs ---
   const {
     data: faqs = [],
     isLoading: faqsLoading,
@@ -1547,6 +1551,16 @@ export default function FAQs() {
     type: "success",
   });
 
+  // Helper to safely get course name
+  const getCourseName = (courseValue) => {
+    if (!courseValue) return "Unknown Course";
+    // If it's an object with name property, use that (shouldn't happen after normalization)
+    if (typeof courseValue === "object" && courseValue.name) return courseValue.name;
+    // If it's a primitive (ID), look up in map
+    const id = Number(courseValue);
+    return coursesMap[id] || `Course ${id}`;
+  };
+
   // --- Derived filtered FAQs (memoized) ---
   const filteredFaqs = useMemo(() => {
     let result = [...faqs];
@@ -1554,7 +1568,7 @@ export default function FAQs() {
     if (searchTerm) {
       const q = searchTerm.toLowerCase();
       result = result.filter((faq) => {
-        const courseName = coursesMap[faq.course] || "";
+        const courseName = getCourseName(faq.course);
         return (
           faq.question.toLowerCase().includes(q) ||
           faq.answer.toLowerCase().includes(q) ||
@@ -1565,7 +1579,8 @@ export default function FAQs() {
     }
 
     if (filters.course !== "all") {
-      result = result.filter((faq) => faq.course === parseInt(filters.course));
+      const filterId = Number(filters.course);
+      result = result.filter((faq) => Number(faq.course) === filterId);
     }
 
     result.sort((a, b) => {
@@ -1577,8 +1592,8 @@ export default function FAQs() {
         aVal = a.question?.toLowerCase() || "";
         bVal = b.question?.toLowerCase() || "";
       } else if (sortConfig.key === "course") {
-        aVal = coursesMap[a.course]?.toLowerCase() || String(a.course);
-        bVal = coursesMap[b.course]?.toLowerCase() || String(b.course);
+        aVal = getCourseName(a.course).toLowerCase();
+        bVal = getCourseName(b.course).toLowerCase();
       }
       if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
       if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
@@ -1636,15 +1651,13 @@ export default function FAQs() {
     deleteMutation.mutate(faqToDelete.id);
   };
 
-  const uniqueCourses = Object.keys(coursesMap).map((id) => ({
+  // Unique courses for filter dropdown (from coursesMap)
+  const uniqueCourses = Object.entries(coursesMap).map(([id, name]) => ({
     id: parseInt(id),
-    name: coursesMap[id],
-  }));
+    name,
+  })).sort((a, b) => a.name.localeCompare(b.name));
 
-  const activeFiltersCount = [
-    filters.course !== "all",
-    sortConfig.key !== "display_id" || sortConfig.direction !== "desc",
-  ].filter(Boolean).length;
+  const activeFiltersCount = [filters.course !== "all"].filter(Boolean).length;
 
   // Helper for consistent avatar colors
   const avatarColors = [
@@ -2206,7 +2219,7 @@ export default function FAQs() {
                         Actions
                       </span>
                     </th>
-                  </tr>
+                   </tr>
                 </thead>
                 <tbody>
                   {paginatedFaqs.map((faq, index) => {
@@ -2325,7 +2338,7 @@ export default function FAQs() {
                           </div>
                         </td>
 
-                        {/* Course badge */}
+                        {/* Course badge - fixed to use getCourseName */}
                         <td
                           style={{ padding: "15px 18px", verticalAlign: "top" }}
                         >
@@ -2344,7 +2357,7 @@ export default function FAQs() {
                             }}
                           >
                             <BookOpen size={10} />
-                            {coursesMap[faq.course] || `Course ${faq.course}`}
+                            {getCourseName(faq.course)}
                           </span>
                         </td>
 
@@ -2607,8 +2620,7 @@ export default function FAQs() {
                     margin: 0,
                   }}
                 >
-                  {coursesMap[selectedFaq.course] ||
-                    `Course ${selectedFaq.course}`}
+                  {getCourseName(selectedFaq.course)}
                 </p>
               </div>
 

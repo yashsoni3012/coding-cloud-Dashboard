@@ -519,7 +519,7 @@ import * as XLSX from "xlsx"; // <-- added for Excel export
 // Fetch enrollments function
 const fetchEnrollments = async () => {
   const response = await fetch(
-    "https://codingcloudapi.codingcloud.co.in/enroll/",
+    "https://codingcloudapi.codingcloud.co.in/enroll",
   );
   if (!response.ok)
     throw new Error(`HTTP ${response.status} · ${response.statusText}`);

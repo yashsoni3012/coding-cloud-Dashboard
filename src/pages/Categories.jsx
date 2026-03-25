@@ -566,10 +566,10 @@ import {
 import Toasts from "../pages/Toasts";
 
 // Fetch function (same as before, now used by TanStack Query)
+const BASE_URL = "https://codingcloudapi.codingcloud.co.in";
+
 const fetchCategories = async () => {
-  const response = await fetch(
-    "https://codingcloudapi.codingcloud.co.in/category/",
-  );
+  const response = await fetch(`${BASE_URL}/category/`);
   if (!response.ok) throw new Error("Failed to fetch categories");
   const json = await response.json();
   return json.data || [];
@@ -593,10 +593,9 @@ export default function Categories() {
   // --- Delete mutation (replaces manual fetch) ---
   const deleteMutation = useMutation({
     mutationFn: async (id) => {
-      const response = await fetch(
-        `https://codingcloudapi.codingcloud.co.in/category/${id}/`,
-        { method: "DELETE" },
-      );
+      const response = await fetch(`${BASE_URL}/category/${id}/`, {
+        method: "DELETE",
+      });
       if (!response.ok && response.status !== 204) {
         const data = await response.json().catch(() => ({}));
         throw new Error(data.message || `HTTP Error: ${response.status}`);
@@ -1290,7 +1289,11 @@ export default function Categories() {
                         >
                           {category.image ? (
                             <img
-                              src={`https://codingcloudapi.codingcloud.co.in/${category.image}`}
+                              src={
+                                category.image?.startsWith("http")
+                                  ? category.image
+                                  : `${BASE_URL}${category.image}`
+                              }
                               alt={category.name}
                               style={{
                                 width: "100%",

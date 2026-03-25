@@ -1354,6 +1354,21 @@ import {
 } from "lucide-react";
 import Toasts from "./Toasts";
 
+const BASE_URL = "https://codingcloudapi.codingcloud.co.in";
+
+const getImageUrl = (path) => {
+  if (!path) return "";
+
+  // Already full URL
+  if (path.startsWith("http")) return path;
+
+  // If starts with /media or /
+  if (path.startsWith("/")) return `${BASE_URL}${path}`;
+
+  // fallback
+  return `${BASE_URL}/${path}`;
+};
+
 // Fetch categories
 const fetchCategories = async () => {
   const response = await fetch(
@@ -1649,8 +1664,8 @@ export default function EditCourse() {
       }
     }
 
-    const hasExisting = formData[`existing_${field}`] && !isExisting;
-    const hasNew = formData[field] && !isExisting;
+   const hasExisting = formData[`existing_${field}`];
+    const hasNew = formData[field];
     const empty = !hasExisting && !hasNew;
     if (empty) {
       setFieldErrors((prev) => ({ ...prev, [field]: `${field} is required` }));
@@ -1779,11 +1794,7 @@ export default function EditCourse() {
     error,
   }) => {
     const hasPreview = preview || existingUrl;
-    const previewSrc =
-      preview ||
-      (existingUrl
-        ? `https://codingcloudapi.codingcloud.co.in/${existingUrl}`
-        : "");
+    const previewSrc = preview || getImageUrl(existingUrl);
     const isNew = !!preview;
 
     return (

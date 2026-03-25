@@ -441,13 +441,22 @@ import Toasts from "./Toasts";
 // Fetch courses
 const fetchCourses = async () => {
   const response = await fetch(
-    "https://codingcloudapi.codingcloud.co.in/course/",
+    "https://codingcloudapi.codingcloud.co.in/course/"
   );
   const data = await response.json();
-  if (!data.success) throw new Error("Failed to load courses");
-  return data.data.map((course) => ({ id: course.id, name: course.name }));
-};
 
+  // ✅ Always ensure array
+  const coursesArray = Array.isArray(data)
+    ? data
+    : Array.isArray(data.data)
+    ? data.data
+    : [];
+
+  return coursesArray.map((course) => ({
+    id: course.id,
+    name: course.name,
+  }));
+};
 // Create module mutation
 const createModule = async (moduleData) => {
   const response = await fetch(
@@ -592,9 +601,11 @@ export default function AddModule() {
   };
 
   // Selected course name for preview (optional, can be used)
-  const selectedCourse = courses.find(
-    (c) => String(c.id) === String(formData.course_data),
-  );
+const selectedCourse = Array.isArray(courses)
+  ? courses.find(
+      (c) => String(c.id) === String(formData.course_data)
+    )
+  : null;
 
   return (
     <div className="min-h-screen bg-gray-50">

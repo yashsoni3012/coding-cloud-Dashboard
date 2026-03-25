@@ -711,6 +711,14 @@ const stripHtml = (html) => {
   return tmp.textContent || tmp.innerText || "";
 };
 
+const BASE_URL = "https://codingcloudapi.codingcloud.co.in";
+
+const getImageUrl = (path) => {
+  if (!path) return "";
+  if (path.startsWith("http")) return path;
+  return `${BASE_URL}${path}`;
+};
+
 const fetchCourses = async () => {
   const response = await fetch(
     "https://codingcloudapi.codingcloud.co.in/course/",
@@ -735,17 +743,24 @@ export default function Courses() {
     queryFn: fetchCourses,
   });
 
-  // --- Derived data from courses (categories & languages) ---
+  // --- Derived data from courses (categories & languages) with array guards ---
   const categories = useMemo(() => {
+    // Guard: ensure courses is an array before using it
+    if (!Array.isArray(courses)) return [];
+
     const catMap = new Map();
     courses.forEach((c) => {
-      if (c.category_details?.id)
+      if (c.category_details?.id) {
         catMap.set(c.category_details.id, c.category_details);
+      }
     });
     return [...catMap.values()];
   }, [courses]);
 
   const languages = useMemo(() => {
+    // Guard: ensure courses is an array before using it
+    if (!Array.isArray(courses)) return [];
+
     return [...new Set(courses.map((c) => c.language).filter(Boolean))];
   }, [courses]);
 
@@ -763,26 +778,18 @@ export default function Courses() {
       return id;
     },
     onMutate: async (deletedId) => {
-      // Cancel outgoing refetches so they don't overwrite optimistic update
       await queryClient.cancelQueries({ queryKey: ["courses"] });
-
-      // Snapshot the previous value
       const previousCourses = queryClient.getQueryData(["courses"]);
-
-      // Optimistically remove the course from the cache
       queryClient.setQueryData(["courses"], (old = []) =>
         old.filter((c) => c.id !== deletedId),
       );
-
       return { previousCourses };
     },
     onError: (err, deletedId, context) => {
-      // Rollback to the previous value
       if (context?.previousCourses) {
         queryClient.setQueryData(["courses"], context.previousCourses);
       }
       setDeleteError(err.message);
-      // Show a temporary error toast (simulate original behavior)
       setToastError(err.message);
       setTimeout(() => setToastError(""), 3000);
     },
@@ -791,7 +798,7 @@ export default function Courses() {
         show: true,
         message: "Course deleted successfully!",
         type: "error",
-      }); // original used "error" for success
+      });
     },
     onSettled: () => {
       setDeleteLoading(false);
@@ -821,7 +828,7 @@ export default function Courses() {
   const [showViewModal, setShowViewModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [courseToDelete, setCourseToDelete] = useState(null);
-  const [deleteLoading, setDeleteLoading] = useState(false); // UI spinner
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState("");
   const [toastError, setToastError] = useState("");
   const [toast, setToast] = useState({
@@ -830,8 +837,11 @@ export default function Courses() {
     type: "success",
   });
 
-  // ── Derived filtered/sorted data (identical) ──
+  // ── Derived filtered/sorted data (with array guard) ──
   const filteredCourses = useMemo(() => {
+    // Guard: ensure courses is an array before using it
+    if (!Array.isArray(courses)) return [];
+
     let result = [...courses];
 
     if (searchTerm.trim()) {
@@ -1198,7 +1208,7 @@ export default function Courses() {
       )}
 
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "28px 16px" }}>
-        {/* Header (unchanged) */}
+        {/* Header */}
         <div style={{ marginBottom: 24 }}>
           <div
             style={{
@@ -1257,7 +1267,7 @@ export default function Courses() {
           </p>
         </div>
 
-        {/* Toolbar (unchanged) */}
+        {/* Toolbar */}
         <div
           style={{
             background: "#fff",
@@ -1391,7 +1401,7 @@ export default function Courses() {
             </button>
           </div>
 
-          {/* Expandable filter panel (unchanged) */}
+          {/* Expandable filter panel */}
           {showFilters && (
             <div
               style={{
@@ -1420,6 +1430,23 @@ export default function Courses() {
                     { value: "beginner", label: "Beginner" },
                     { value: "intermediate", label: "Intermediate" },
                     { value: "Advanced", label: "Advanced" },
+                  ],
+                },
+                {
+                  label: "Language",
+                  key: "language",
+                  options: [
+                    { value: "all", label: "All Languages" },
+                    ...languages.map((lang) => ({ value: lang, label: lang })),
+                  ],
+                },
+                {
+                  label: "Certificate",
+                  key: "certificate",
+                  options: [
+                    { value: "all", label: "All" },
+                    { value: "yes", label: "Yes" },
+                    { value: "no", label: "No" },
                   ],
                 },
               ].map(({ label, key, options }) => (
@@ -1458,7 +1485,7 @@ export default function Courses() {
 
         <div style={{ height: 20 }} />
 
-        {/* Table / Empty (unchanged, but uses filteredCourses) */}
+        {/* Table / Empty */}
         {filteredCourses.length === 0 ? (
           <div
             className="crs-animate"
@@ -1678,7 +1705,7 @@ export default function Courses() {
                             >
                               {course.image ? (
                                 <img
-                                  src={`https://codingcloudapi.codingcloud.co.in/${course.image}`}
+                                  src={getImageUrl(course.image)}
                                   alt={course.name}
                                   style={{
                                     width: "100%",
@@ -1843,7 +1870,7 @@ export default function Courses() {
               </table>
             </div>
 
-            {/* Pagination (unchanged) */}
+            {/* Pagination */}
             <div
               style={{
                 padding: "13px 18px",
@@ -1905,7 +1932,7 @@ export default function Courses() {
         )}
       </div>
 
-      {/* View Modal (unchanged) */}
+      {/* View Modal */}
       {showViewModal && selectedCourse && (
         <div
           style={{
@@ -1974,7 +2001,9 @@ export default function Courses() {
               }}
             >
               <img
-                src={`https://codingcloudapi.codingcloud.co.in/${selectedCourse.banner_img || selectedCourse.image}`}
+                src={getImageUrl(
+                  selectedCourse.banner_img || selectedCourse.image,
+                )}
                 alt={selectedCourse.name}
                 style={{
                   width: "100%",
@@ -2291,7 +2320,7 @@ export default function Courses() {
         </div>
       )}
 
-      {/* Delete Modal (unchanged, uses deleteMutation.isPending) */}
+      {/* Delete Modal */}
       {showDeleteModal && courseToDelete && (
         <div
           style={{
