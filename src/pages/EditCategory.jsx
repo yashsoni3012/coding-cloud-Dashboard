@@ -58,7 +58,7 @@
 //           categoryData = locationState.category;
 //         } else {
 //           const response = await fetch(
-//             "https://codingcloud.pythonanywhere.com/category/",
+//             "https://codingcloudapi.codingcloud.co.in/category/",
 //           );
 //           if (response.ok) {
 //             const listData = await response.json();
@@ -74,7 +74,7 @@
 //             image: null,
 //           });
 //           if (categoryData.image) {
-//             const fullImageUrl = `https://codingcloud.pythonanywhere.com${categoryData.image}`;
+//             const fullImageUrl = `https://codingcloudapi.codingcloud.co.in/${categoryData.image}`;
 //             setImagePreview(fullImageUrl);
 //             setOriginalImage(fullImageUrl);
 //           }
@@ -221,7 +221,7 @@
 //       if (formData.image instanceof File) payload.append("image", formData.image);
 
 //       const response = await fetch(
-//         `https://codingcloud.pythonanywhere.com/category/${id}/`,
+//         `https://codingcloudapi.codingcloud.co.in/category/${id}/`,
 //         { method: "PATCH", body: payload },
 //       );
 
@@ -304,7 +304,7 @@
 //               <h1 className="text-base sm:text-lg font-bold text-gray-900 leading-tight">
 //                 Edit Category
 //               </h1>
-              
+
 //             </div>
 //           </div>
 //           <button
@@ -352,7 +352,7 @@
 //                 >
 //                   Category Name <span className="text-red-500">*</span>
 //                 </label>
-               
+
 //               </div>
 //             </div>
 //             <input
@@ -385,7 +385,7 @@
 //                 >
 //                   Slug
 //                 </label>
-                
+
 //               </div>
 //             </div>
 //             <div className="relative">
@@ -407,7 +407,7 @@
 //             {fieldErrors.slug && (
 //               <p className="text-xs text-red-500 mt-1">{fieldErrors.slug}</p>
 //             )}
-           
+
 //           </div>
 
 //           {/* Description Card */}
@@ -423,7 +423,7 @@
 //                 >
 //                   Description <span className="text-red-500">*</span>
 //                 </label>
-                
+
 //               </div>
 //             </div>
 //             <textarea
@@ -455,7 +455,7 @@
 //                 <p className="text-base font-semibold text-gray-800">
 //                   Cover Image
 //                 </p>
-                
+
 //               </div>
 //             </div>
 
@@ -610,7 +610,6 @@
 //   );
 // }
 
-
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -633,7 +632,9 @@ const fetchCategory = async (id, locationState) => {
   if (locationState && locationState.category) {
     return locationState.category;
   }
-  const response = await fetch("https://codingcloud.pythonanywhere.com/category/");
+  const response = await fetch(
+    "https://codingcloudapi.codingcloud.co.in/category/",
+  );
   if (!response.ok) throw new Error("Failed to load categories");
   const listData = await response.json();
   const category = listData.find((c) => c.id === parseInt(id));
@@ -644,8 +645,8 @@ const fetchCategory = async (id, locationState) => {
 // Update mutation function
 const updateCategory = async ({ id, formData }) => {
   const response = await fetch(
-    `https://codingcloud.pythonanywhere.com/category/${id}/`,
-    { method: "PATCH", body: formData }
+    `https://codingcloudapi.codingcloud.co.in/category/${id}/`,
+    { method: "PATCH", body: formData },
   );
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));
@@ -655,7 +656,10 @@ const updateCategory = async ({ id, formData }) => {
       Object.keys(data.errors).forEach((key) => {
         backendErrors[key] = data.errors[key].join(", ");
       });
-      throw { message: "Please correct the errors below", errors: backendErrors };
+      throw {
+        message: "Please correct the errors below",
+        errors: backendErrors,
+      };
     }
     let message =
       data.message ||
@@ -746,7 +750,7 @@ export default function EditCategory() {
         image: null,
       });
       if (categoryData.image) {
-        const fullImageUrl = `https://codingcloud.pythonanywhere.com${categoryData.image}`;
+        const fullImageUrl = `https://codingcloudapi.codingcloud.co.in/${categoryData.image}`;
         setImagePreview(fullImageUrl);
         setOriginalImage(fullImageUrl);
       }

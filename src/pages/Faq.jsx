@@ -58,8 +58,8 @@
 //     try {
 //       setLoading(true);
 //       const [faqsRes, coursesRes] = await Promise.all([
-//         fetch("https://codingcloud.pythonanywhere.com/faqs/"),
-//         fetch("https://codingcloud.pythonanywhere.com/course/"),
+//         fetch("https://codingcloudapi.codingcloud.co.in/faqs/"),
+//         fetch("https://codingcloudapi.codingcloud.co.in/course/"),
 //       ]);
 
 //       if (faqsRes.ok && coursesRes.ok) {
@@ -181,7 +181,7 @@
 //     setDeleteLoading(true);
 //     try {
 //       const response = await fetch(
-//         `https://codingcloud.pythonanywhere.com/faqs/${faqToDelete.id}/`,
+//         `https://codingcloudapi.codingcloud.co.in/faqs/${faqToDelete.id}/`,
 //         { method: "DELETE" },
 //       );
 //       if (response.ok || response.status === 204) {
@@ -1431,7 +1431,9 @@ import {
 
 // Fetch FAQs
 const fetchFaqs = async () => {
-  const response = await fetch("https://codingcloud.pythonanywhere.com/faqs/");
+  const response = await fetch(
+    "https://codingcloudapi.codingcloud.co.in/faqs/",
+  );
   if (!response.ok) throw new Error("Failed to fetch FAQs");
   const data = await response.json();
   const actualFaqs = data.data || data;
@@ -1441,7 +1443,7 @@ const fetchFaqs = async () => {
 // Fetch courses and return as id->name map
 const fetchCoursesMap = async () => {
   const response = await fetch(
-    "https://codingcloud.pythonanywhere.com/course/",
+    "https://codingcloudapi.codingcloud.co.in/course/",
   );
   if (!response.ok) throw new Error("Failed to fetch courses");
   const data = await response.json();
@@ -1458,7 +1460,7 @@ const fetchCoursesMap = async () => {
 // Delete FAQ mutation
 const deleteFaq = async (id) => {
   const response = await fetch(
-    `https://codingcloud.pythonanywhere.com/faqs/${id}/`,
+    `https://codingcloudapi.codingcloud.co.in/faqs/${id}/`,
     {
       method: "DELETE",
     },

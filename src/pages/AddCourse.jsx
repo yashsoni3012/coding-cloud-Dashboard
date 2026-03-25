@@ -57,7 +57,7 @@
 //     const fetchCategories = async () => {
 //       try {
 //         const response = await fetch(
-//           "https://codingcloud.pythonanywhere.com/category/",
+//           "https://codingcloudapi.codingcloud.co.in/category/",
 //         );
 //         const data = await response.json();
 //         setCategories(data.data || []);
@@ -325,7 +325,7 @@
 //       if (formData.image2) submitData.append("image2", formData.image2);
 
 //       const response = await fetch(
-//         "https://codingcloud.pythonanywhere.com/course/",
+//         "https://codingcloudapi.codingcloud.co.in/course/",
 //         {
 //           method: "POST",
 //           body: submitData,
@@ -1310,7 +1310,7 @@ import Toasts from "../pages/Toasts";
 // Fetch categories function
 const fetchCategories = async () => {
   const response = await fetch(
-    "https://codingcloud.pythonanywhere.com/category/",
+    "https://codingcloudapi.codingcloud.co.in/category/",
   );
   if (!response.ok) throw new Error("Failed to load categories");
   const data = await response.json();
@@ -1320,7 +1320,7 @@ const fetchCategories = async () => {
 // Create course mutation function
 const createCourse = async (formData) => {
   const response = await fetch(
-    "https://codingcloud.pythonanywhere.com/course/",
+    "https://codingcloudapi.codingcloud.co.in/course/",
     {
       method: "POST",
       body: formData,

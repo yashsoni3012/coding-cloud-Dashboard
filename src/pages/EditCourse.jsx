@@ -105,7 +105,7 @@
 //     try {
 //       setCategoriesLoading(true);
 //       const response = await fetch(
-//         "https://codingcloud.pythonanywhere.com/category/",
+//         "https://codingcloudapi.codingcloud.co.in/category/",
 //       );
 //       const data = await response.json();
 //       if (data.success) {
@@ -131,7 +131,7 @@
 //       try {
 //         setLoading(true);
 //         const response = await fetch(
-//           `https://codingcloud.pythonanywhere.com/course/${id}/`,
+//           `https://codingcloudapi.codingcloud.co.in/course/${id}/`,
 //         );
 //         const data = await response.json();
 
@@ -363,7 +363,7 @@
 //       if (formData.image2) submitData.append("image2", formData.image2);
 
 //       const response = await fetch(
-//         `https://codingcloud.pythonanywhere.com/course/${id}/`,
+//         `https://codingcloudapi.codingcloud.co.in/course/${id}/`,
 //         {
 //           method: "PATCH",
 //           body: submitData,
@@ -438,7 +438,7 @@
 //     const previewSrc =
 //       preview ||
 //       (existingUrl
-//         ? `https://codingcloud.pythonanywhere.com${existingUrl}`
+//         ? `https://codingcloudapi.codingcloud.co.in/${existingUrl}`
 //         : "");
 //     const isNew = !!preview;
 
@@ -1163,7 +1163,7 @@
 //             iconBg="bg-pink-50"
 //             iconColor="text-pink-500"
 //             required={true}
-            
+
 //           />
 
 //           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -1328,7 +1328,6 @@
 //   );
 // }
 
-
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -1357,7 +1356,9 @@ import Toasts from "./Toasts";
 
 // Fetch categories
 const fetchCategories = async () => {
-  const response = await fetch("https://codingcloud.pythonanywhere.com/category/");
+  const response = await fetch(
+    "https://codingcloudapi.codingcloud.co.in/category/",
+  );
   const data = await response.json();
   if (!data.success) throw new Error("Failed to load categories");
   return data.data || [];
@@ -1365,7 +1366,9 @@ const fetchCategories = async () => {
 
 // Fetch single course
 const fetchCourse = async (id) => {
-  const response = await fetch(`https://codingcloud.pythonanywhere.com/course/${id}/`);
+  const response = await fetch(
+    `https://codingcloudapi.codingcloud.co.in/course/${id}/`,
+  );
   const data = await response.json();
   if (!data.success) throw new Error("Failed to fetch course details");
   return data.data;
@@ -1373,10 +1376,13 @@ const fetchCourse = async (id) => {
 
 // Update course mutation
 const updateCourse = async ({ id, formData }) => {
-  const response = await fetch(`https://codingcloud.pythonanywhere.com/course/${id}/`, {
-    method: "PATCH",
-    body: formData,
-  });
+  const response = await fetch(
+    `https://codingcloudapi.codingcloud.co.in/course/${id}/`,
+    {
+      method: "PATCH",
+      body: formData,
+    },
+  );
   const data = await response.json();
   if (!response.ok && response.status !== 200) {
     if (data.errors) {
@@ -1384,7 +1390,10 @@ const updateCourse = async ({ id, formData }) => {
       Object.keys(data.errors).forEach((key) => {
         backendErrors[key] = data.errors[key].join(", ");
       });
-      throw { message: "Please correct the errors below", errors: backendErrors };
+      throw {
+        message: "Please correct the errors below",
+        errors: backendErrors,
+      };
     }
     throw new Error(data.message || data.detail || "Failed to update course.");
   }
@@ -1398,7 +1407,11 @@ export default function EditCourse() {
 
   const [saving, setSaving] = useState(false);
   const [editorMode, setEditorMode] = useState("tinymce");
-  const [toast, setToast] = useState({ show: false, message: "", type: "success" });
+  const [toast, setToast] = useState({
+    show: false,
+    message: "",
+    type: "success",
+  });
   const [fieldErrors, setFieldErrors] = useState({});
 
   const [formData, setFormData] = useState({
@@ -1580,7 +1593,10 @@ export default function EditCourse() {
     if (file) {
       const maxSize = name === "pdf_file" ? 10 * 1024 * 1024 : 5 * 1024 * 1024;
       if (file.size > maxSize) {
-        showToast(`File size must be less than ${maxSize / (1024 * 1024)}MB`, "error");
+        showToast(
+          `File size must be less than ${maxSize / (1024 * 1024)}MB`,
+          "error",
+        );
         return;
       }
       if (name === "pdf_file" && file.type !== "application/pdf") {
@@ -1599,7 +1615,8 @@ export default function EditCourse() {
       }
 
       if (name === "image") setImagePreview(URL.createObjectURL(file));
-      else if (name === "banner_img") setBannerPreview(URL.createObjectURL(file));
+      else if (name === "banner_img")
+        setBannerPreview(URL.createObjectURL(file));
       else if (name === "icon") setIconPreview(URL.createObjectURL(file));
       else if (name === "image2") setImage2Preview(URL.createObjectURL(file));
       else if (name === "pdf_file") setPdfName(file.name);
@@ -1696,16 +1713,21 @@ export default function EditCourse() {
       if (formData.students) submitData.append("students", formData.students);
       if (formData.level) submitData.append("level", formData.level);
       if (formData.language) submitData.append("language", formData.language);
-      submitData.append("certificate", formData.certificate === "Yes" ? "Yes" : "No");
+      submitData.append(
+        "certificate",
+        formData.certificate === "Yes" ? "Yes" : "No",
+      );
       submitData.append("featured", formData.featured.toString());
       submitData.append("kids_course", formData.kids_course.toString());
-      if (formData.meta_title) submitData.append("meta_title", formData.meta_title);
+      if (formData.meta_title)
+        submitData.append("meta_title", formData.meta_title);
       if (formData.meta_description)
         submitData.append("meta_description", formData.meta_description);
       if (formData.keywords) submitData.append("keywords", formData.keywords);
 
       if (formData.image) submitData.append("image", formData.image);
-      if (formData.banner_img) submitData.append("banner_img", formData.banner_img);
+      if (formData.banner_img)
+        submitData.append("banner_img", formData.banner_img);
       if (formData.pdf_file) submitData.append("pdf_file", formData.pdf_file);
       if (formData.icon) submitData.append("icon", formData.icon);
       if (formData.image2) submitData.append("image2", formData.image2);
@@ -1760,7 +1782,7 @@ export default function EditCourse() {
     const previewSrc =
       preview ||
       (existingUrl
-        ? `https://codingcloud.pythonanywhere.com${existingUrl}`
+        ? `https://codingcloudapi.codingcloud.co.in/${existingUrl}`
         : "");
     const isNew = !!preview;
 
@@ -1794,7 +1816,8 @@ export default function EditCourse() {
               Click to upload
             </p>
             <p className="text-xs text-gray-400">
-              <span className="text-indigo-500 font-medium">Browse files</span> · {hint}
+              <span className="text-indigo-500 font-medium">Browse files</span>{" "}
+              · {hint}
             </p>
           </div>
         ) : (
@@ -1805,7 +1828,8 @@ export default function EditCourse() {
               className="w-full max-h-48 object-cover block"
               onError={(e) => {
                 e.target.onerror = null;
-                e.target.src = "https://via.placeholder.com/400x200?text=Image+Error";
+                e.target.src =
+                  "https://via.placeholder.com/400x200?text=Image+Error";
               }}
             />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all pointer-events-none" />
@@ -1816,7 +1840,9 @@ export default function EditCourse() {
                   ✓ New image selected — will replace existing
                 </p>
               ) : (
-                <p className="text-xs text-white/70 font-medium">Current image</p>
+                <p className="text-xs text-white/70 font-medium">
+                  Current image
+                </p>
               )}
             </div>
 
@@ -1886,7 +1912,8 @@ export default function EditCourse() {
               Upload Syllabus
             </p>
             <p className="text-xs text-gray-400">
-              <span className="text-indigo-500 font-medium">Browse files</span> · PDF only up to 10MB
+              <span className="text-indigo-500 font-medium">Browse files</span>{" "}
+              · PDF only up to 10MB
             </p>
           </div>
         ) : (
@@ -1918,7 +1945,9 @@ export default function EditCourse() {
                     isNew ? "text-emerald-500" : "text-indigo-400"
                   }`}
                 >
-                  {isNew ? "New file — will replace existing" : "Current syllabus"}
+                  {isNew
+                    ? "New file — will replace existing"
+                    : "Current syllabus"}
                 </p>
               </div>
 
@@ -1984,7 +2013,9 @@ export default function EditCourse() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-14 h-14 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-base text-gray-500 font-medium">Loading course data…</p>
+          <p className="text-base text-gray-500 font-medium">
+            Loading course data…
+          </p>
         </div>
       </div>
     );
@@ -1993,7 +2024,13 @@ export default function EditCourse() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Toast notification */}
-      {toast.show && <Toasts message={toast.message} type={toast.type} onClose={closeToast} />}
+      {toast.show && (
+        <Toasts
+          message={toast.message}
+          type={toast.type}
+          onClose={closeToast}
+        />
+      )}
 
       {/* ── Header ── */}
       <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
@@ -2046,7 +2083,10 @@ export default function EditCourse() {
 
           {/* Course Name */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-            <label htmlFor="name" className="block text-base font-semibold text-gray-800 mb-1">
+            <label
+              htmlFor="name"
+              className="block text-base font-semibold text-gray-800 mb-1"
+            >
               Course Name <span className="text-red-500">*</span>
             </label>
             <input
@@ -2065,7 +2105,10 @@ export default function EditCourse() {
 
           {/* Slug */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-            <label htmlFor="slug" className="block text-base font-semibold text-gray-800 mb-1">
+            <label
+              htmlFor="slug"
+              className="block text-base font-semibold text-gray-800 mb-1"
+            >
               Course Slug <span className="text-red-500">*</span>
             </label>
             <div className="flex rounded-xl overflow-hidden border border-gray-200 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-transparent transition-all">
@@ -2089,7 +2132,10 @@ export default function EditCourse() {
 
           {/* Category */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-            <label htmlFor="category" className="block text-base font-semibold text-gray-800 mb-1">
+            <label
+              htmlFor="category"
+              className="block text-base font-semibold text-gray-800 mb-1"
+            >
               Category <span className="text-red-500">*</span>
             </label>
             <div className="relative">
@@ -2120,7 +2166,10 @@ export default function EditCourse() {
           {/* Description with tabs */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <div className="flex items-center justify-between mb-4">
-              <label htmlFor="text" className="block text-base font-semibold text-gray-800">
+              <label
+                htmlFor="text"
+                className="block text-base font-semibold text-gray-800"
+              >
                 Description <span className="text-red-500">*</span>
               </label>
               <div className="flex gap-1 p-1 bg-gray-100 rounded-lg">
@@ -2247,7 +2296,9 @@ export default function EditCourse() {
               onChange={handleInputChange}
               placeholder="e.g., Learn React from scratch in 40 hours"
               className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
-                fieldErrors.short_description ? "border-red-500" : "border-gray-200"
+                fieldErrors.short_description
+                  ? "border-red-500"
+                  : "border-gray-200"
               }`}
             />
           </div>
@@ -2296,7 +2347,9 @@ export default function EditCourse() {
                     >
                       <field.icon size={12} className={field.color} />
                     </div>
-                    <label className="text-xs font-semibold text-gray-700">{field.label}</label>
+                    <label className="text-xs font-semibold text-gray-700">
+                      {field.label}
+                    </label>
                   </div>
                   <input
                     type="text"
@@ -2320,7 +2373,9 @@ export default function EditCourse() {
                   <div className="w-6 h-6 bg-purple-50 rounded-md flex items-center justify-center">
                     <Signal size={12} className="text-purple-500" />
                   </div>
-                  <label className="text-xs font-semibold text-gray-700">Difficulty Level</label>
+                  <label className="text-xs font-semibold text-gray-700">
+                    Difficulty Level
+                  </label>
                 </div>
                 <div className="relative">
                   <select
@@ -2349,7 +2404,9 @@ export default function EditCourse() {
                   <div className="w-6 h-6 bg-teal-50 rounded-md flex items-center justify-center">
                     <Globe size={12} className="text-teal-500" />
                   </div>
-                  <label className="text-xs font-semibold text-gray-700">Language</label>
+                  <label className="text-xs font-semibold text-gray-700">
+                    Language
+                  </label>
                 </div>
                 <input
                   type="text"
@@ -2387,9 +2444,15 @@ export default function EditCourse() {
                         value={val}
                         checked={formData.certificate === val}
                         onChange={(e) => {
-                          setFormData((prev) => ({ ...prev, certificate: e.target.value }));
+                          setFormData((prev) => ({
+                            ...prev,
+                            certificate: e.target.value,
+                          }));
                           if (fieldErrors.certificate) {
-                            setFieldErrors((prev) => ({ ...prev, certificate: undefined }));
+                            setFieldErrors((prev) => ({
+                              ...prev,
+                              certificate: undefined,
+                            }));
                           }
                         }}
                         className="hidden"
@@ -2410,7 +2473,9 @@ export default function EditCourse() {
                 <Sparkles size={16} className="text-amber-500" />
               </div>
               <div>
-                <p className="text-base font-semibold text-gray-800">Additional Options</p>
+                <p className="text-base font-semibold text-gray-800">
+                  Additional Options
+                </p>
               </div>
             </div>
             <div className="space-y-3 divide-y divide-gray-100">
@@ -2497,7 +2562,10 @@ export default function EditCourse() {
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-5">
             {/* Meta Title */}
             <div>
-              <label htmlFor="meta_title" className="block text-base font-semibold text-gray-800 mb-1">
+              <label
+                htmlFor="meta_title"
+                className="block text-base font-semibold text-gray-800 mb-1"
+              >
                 Meta Title <span className="text-red-500">*</span>
               </label>
               <input
@@ -2511,14 +2579,19 @@ export default function EditCourse() {
                   fieldErrors.meta_title ? "border-red-500" : "border-gray-200"
                 }`}
               />
-              <p className="text-xs text-gray-400 text-right mt-1">{formData.meta_title.length} / 60</p>
+              <p className="text-xs text-gray-400 text-right mt-1">
+                {formData.meta_title.length} / 60
+              </p>
             </div>
 
             <div className="h-px bg-gray-100" />
 
             {/* Meta Description */}
             <div>
-              <label htmlFor="meta_description" className="block text-base font-semibold text-gray-800 mb-1">
+              <label
+                htmlFor="meta_description"
+                className="block text-base font-semibold text-gray-800 mb-1"
+              >
                 Meta Description <span className="text-red-500">*</span>
               </label>
               <textarea
@@ -2529,7 +2602,9 @@ export default function EditCourse() {
                 rows={3}
                 placeholder="Brief description for search engines…"
                 className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-none ${
-                  fieldErrors.meta_description ? "border-red-500" : "border-gray-200"
+                  fieldErrors.meta_description
+                    ? "border-red-500"
+                    : "border-gray-200"
                 }`}
               />
               <p className="text-xs text-gray-400 text-right mt-1">
@@ -2541,7 +2616,10 @@ export default function EditCourse() {
 
             {/* Keywords */}
             <div>
-              <label htmlFor="keywords" className="block text-base font-semibold text-gray-800 mb-1">
+              <label
+                htmlFor="keywords"
+                className="block text-base font-semibold text-gray-800 mb-1"
+              >
                 Keywords <span className="text-red-500">*</span>
               </label>
               <input

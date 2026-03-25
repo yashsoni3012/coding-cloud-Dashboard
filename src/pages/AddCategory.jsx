@@ -166,7 +166,7 @@
 //       );
 
 //       const response = await fetch(
-//         "https://codingcloud.pythonanywhere.com/category/",
+//         "https://codingcloudapi.codingcloud.co.in/category/",
 //         {
 //           method: "POST",
 //           body: payload,
@@ -221,7 +221,7 @@
 //               <h1 className="text-base sm:text-lg font-bold text-gray-900 leading-tight">
 //                 Add Category
 //               </h1>
-             
+
 //             </div>
 //           </div>
 
@@ -272,7 +272,7 @@
 //                 >
 //                   Category Name <span className="text-red-500">*</span>
 //                 </label>
-                
+
 //               </div>
 //             </div>
 //             <input
@@ -305,7 +305,7 @@
 //                 >
 //                   Slug
 //                 </label>
-                
+
 //               </div>
 //             </div>
 //             <div className="relative">
@@ -322,7 +322,7 @@
 //                 className="w-full pl-8 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
 //               />
 //             </div>
-          
+
 //           </div>
 
 //           {/* Description Card */}
@@ -338,7 +338,7 @@
 //                 >
 //                   Description <span className="text-red-500">*</span>
 //                 </label>
-                
+
 //               </div>
 //             </div>
 //             <textarea
@@ -370,7 +370,7 @@
 //                 <p className="text-base font-semibold text-gray-800">
 //                   Cover Image
 //                 </p>
-                
+
 //               </div>
 //             </div>
 
@@ -408,7 +408,7 @@
 //                   <span className="text-indigo-500 font-medium">
 //                     Browse files
 //                   </span>{" "}
-                  
+
 //                 </p>
 //                 <input
 //                   type="file"
@@ -501,18 +501,16 @@ import Toasts from "../pages/Toasts";
 // Mutation function for creating a category
 const createCategory = async (formData) => {
   const response = await fetch(
-    "https://codingcloud.pythonanywhere.com/category/",
+    "https://codingcloudapi.codingcloud.co.in/category/",
     {
       method: "POST",
       body: formData,
-    }
+    },
   );
 
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));
-    throw new Error(
-      data.message || data.detail || "Failed to create category"
-    );
+    throw new Error(data.message || data.detail || "Failed to create category");
   }
 
   return response.json();
@@ -681,10 +679,7 @@ export default function AddCategory() {
     payload.append("name", formData.name.trim());
     payload.append("text", formData.text.trim());
     if (formData.image) payload.append("image", formData.image);
-    payload.append(
-      "slug",
-      formData.slug.trim() || generateSlug(formData.name)
-    );
+    payload.append("slug", formData.slug.trim() || generateSlug(formData.name));
 
     // Use mutation instead of manual fetch
     mutation.mutate(payload);
@@ -701,7 +696,7 @@ export default function AddCategory() {
       )}
 
       {/* Header */}
-      <header className=" top-0 z-50 bg-white border-b border-gray-200 shadow-sm sticky" >
+      <header className=" top-0 z-50 bg-white border-b border-gray-200 shadow-sm sticky">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
@@ -716,7 +711,6 @@ export default function AddCategory() {
               <h1 className="text-base sm:text-lg font-bold text-gray-900 leading-tight">
                 Add Category
               </h1>
-             
             </div>
           </div>
 
@@ -767,7 +761,6 @@ export default function AddCategory() {
                 >
                   Category Name <span className="text-red-500">*</span>
                 </label>
-                
               </div>
             </div>
             <input
@@ -800,7 +793,6 @@ export default function AddCategory() {
                 >
                   Slug
                 </label>
-                
               </div>
             </div>
             <div className="relative">
@@ -817,7 +809,6 @@ export default function AddCategory() {
                 className="w-full pl-8 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
               />
             </div>
-          
           </div>
 
           {/* Description Card */}
@@ -833,7 +824,6 @@ export default function AddCategory() {
                 >
                   Description <span className="text-red-500">*</span>
                 </label>
-                
               </div>
             </div>
             <textarea
@@ -865,7 +855,6 @@ export default function AddCategory() {
                 <p className="text-base font-semibold text-gray-800">
                   Cover Image
                 </p>
-                
               </div>
             </div>
 
@@ -903,7 +892,6 @@ export default function AddCategory() {
                   <span className="text-indigo-500 font-medium">
                     Browse files
                   </span>{" "}
-                  
                 </p>
                 <input
                   type="file"

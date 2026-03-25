@@ -60,7 +60,7 @@
 //                 if (locationState && locationState.blog) {
 //                     blogData = locationState.blog;
 //                 } else {
-//                     const response = await fetch("https://codingcloud.pythonanywhere.com/blogs/");
+//                     const response = await fetch("https://codingcloudapi.codingcloud.co.in/blogs/");
 //                     if (response.ok) {
 //                         const dataRes = await response.json();
 //                         const listData = dataRes.data || dataRes;
@@ -85,7 +85,7 @@
 //                         featured_image: null,
 //                     });
 //                     if (blogData.featured_image) {
-//                         const fullImageUrl = `https://codingcloud.pythonanywhere.com${blogData.featured_image}`;
+//                         const fullImageUrl = `https://codingcloudapi.codingcloud.co.in/${blogData.featured_image}`;
 //                         setImagePreview(fullImageUrl);
 //                         setOriginalImage(fullImageUrl);
 //                     }
@@ -172,7 +172,7 @@
 //             if (formData.hashtag !== undefined) payload.append("hashtag", formData.hashtag.trim());
 //             if (formData.featured_image && formData.featured_image instanceof File) payload.append("featured_image", formData.featured_image);
 
-//             const response = await fetch(`https://codingcloud.pythonanywhere.com/blogs/${id}/`, { method: "PATCH", body: payload });
+//             const response = await fetch(`https://codingcloudapi.codingcloud.co.in/blogs/${id}/`, { method: "PATCH", body: payload });
 //             if (!response.ok) {
 //                 let errorMessage;
 //                 try {
@@ -764,7 +764,7 @@ export default function EditBlog() {
           blogData = locationState.blog;
         } else {
           const response = await fetch(
-            "https://codingcloud.pythonanywhere.com/blogs/",
+            "https://codingcloudapi.codingcloud.co.in/blogs/",
           );
           if (response.ok) {
             const dataRes = await response.json();
@@ -792,7 +792,7 @@ export default function EditBlog() {
             featured_image: null,
           });
           if (blogData.featured_image) {
-            const fullImageUrl = `https://codingcloud.pythonanywhere.com${blogData.featured_image}`;
+            const fullImageUrl = `https://codingcloudapi.codingcloud.co.in/${blogData.featured_image}`;
             setImagePreview(fullImageUrl);
             setOriginalImage(fullImageUrl);
           }
@@ -853,7 +853,10 @@ export default function EditBlog() {
     if (fileInputRef.current) fileInputRef.current.value = "";
     // If there is no original image, mark as error
     if (!originalImage) {
-      setFieldErrors((prev) => ({ ...prev, featured_image: "Featured image is required" }));
+      setFieldErrors((prev) => ({
+        ...prev,
+        featured_image: "Featured image is required",
+      }));
     }
   };
 
@@ -941,7 +944,7 @@ export default function EditBlog() {
       }
 
       const response = await fetch(
-        `https://codingcloud.pythonanywhere.com/blogs/${id}/`,
+        `https://codingcloudapi.codingcloud.co.in/blogs/${id}/`,
         { method: "PATCH", body: payload },
       );
 
@@ -1065,7 +1068,6 @@ export default function EditBlog() {
               <h1 className="text-base sm:text-lg font-bold text-gray-900 leading-tight">
                 Edit Blog
               </h1>
-              
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -1132,7 +1134,7 @@ export default function EditBlog() {
                 >
                   Blog Title <span className="text-red-500">*</span>
                 </label>
-               
+
                 <div className="relative">
                   <FileText
                     size={16}
@@ -1152,7 +1154,9 @@ export default function EditBlog() {
                   />
                 </div>
                 {fieldErrors.title && (
-                  <p className="text-xs text-red-500 mt-1">{fieldErrors.title}</p>
+                  <p className="text-xs text-red-500 mt-1">
+                    {fieldErrors.title}
+                  </p>
                 )}
               </div>
 
@@ -1164,7 +1168,7 @@ export default function EditBlog() {
                 >
                   Slug / URL Path <span className="text-red-500">*</span>
                 </label>
-               
+
                 <div className="flex rounded-xl overflow-hidden border border-gray-200 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-transparent transition-all">
                   <span className="inline-flex items-center px-4 py-3 bg-gray-100 text-xs text-gray-500 font-medium border-r border-gray-200 whitespace-nowrap">
                     /blog/
@@ -1180,7 +1184,10 @@ export default function EditBlog() {
                         .replace(/[^a-z0-9-]/g, "-");
                       setFormData((prev) => ({ ...prev, slug: val }));
                       if (fieldErrors.slug) {
-                        setFieldErrors((prev) => ({ ...prev, slug: undefined }));
+                        setFieldErrors((prev) => ({
+                          ...prev,
+                          slug: undefined,
+                        }));
                       }
                     }}
                     placeholder="how-to-learn-react"
@@ -1191,9 +1198,10 @@ export default function EditBlog() {
                   />
                 </div>
                 {fieldErrors.slug && (
-                  <p className="text-xs text-red-500 mt-1">{fieldErrors.slug}</p>
+                  <p className="text-xs text-red-500 mt-1">
+                    {fieldErrors.slug}
+                  </p>
                 )}
-                
               </div>
 
               {/* Short Description */}
@@ -1204,7 +1212,7 @@ export default function EditBlog() {
                 >
                   Short Description
                 </label>
-               
+
                 <textarea
                   id="short_description"
                   name="short_description"
@@ -1214,7 +1222,6 @@ export default function EditBlog() {
                   placeholder="A brief summary of the blog post…"
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-y"
                 />
-                
               </div>
 
               {/* Main Content with tabs */}
@@ -1254,8 +1261,6 @@ export default function EditBlog() {
                   </div>
                 </div>
 
-                
-
                 {/* Conditional Editor */}
                 {editorMode === "tinymce" ? (
                   <div
@@ -1270,7 +1275,10 @@ export default function EditBlog() {
                       onEditorChange={(content) => {
                         setFormData((prev) => ({ ...prev, content }));
                         if (fieldErrors.content) {
-                          setFieldErrors((prev) => ({ ...prev, content: undefined }));
+                          setFieldErrors((prev) => ({
+                            ...prev,
+                            content: undefined,
+                          }));
                         }
                       }}
                       init={{
@@ -1311,9 +1319,15 @@ export default function EditBlog() {
                   <textarea
                     value={formData.content}
                     onChange={(e) => {
-                      setFormData((prev) => ({ ...prev, content: e.target.value }));
+                      setFormData((prev) => ({
+                        ...prev,
+                        content: e.target.value,
+                      }));
                       if (fieldErrors.content) {
-                        setFieldErrors((prev) => ({ ...prev, content: undefined }));
+                        setFieldErrors((prev) => ({
+                          ...prev,
+                          content: undefined,
+                        }));
                       }
                     }}
                     className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base font-mono placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
@@ -1324,9 +1338,10 @@ export default function EditBlog() {
                   />
                 )}
                 {fieldErrors.content && (
-                  <p className="text-xs text-red-500 mt-1">{fieldErrors.content}</p>
+                  <p className="text-xs text-red-500 mt-1">
+                    {fieldErrors.content}
+                  </p>
                 )}
-               
               </div>
 
               {/* SEO & Metadata */}
@@ -1349,7 +1364,7 @@ export default function EditBlog() {
                       Meta Title
                     </label>
                   </div>
-                 
+
                   <input
                     id="meta_title"
                     type="text"
@@ -1374,7 +1389,7 @@ export default function EditBlog() {
                   >
                     Meta Description
                   </label>
-                 
+
                   <textarea
                     id="meta_descrtiption"
                     name="meta_descrtiption"
@@ -1402,7 +1417,7 @@ export default function EditBlog() {
                       Meta Keywords
                     </label>
                   </div>
-                 
+
                   <input
                     id="meta_keyword"
                     type="text"
@@ -1427,7 +1442,7 @@ export default function EditBlog() {
                       Hashtags <span className="text-red-500">*</span>
                     </label>
                   </div>
-                 
+
                   <input
                     id="hashtag"
                     type="text"
@@ -1440,7 +1455,9 @@ export default function EditBlog() {
                     }`}
                   />
                   {fieldErrors.hashtag && (
-                    <p className="text-xs text-red-500 mt-1">{fieldErrors.hashtag}</p>
+                    <p className="text-xs text-red-500 mt-1">
+                      {fieldErrors.hashtag}
+                    </p>
                   )}
                 </div>
               </div>
@@ -1466,7 +1483,7 @@ export default function EditBlog() {
                   >
                     Status <span className="text-red-500">*</span>
                   </label>
-                
+
                   <div className="relative">
                     <select
                       id="status"
@@ -1474,7 +1491,9 @@ export default function EditBlog() {
                       value={formData.status}
                       onChange={handleInputChange}
                       className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none cursor-pointer ${
-                        fieldErrors.status ? "border-red-500" : "border-gray-200"
+                        fieldErrors.status
+                          ? "border-red-500"
+                          : "border-gray-200"
                       }`}
                     >
                       {statusOptions.map((status) => (
@@ -1489,7 +1508,9 @@ export default function EditBlog() {
                     />
                   </div>
                   {fieldErrors.status && (
-                    <p className="text-xs text-red-500 mt-1">{fieldErrors.status}</p>
+                    <p className="text-xs text-red-500 mt-1">
+                      {fieldErrors.status}
+                    </p>
                   )}
                 </div>
 
@@ -1503,7 +1524,7 @@ export default function EditBlog() {
                   >
                     Publish Date <span className="text-red-500">*</span>
                   </label>
-                 
+
                   <input
                     id="publish_date"
                     type="date"
@@ -1511,16 +1532,18 @@ export default function EditBlog() {
                     value={formData.publish_date}
                     onChange={handleInputChange}
                     className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
-                      fieldErrors.publish_date ? "border-red-500" : "border-gray-200"
+                      fieldErrors.publish_date
+                        ? "border-red-500"
+                        : "border-gray-200"
                     }`}
                     required
                   />
                   {fieldErrors.publish_date && (
-                    <p className="text-xs text-red-500 mt-1">{fieldErrors.publish_date}</p>
+                    <p className="text-xs text-red-500 mt-1">
+                      {fieldErrors.publish_date}
+                    </p>
                   )}
                 </div>
-
-               
               </div>
 
               {/* Featured Image Card */}
@@ -1533,7 +1556,9 @@ export default function EditBlog() {
 
               <div
                 className={`bg-white rounded-2xl border shadow-sm p-6 ${
-                  fieldErrors.featured_image ? "border-red-500" : "border-gray-200"
+                  fieldErrors.featured_image
+                    ? "border-red-500"
+                    : "border-gray-200"
                 }`}
               >
                 {!imagePreview ? (
@@ -1657,7 +1682,9 @@ export default function EditBlog() {
                   </div>
                 )}
                 {fieldErrors.featured_image && (
-                  <p className="text-xs text-red-500 mt-2">{fieldErrors.featured_image}</p>
+                  <p className="text-xs text-red-500 mt-2">
+                    {fieldErrors.featured_image}
+                  </p>
                 )}
                 <input
                   ref={fileInputRef}

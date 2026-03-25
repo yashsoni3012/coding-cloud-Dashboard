@@ -49,15 +49,15 @@
 //         blogsRes,
 //         testimonialsRes,
 //       ] = await Promise.allSettled([
-//         fetch("https://codingcloud.pythonanywhere.com/category/"),
-//         fetch("https://codingcloud.pythonanywhere.com/course/"),
-//         fetch("https://codingcloud.pythonanywhere.com/modules/"),
-//         fetch("https://codingcloud.pythonanywhere.com/topics/"),
-//         fetch("https://codingcloud.pythonanywhere.com/contacts/"),
-//         fetch("https://codingcloud.pythonanywhere.com/enroll/"),
-//         fetch("https://codingcloud.pythonanywhere.com/faqs/"),
-//         fetch("https://codingcloud.pythonanywhere.com/blogs/"),
-//         fetch("https://codingcloud.pythonanywhere.com/testimonials/"),
+//         fetch("https://codingcloudapi.codingcloud.co.in/category/"),
+//         fetch("https://codingcloudapi.codingcloud.co.in/course/"),
+//         fetch("https://codingcloudapi.codingcloud.co.in/modules/"),
+//         fetch("https://codingcloudapi.codingcloud.co.in/topics/"),
+//         fetch("https://codingcloudapi.codingcloud.co.in/contacts/"),
+//         fetch("https://codingcloudapi.codingcloud.co.in/enroll/"),
+//         fetch("https://codingcloudapi.codingcloud.co.in/faqs/"),
+//         fetch("https://codingcloudapi.codingcloud.co.in/blogs/"),
+//         fetch("https://codingcloudapi.codingcloud.co.in/testimonials/"),
 //       ]);
 
 //       // Process categories
@@ -139,13 +139,13 @@
 
 //   if (Array.isArray(data.testimonials)) {
 //     stats.testimonials = data.testimonials.length;
-//   } 
+//   }
 //   else if (Array.isArray(data.data)) {
 //     stats.testimonials = data.data.length;
-//   } 
+//   }
 //   else if (Array.isArray(data)) {
 //     stats.testimonials = data.length;
-//   } 
+//   }
 //   else {
 //     stats.testimonials = 0;
 //   }
@@ -465,7 +465,6 @@
 //   );
 // }
 
-
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueries, useQueryClient } from "@tanstack/react-query";
@@ -484,7 +483,7 @@ import {
 } from "lucide-react";
 
 // API base
-const BASE_URL = "https://codingcloud.pythonanywhere.com";
+const BASE_URL = "https://codingcloudapi.codingcloud.co.in";
 
 // Query functions for each endpoint
 const fetchCategoriesCount = async () => {
@@ -515,7 +514,10 @@ const fetchTopicsCount = async () => {
   // Try to get count from various response structures
   if (typeof data.count === "number") return data.count;
   if (Array.isArray(data.data)) {
-    return data.data.reduce((total, module) => total + (module.topics?.length || 0), 0);
+    return data.data.reduce(
+      (total, module) => total + (module.topics?.length || 0),
+      0,
+    );
   }
   return 0;
 };
@@ -596,7 +598,7 @@ export default function Dashboard() {
       blogs: queries[7]?.data ?? 0,
       testimonials: queries[8]?.data ?? 0,
     }),
-    queries.map((q) => q.data) // re-run when any data changes
+    queries.map((q) => q.data), // re-run when any data changes
   );
 
   // Refresh all queries (used by retry button)

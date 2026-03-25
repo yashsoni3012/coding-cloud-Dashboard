@@ -22,7 +22,7 @@
 // } from "lucide-react";
 
 // // API base URL – change this if your endpoint moves
-// const BASE_URL = "https://codingcloud.pythonanywhere.com";
+// const BASE_URL = "https://codingcloudapi.codingcloud.co.in/";
 
 // export default function Testimonials() {
 //   const navigate = useNavigate();
@@ -786,15 +786,14 @@ import {
 } from "lucide-react";
 
 // API base URL – change this if your endpoint moves
-const BASE_URL = "https://codingcloud.pythonanywhere.com";
+const BASE_URL = "https://codingcloudapi.codingcloud.co.in";
 
 const getImageUrl = (image) => {
   if (!image) return null;
 
   if (image.startsWith("http")) return image;
 
-  return `https://codingcloud.pythonanywhere.com${image}`;
-  
+  return `https://codingcloudapi.codingcloud.co.in/${image}`;
 };
 
 // Fetch testimonials function
@@ -886,10 +885,10 @@ export default function Testimonials() {
 
   // Local UI state (unchanged)
   const [searchTerm, setSearchTerm] = useState("");
-const [sortConfig, setSortConfig] = useState({
-  key: "created_at",
-  direction: "desc",
-});
+  const [sortConfig, setSortConfig] = useState({
+    key: "created_at",
+    direction: "desc",
+  });
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({ rating: "all" });
   const [showViewModal, setShowViewModal] = useState(false);
@@ -900,7 +899,11 @@ const [sortConfig, setSortConfig] = useState({
   const [deleteError, setDeleteError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [toast, setToast] = useState({ show: false, message: "", type: "success" });
+  const [toast, setToast] = useState({
+    show: false,
+    message: "",
+    type: "success",
+  });
 
   // --- Derived filtered testimonials (memoized) ---
   const filteredTestimonials = useMemo(() => {
@@ -911,14 +914,15 @@ const [sortConfig, setSortConfig] = useState({
       result = result.filter(
         (testimonial) =>
           (testimonial.name && testimonial.name.toLowerCase().includes(q)) ||
-          (testimonial.review && testimonial.review.toLowerCase().includes(q)) ||
-          testimonial.display_id.toString().includes(q)
+          (testimonial.review &&
+            testimonial.review.toLowerCase().includes(q)) ||
+          testimonial.display_id.toString().includes(q),
       );
     }
 
     if (filters.rating !== "all") {
       result = result.filter(
-        (testimonial) => testimonial.rating === parseInt(filters.rating)
+        (testimonial) => testimonial.rating === parseInt(filters.rating),
       );
     }
 
@@ -934,9 +938,9 @@ const [sortConfig, setSortConfig] = useState({
         aVal = a.rating || 0;
         bVal = b.rating || 0;
       } else if (sortConfig.key === "created_at") {
-  aVal = new Date(a.created_at).getTime() || 0;
-  bVal = new Date(b.created_at).getTime() || 0;
-} else {
+        aVal = new Date(a.created_at).getTime() || 0;
+        bVal = new Date(b.created_at).getTime() || 0;
+      } else {
         aVal = a[sortConfig.key] || "";
         bVal = b[sortConfig.key] || "";
       }
@@ -961,15 +965,21 @@ const [sortConfig, setSortConfig] = useState({
   };
 
   const SortIcon = ({ col }) => {
-    if (sortConfig.key !== col) return <SortAsc size={13} style={{ color: "#cbd5e1" }} />;
-    return sortConfig.direction === "asc"
-      ? <SortAsc size={13} style={{ color: "#7c3aed" }} />
-      : <SortDesc size={13} style={{ color: "#7c3aed" }} />;
+    if (sortConfig.key !== col)
+      return <SortAsc size={13} style={{ color: "#cbd5e1" }} />;
+    return sortConfig.direction === "asc" ? (
+      <SortAsc size={13} style={{ color: "#7c3aed" }} />
+    ) : (
+      <SortDesc size={13} style={{ color: "#7c3aed" }} />
+    );
   };
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const paginatedTestimonials = filteredTestimonials.slice(indexOfFirstItem, indexOfLastItem);
+  const paginatedTestimonials = filteredTestimonials.slice(
+    indexOfFirstItem,
+    indexOfLastItem,
+  );
   const totalPages = Math.ceil(filteredTestimonials.length / itemsPerPage);
 
   const handleDeleteClick = (e, testimonial) => {
@@ -996,9 +1006,23 @@ const [sortConfig, setSortConfig] = useState({
   };
 
   const getRatingColor = (rating) => {
-    if (rating >= 4) return { background: "#ecfdf5", color: "#047857", border: "1px solid #a7f3d0" };
-    if (rating >= 3) return { background: "#fffbeb", color: "#b45309", border: "1px solid #fde68a" };
-    return { background: "#fef2f2", color: "#b91c1c", border: "1px solid #fecaca" };
+    if (rating >= 4)
+      return {
+        background: "#ecfdf5",
+        color: "#047857",
+        border: "1px solid #a7f3d0",
+      };
+    if (rating >= 3)
+      return {
+        background: "#fffbeb",
+        color: "#b45309",
+        border: "1px solid #fde68a",
+      };
+    return {
+      background: "#fef2f2",
+      color: "#b91c1c",
+      border: "1px solid #fecaca",
+    };
   };
 
   const activeFiltersCount = [
@@ -1022,23 +1046,71 @@ const [sortConfig, setSortConfig] = useState({
   );
 
   const getPageNumbers = () => {
-    if (totalPages <= 5) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    if (totalPages <= 5)
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
     if (currentPage <= 3) return [1, 2, 3, 4, 5];
-    if (currentPage >= totalPages - 2) return [totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
-    return [currentPage - 2, currentPage - 1, currentPage, currentPage + 1, currentPage + 2];
+    if (currentPage >= totalPages - 2)
+      return [
+        totalPages - 4,
+        totalPages - 3,
+        totalPages - 2,
+        totalPages - 1,
+        totalPages,
+      ];
+    return [
+      currentPage - 2,
+      currentPage - 1,
+      currentPage,
+      currentPage + 1,
+      currentPage + 2,
+    ];
   };
 
-  const avatarColors = ["#7c3aed", "#2563eb", "#0891b2", "#059669", "#d97706", "#dc2626"];
+  const avatarColors = [
+    "#7c3aed",
+    "#2563eb",
+    "#0891b2",
+    "#059669",
+    "#d97706",
+    "#dc2626",
+  ];
   const getColor = (id) => avatarColors[(id || 0) % avatarColors.length];
   const getInitials = (name) => (name ? name.slice(0, 2).toUpperCase() : "TM");
 
   if (isLoading) {
     return (
-      <div style={{ minHeight: "100vh", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div
+        style={{
+          minHeight: "100vh",
+          background: "#f8fafc",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
         <div style={{ textAlign: "center" }}>
-          <div style={{ width: 44, height: 44, border: "3px solid #ede9fe", borderTopColor: "#7c3aed", borderRadius: "50%", margin: "0 auto", animation: "spin 0.8s linear infinite" }} />
+          <div
+            style={{
+              width: 44,
+              height: 44,
+              border: "3px solid #ede9fe",
+              borderTopColor: "#7c3aed",
+              borderRadius: "50%",
+              margin: "0 auto",
+              animation: "spin 0.8s linear infinite",
+            }}
+          />
           <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-          <p style={{ marginTop: 14, color: "#94a3b8", fontSize: 15, fontWeight: 500 }}>Loading testimonials…</p>
+          <p
+            style={{
+              marginTop: 14,
+              color: "#94a3b8",
+              fontSize: 15,
+              fontWeight: 500,
+            }}
+          >
+            Loading testimonials…
+          </p>
         </div>
       </div>
     );
@@ -1046,14 +1118,67 @@ const [sortConfig, setSortConfig] = useState({
 
   if (error) {
     return (
-      <div style={{ minHeight: "100vh", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-        <div style={{ background: "#fff", borderRadius: 20, boxShadow: "0 8px 32px rgba(0,0,0,0.08)", padding: 32, maxWidth: 360, width: "100%", textAlign: "center" }}>
-          <div style={{ width: 56, height: 56, background: "#fef2f2", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+      <div
+        style={{
+          minHeight: "100vh",
+          background: "#f8fafc",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 16,
+        }}
+      >
+        <div
+          style={{
+            background: "#fff",
+            borderRadius: 20,
+            boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
+            padding: 32,
+            maxWidth: 360,
+            width: "100%",
+            textAlign: "center",
+          }}
+        >
+          <div
+            style={{
+              width: 56,
+              height: 56,
+              background: "#fef2f2",
+              borderRadius: "50%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto 16px",
+            }}
+          >
             <X size={22} color="#ef4444" />
           </div>
-          <h3 style={{ fontSize: 17, fontWeight: 700, color: "#0f172a", margin: "0 0 6px" }}>Something went wrong</h3>
-          <p style={{ fontSize: 15, color: "#94a3b8", margin: "0 0 20px" }}>{error.message}</p>
-          <button onClick={() => refetch()} style={{ padding: "10px 24px", background: "#7c3aed", color: "#fff", border: "none", borderRadius: 10, fontSize: 15, fontWeight: 600, cursor: "pointer" }}>
+          <h3
+            style={{
+              fontSize: 17,
+              fontWeight: 700,
+              color: "#0f172a",
+              margin: "0 0 6px",
+            }}
+          >
+            Something went wrong
+          </h3>
+          <p style={{ fontSize: 15, color: "#94a3b8", margin: "0 0 20px" }}>
+            {error.message}
+          </p>
+          <button
+            onClick={() => refetch()}
+            style={{
+              padding: "10px 24px",
+              background: "#7c3aed",
+              color: "#fff",
+              border: "none",
+              borderRadius: 10,
+              fontSize: 15,
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
             Try Again
           </button>
         </div>
@@ -1062,7 +1187,13 @@ const [sortConfig, setSortConfig] = useState({
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f8fafc", fontFamily: "'DM Sans', 'Segoe UI', sans-serif" }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "#f8fafc",
+        fontFamily: "'DM Sans', 'Segoe UI', sans-serif",
+      }}
+    >
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
         * { box-sizing: border-box; }
@@ -1102,26 +1233,98 @@ const [sortConfig, setSortConfig] = useState({
       )}
 
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "28px 16px" }}>
-
         {/* Header */}
         <div style={{ marginBottom: 24 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 5 }}>
-            <div style={{ width: 38, height: 38, background: "linear-gradient(135deg,#7c3aed,#a78bfa)", borderRadius: 11, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(124,58,237,0.25)" }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              marginBottom: 5,
+            }}
+          >
+            <div
+              style={{
+                width: 38,
+                height: 38,
+                background: "linear-gradient(135deg,#7c3aed,#a78bfa)",
+                borderRadius: 11,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                boxShadow: "0 4px 12px rgba(124,58,237,0.25)",
+              }}
+            >
               <MessageSquare size={17} color="#fff" />
             </div>
-            <h1 style={{ fontSize: 22, fontWeight: 700, color: "#0f172a", margin: 0 }}>Testimonials</h1>
-            <span style={{ padding: "3px 11px", background: "#ede9fe", color: "#6d28d9", fontSize: 13, fontWeight: 700, borderRadius: 99 }}>{testimonials.length}</span>
+            <h1
+              style={{
+                fontSize: 22,
+                fontWeight: 700,
+                color: "#0f172a",
+                margin: 0,
+              }}
+            >
+              Testimonials
+            </h1>
+            <span
+              style={{
+                padding: "3px 11px",
+                background: "#ede9fe",
+                color: "#6d28d9",
+                fontSize: 13,
+                fontWeight: 700,
+                borderRadius: 99,
+              }}
+            >
+              {testimonials.length}
+            </span>
           </div>
-          <p style={{ fontSize: 14, color: "#94a3b8", margin: 0, paddingLeft: 48 }}>Manage your customer testimonials and reviews</p>
+          <p
+            style={{
+              fontSize: 14,
+              color: "#94a3b8",
+              margin: 0,
+              paddingLeft: 48,
+            }}
+          >
+            Manage your customer testimonials and reviews
+          </p>
         </div>
 
         {/* Toolbar */}
-        <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", padding: "14px 18px", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
-          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10 }}>
-
+        <div
+          style={{
+            background: "#fff",
+            borderRadius: 16,
+            border: "1px solid #e2e8f0",
+            padding: "14px 18px",
+            boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              alignItems: "center",
+              gap: 10,
+            }}
+          >
             {/* Search */}
-            <div style={{ position: "relative", flex: "1 1 220px", minWidth: 0 }}>
-              <Search size={16} style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: "#cbd5e1", pointerEvents: "none" }} />
+            <div
+              style={{ position: "relative", flex: "1 1 220px", minWidth: 0 }}
+            >
+              <Search
+                size={16}
+                style={{
+                  position: "absolute",
+                  left: 13,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  color: "#cbd5e1",
+                  pointerEvents: "none",
+                }}
+              />
               <input
                 className="test-search"
                 type="text"
@@ -1132,7 +1335,18 @@ const [sortConfig, setSortConfig] = useState({
               {searchTerm && (
                 <button
                   onClick={() => setSearchTerm("")}
-                  style={{ position: "absolute", right: 11, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#94a3b8", display: "flex", padding: 2 }}
+                  style={{
+                    position: "absolute",
+                    right: 11,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    color: "#94a3b8",
+                    display: "flex",
+                    padding: 2,
+                  }}
                 >
                   <X size={14} />
                 </button>
@@ -1147,11 +1361,27 @@ const [sortConfig, setSortConfig] = useState({
               <Filter size={15} />
               Filters
               {activeFiltersCount > 0 && (
-                <span style={{ marginLeft: 2, background: "#7c3aed", color: "#fff", fontSize: 11, fontWeight: 600, padding: "2px 6px", borderRadius: 20 }}>
+                <span
+                  style={{
+                    marginLeft: 2,
+                    background: "#7c3aed",
+                    color: "#fff",
+                    fontSize: 11,
+                    fontWeight: 600,
+                    padding: "2px 6px",
+                    borderRadius: 20,
+                  }}
+                >
                   {activeFiltersCount}
                 </span>
               )}
-              <ChevronDown size={14} style={{ transition: "transform 0.2s", transform: showFilters ? "rotate(180deg)" : "none" }} />
+              <ChevronDown
+                size={14}
+                style={{
+                  transition: "transform 0.2s",
+                  transform: showFilters ? "rotate(180deg)" : "none",
+                }}
+              />
             </button>
 
             {/* Add Testimonial */}
@@ -1166,9 +1396,30 @@ const [sortConfig, setSortConfig] = useState({
 
           {/* Expandable filter panel */}
           {showFilters && (
-            <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid #f1f5f9", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <div
+              style={{
+                marginTop: 16,
+                paddingTop: 16,
+                borderTop: "1px solid #f1f5f9",
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 16,
+              }}
+            >
               <div>
-                <label style={{ display: "block", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#94a3b8", marginBottom: 6 }}>Rating</label>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.07em",
+                    color: "#94a3b8",
+                    marginBottom: 6,
+                  }}
+                >
+                  Rating
+                </label>
                 <select
                   className="test-select"
                   value={filters.rating}
@@ -1184,7 +1435,19 @@ const [sortConfig, setSortConfig] = useState({
                 </select>
               </div>
               <div>
-                <label style={{ display: "block", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#94a3b8", marginBottom: 6 }}>Items per page</label>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.07em",
+                    color: "#94a3b8",
+                    marginBottom: 6,
+                  }}
+                >
+                  Items per page
+                </label>
                 <select
                   className="test-select"
                   value={itemsPerPage}
@@ -1206,53 +1469,183 @@ const [sortConfig, setSortConfig] = useState({
 
         {/* Table / Empty state */}
         {filteredTestimonials.length === 0 ? (
-          <div className="test-animate" style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", padding: "64px 24px", textAlign: "center" }}>
-            <div style={{ width: 62, height: 62, background: "#f1f5f9", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+          <div
+            className="test-animate"
+            style={{
+              background: "#fff",
+              borderRadius: 16,
+              border: "1px solid #e2e8f0",
+              padding: "64px 24px",
+              textAlign: "center",
+            }}
+          >
+            <div
+              style={{
+                width: 62,
+                height: 62,
+                background: "#f1f5f9",
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto 16px",
+              }}
+            >
               <MessageSquare size={27} color="#cbd5e1" />
             </div>
-            <h3 style={{ fontSize: 16, fontWeight: 700, color: "#1e293b", margin: "0 0 6px" }}>No testimonials found</h3>
+            <h3
+              style={{
+                fontSize: 16,
+                fontWeight: 700,
+                color: "#1e293b",
+                margin: "0 0 6px",
+              }}
+            >
+              No testimonials found
+            </h3>
             <p style={{ fontSize: 14.5, color: "#94a3b8", margin: "0 0 20px" }}>
-              {searchTerm || filters.rating !== "all" ? "Try adjusting your filters or search term." : "Get started by adding your first testimonial."}
+              {searchTerm || filters.rating !== "all"
+                ? "Try adjusting your filters or search term."
+                : "Get started by adding your first testimonial."}
             </p>
-            {(searchTerm || filters.rating !== "all") ? (
+            {searchTerm || filters.rating !== "all" ? (
               <button
-                onClick={() => { setSearchTerm(""); setFilters({ rating: "all" }); }}
-                style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "10px 20px", background: "#7c3aed", color: "#fff", border: "none", borderRadius: 10, fontSize: 14.5, fontWeight: 600, cursor: "pointer" }}
+                onClick={() => {
+                  setSearchTerm("");
+                  setFilters({ rating: "all" });
+                }}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "10px 20px",
+                  background: "#7c3aed",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 10,
+                  fontSize: 14.5,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
               >
                 Clear Filters
               </button>
             ) : (
               <button
                 onClick={() => navigate("/add-testimonial")}
-                style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "10px 20px", background: "#7c3aed", color: "#fff", border: "none", borderRadius: 10, fontSize: 14.5, fontWeight: 600, cursor: "pointer" }}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "10px 20px",
+                  background: "#7c3aed",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 10,
+                  fontSize: 14.5,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
               >
                 <Plus size={15} /> Add Testimonial
               </button>
             )}
           </div>
         ) : (
-          <div className="test-animate" style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
+          <div
+            className="test-animate"
+            style={{
+              background: "#fff",
+              borderRadius: 16,
+              border: "1px solid #e2e8f0",
+              overflow: "hidden",
+              boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+            }}
+          >
             <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", minWidth: 800, borderCollapse: "collapse" }}>
+              <table
+                style={{
+                  width: "100%",
+                  minWidth: 800,
+                  borderCollapse: "collapse",
+                }}
+              >
                 <thead>
-                  <tr style={{ borderBottom: "2px solid #f1f5f9", background: "#fafafa" }}>
-                    <th style={{ padding: "14px 18px", textAlign: "left", width: 56 }}>
-                      <button className="test-th-btn" onClick={() => handleSort("display_id")}># <SortIcon col="display_id" /></button>
+                  <tr
+                    style={{
+                      borderBottom: "2px solid #f1f5f9",
+                      background: "#fafafa",
+                    }}
+                  >
+                    <th
+                      style={{
+                        padding: "14px 18px",
+                        textAlign: "left",
+                        width: 56,
+                      }}
+                    >
+                      <button
+                        className="test-th-btn"
+                        onClick={() => handleSort("display_id")}
+                      >
+                        # <SortIcon col="display_id" />
+                      </button>
                     </th>
                     <th style={{ padding: "14px 18px", textAlign: "left" }}>
-                      <button className="test-th-btn" onClick={() => handleSort("name")}>Reviewer <SortIcon col="name" /></button>
+                      <button
+                        className="test-th-btn"
+                        onClick={() => handleSort("name")}
+                      >
+                        Reviewer <SortIcon col="name" />
+                      </button>
                     </th>
                     <th style={{ padding: "14px 18px", textAlign: "left" }}>
-                      <button className="test-th-btn" onClick={() => handleSort("rating")}>Rating <SortIcon col="rating" /></button>
+                      <button
+                        className="test-th-btn"
+                        onClick={() => handleSort("rating")}
+                      >
+                        Rating <SortIcon col="rating" />
+                      </button>
                     </th>
-                    <th style={{ padding: "14px 18px", textAlign: "left" }} className="hidden lg:table-cell">
-                      <span style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#94a3b8" }}>Review</span>
+                    <th
+                      style={{ padding: "14px 18px", textAlign: "left" }}
+                      className="hidden lg:table-cell"
+                    >
+                      <span
+                        style={{
+                          fontSize: 12,
+                          fontWeight: 700,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.07em",
+                          color: "#94a3b8",
+                        }}
+                      >
+                        Review
+                      </span>
                     </th>
-                    <th style={{ padding: "14px 18px", textAlign: "left" }} className="hidden md:table-cell">
-                      <button className="test-th-btn" onClick={() => handleSort("created_at")}>Date <SortIcon col="created_at" /></button>
+                    <th
+                      style={{ padding: "14px 18px", textAlign: "left" }}
+                      className="hidden md:table-cell"
+                    >
+                      <button
+                        className="test-th-btn"
+                        onClick={() => handleSort("created_at")}
+                      >
+                        Date <SortIcon col="created_at" />
+                      </button>
                     </th>
                     <th style={{ padding: "14px 18px", textAlign: "right" }}>
-                      <span style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#94a3b8" }}>Actions</span>
+                      <span
+                        style={{
+                          fontSize: 12,
+                          fontWeight: 700,
+                          textTransform: "uppercase",
+                          letterSpacing: "0.07em",
+                          color: "#94a3b8",
+                        }}
+                      >
+                        Actions
+                      </span>
                     </th>
                   </tr>
                 </thead>
@@ -1264,20 +1657,38 @@ const [sortConfig, setSortConfig] = useState({
                         key={testimonial.id}
                         className="test-row"
                         style={{ borderBottom: "1px solid #f1f5f9" }}
-                        onClick={() => { setSelectedTestimonial(testimonial); setShowViewModal(true); }}
+                        onClick={() => {
+                          setSelectedTestimonial(testimonial);
+                          setShowViewModal(true);
+                        }}
                       >
                         {/* # */}
-                        <td style={{ padding: "15px 18px", fontSize: 14, fontWeight: 600, color: "#cbd5e1", verticalAlign: "top" }}>
+                        <td
+                          style={{
+                            padding: "15px 18px",
+                            fontSize: 14,
+                            fontWeight: 600,
+                            color: "#cbd5e1",
+                            verticalAlign: "top",
+                          }}
+                        >
                           {indexOfFirstItem + index + 1}
                         </td>
 
                         {/* Reviewer - with image fallback */}
-                        <td style={{ padding: "15px 18px", verticalAlign: "top" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
+                        <td
+                          style={{ padding: "15px 18px", verticalAlign: "top" }}
+                        >
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 11,
+                            }}
+                          >
                             {testimonial.image ? (
                               <img
                                 src={getImageUrl(testimonial.image)}
-                                
                                 alt={testimonial.name}
                                 style={{
                                   width: 38,
@@ -1291,11 +1702,14 @@ const [sortConfig, setSortConfig] = useState({
                                   e.target.style.display = "none";
                                   const parent = e.target.parentNode;
                                   if (parent) {
-                                    const fallback = document.createElement("div");
+                                    const fallback =
+                                      document.createElement("div");
                                     fallback.style.width = "38px";
                                     fallback.style.height = "38px";
                                     fallback.style.borderRadius = "10px";
-                                    fallback.style.background = getColor(testimonial.id);
+                                    fallback.style.background = getColor(
+                                      testimonial.id,
+                                    );
                                     fallback.style.display = "flex";
                                     fallback.style.alignItems = "center";
                                     fallback.style.justifyContent = "center";
@@ -1303,10 +1717,15 @@ const [sortConfig, setSortConfig] = useState({
                                     fallback.style.fontSize = "12px";
                                     fallback.style.fontWeight = "700";
                                     fallback.style.flexShrink = "0";
-                                    fallback.textContent = getInitials(testimonial.name);
+                                    fallback.textContent = getInitials(
+                                      testimonial.name,
+                                    );
                                     parent.insertBefore(fallback, e.target);
                                     e.target.remove();
-                                    console.log("Final Image URL:", getImageUrl(testimonial.image));
+                                    console.log(
+                                      "Final Image URL:",
+                                      getImageUrl(testimonial.image),
+                                    );
                                   }
                                 }}
                               />
@@ -1329,54 +1748,127 @@ const [sortConfig, setSortConfig] = useState({
                                 {getInitials(testimonial.name)}
                               </div>
                             )}
-                            <span style={{ fontSize: 15, fontWeight: 600, color: "#1e293b" }}>
+                            <span
+                              style={{
+                                fontSize: 15,
+                                fontWeight: 600,
+                                color: "#1e293b",
+                              }}
+                            >
                               {testimonial.name}
                             </span>
                           </div>
                         </td>
 
                         {/* Rating */}
-                        <td style={{ padding: "15px 18px", verticalAlign: "top" }}>
-                          <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                        <td
+                          style={{ padding: "15px 18px", verticalAlign: "top" }}
+                        >
+                          <div
+                            style={{
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: 5,
+                            }}
+                          >
                             <StarRating rating={testimonial.rating} />
-                            <span style={{ padding: "4px 10px", ...getRatingColor(testimonial.rating), fontSize: 12.5, fontWeight: 600, borderRadius: 99, display: "inline-block", width: "fit-content" }}>
+                            <span
+                              style={{
+                                padding: "4px 10px",
+                                ...getRatingColor(testimonial.rating),
+                                fontSize: 12.5,
+                                fontWeight: 600,
+                                borderRadius: 99,
+                                display: "inline-block",
+                                width: "fit-content",
+                              }}
+                            >
                               {testimonial.rating}/5
                             </span>
                           </div>
                         </td>
 
                         {/* Review */}
-                        <td style={{ padding: "15px 18px", verticalAlign: "top" }} className="hidden lg:table-cell">
-                          <span style={{ fontSize: 14, color: "#94a3b8", display: "block", maxWidth: 250, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            {testimonial.review || <span style={{ fontStyle: "italic" }}>No review text</span>}
+                        <td
+                          style={{ padding: "15px 18px", verticalAlign: "top" }}
+                          className="hidden lg:table-cell"
+                        >
+                          <span
+                            style={{
+                              fontSize: 14,
+                              color: "#94a3b8",
+                              display: "block",
+                              maxWidth: 250,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {testimonial.review || (
+                              <span style={{ fontStyle: "italic" }}>
+                                No review text
+                              </span>
+                            )}
                           </span>
                         </td>
 
                         {/* Date */}
-                        <td style={{ padding: "15px 18px", verticalAlign: "top" }} className="hidden md:table-cell">
+                        <td
+                          style={{ padding: "15px 18px", verticalAlign: "top" }}
+                          className="hidden md:table-cell"
+                        >
                           {testimonial.created_at ? (
-                            <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 14, color: "#64748b" }}>
+                            <span
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 5,
+                                fontSize: 14,
+                                color: "#64748b",
+                              }}
+                            >
                               <Calendar size={13} color="#94a3b8" />
                               {formatDate(testimonial.created_at)}
                             </span>
                           ) : (
-                            <span style={{ color: "#cbd5e1", fontSize: 14 }}>—</span>
+                            <span style={{ color: "#cbd5e1", fontSize: 14 }}>
+                              —
+                            </span>
                           )}
                         </td>
 
                         {/* Actions */}
-                        <td style={{ padding: "15px 18px", verticalAlign: "top" }} onClick={(e) => e.stopPropagation()}>
-                          <div style={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
+                        <td
+                          style={{ padding: "15px 18px", verticalAlign: "top" }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "flex-end",
+                              gap: 2,
+                            }}
+                          >
                             <button
                               className="test-action-btn"
-                              onClick={(e) => { e.stopPropagation(); setSelectedTestimonial(testimonial); setShowViewModal(true); }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedTestimonial(testimonial);
+                                setShowViewModal(true);
+                              }}
                               title="View"
                             >
                               <Eye size={15} />
                             </button>
                             <button
                               className="test-action-btn"
-                              onClick={(e) => { e.stopPropagation(); navigate(`/edit-testimonial/${testimonial.id}`, { state: { testimonial } }); }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(
+                                  `/edit-testimonial/${testimonial.id}`,
+                                  { state: { testimonial } },
+                                );
+                              }}
                               title="Edit"
                             >
                               <Edit size={15} />
@@ -1398,12 +1890,31 @@ const [sortConfig, setSortConfig] = useState({
             </div>
 
             {/* Pagination */}
-            <div style={{ padding: "13px 18px", background: "#fafafa", borderTop: "1px solid #f1f5f9", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-              <span style={{ fontSize: 13.5, color: "#94a3b8", fontWeight: 500 }}>
+            <div
+              style={{
+                padding: "13px 18px",
+                background: "#fafafa",
+                borderTop: "1px solid #f1f5f9",
+                display: "flex",
+                flexWrap: "wrap",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 10,
+              }}
+            >
+              <span
+                style={{ fontSize: 13.5, color: "#94a3b8", fontWeight: 500 }}
+              >
                 Showing{" "}
-                <strong style={{ color: "#475569" }}>{indexOfFirstItem + 1}–{Math.min(indexOfLastItem, filteredTestimonials.length)}</strong>
-                {" "}of{" "}
-                <strong style={{ color: "#475569" }}>{filteredTestimonials.length}</strong> testimonials
+                <strong style={{ color: "#475569" }}>
+                  {indexOfFirstItem + 1}–
+                  {Math.min(indexOfLastItem, filteredTestimonials.length)}
+                </strong>{" "}
+                of{" "}
+                <strong style={{ color: "#475569" }}>
+                  {filteredTestimonials.length}
+                </strong>{" "}
+                testimonials
               </span>
               <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                 <button
@@ -1424,7 +1935,9 @@ const [sortConfig, setSortConfig] = useState({
                 ))}
                 <button
                   className="test-page-btn"
-                  onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(p + 1, totalPages))
+                  }
                   disabled={currentPage === totalPages}
                 >
                   <ChevronRight size={15} />
@@ -1437,24 +1950,71 @@ const [sortConfig, setSortConfig] = useState({
 
       {/* View Testimonial Modal */}
       {showViewModal && selectedTestimonial && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 50,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+          }}
+        >
           <div
-            style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.5)", backdropFilter: "blur(4px)" }}
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(15,23,42,0.5)",
+              backdropFilter: "blur(4px)",
+            }}
             onClick={() => setShowViewModal(false)}
           />
-          <div className="test-animate" style={{ position: "relative", background: "#fff", borderRadius: 20, boxShadow: "0 20px 60px rgba(0,0,0,0.15)", maxWidth: 600, width: "100%", zIndex: 10, overflow: "hidden", maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
-
+          <div
+            className="test-animate"
+            style={{
+              position: "relative",
+              background: "#fff",
+              borderRadius: 20,
+              boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
+              maxWidth: 600,
+              width: "100%",
+              zIndex: 10,
+              overflow: "hidden",
+              maxHeight: "90vh",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
             <button
               onClick={() => setShowViewModal(false)}
-              style={{ position: "absolute", top: 14, right: 14, background: "none", border: "none", cursor: "pointer", color: "#94a3b8", padding: 6, borderRadius: 8, display: "flex", zIndex: 10 }}
+              style={{
+                position: "absolute",
+                top: 14,
+                right: 14,
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                color: "#94a3b8",
+                padding: 6,
+                borderRadius: 8,
+                display: "flex",
+                zIndex: 10,
+              }}
             >
               <X size={15} />
             </button>
 
             <div style={{ padding: 24, overflowY: "auto", flex: 1 }}>
-
               {/* Avatar + Name + Rating - with image fallback */}
-              <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 14,
+                  marginBottom: 20,
+                }}
+              >
                 {selectedTestimonial.image ? (
                   <img
                     src={getImageUrl(selectedTestimonial.image)}
@@ -1475,7 +2035,9 @@ const [sortConfig, setSortConfig] = useState({
                         fallback.style.width = "52px";
                         fallback.style.height = "52px";
                         fallback.style.borderRadius = "14px";
-                        fallback.style.background = getColor(selectedTestimonial.id);
+                        fallback.style.background = getColor(
+                          selectedTestimonial.id,
+                        );
                         fallback.style.display = "flex";
                         fallback.style.alignItems = "center";
                         fallback.style.justifyContent = "center";
@@ -1483,7 +2045,9 @@ const [sortConfig, setSortConfig] = useState({
                         fallback.style.fontSize = "18px";
                         fallback.style.fontWeight = "700";
                         fallback.style.flexShrink = "0";
-                        fallback.textContent = getInitials(selectedTestimonial.name);
+                        fallback.textContent = getInitials(
+                          selectedTestimonial.name,
+                        );
                         parent.insertBefore(fallback, e.target);
                         e.target.remove();
                       }
@@ -1509,10 +2073,34 @@ const [sortConfig, setSortConfig] = useState({
                   </div>
                 )}
                 <div>
-                  <h2 style={{ fontSize: 20, fontWeight: 700, color: "#0f172a", margin: 0 }}>{selectedTestimonial.name}</h2>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4 }}>
+                  <h2
+                    style={{
+                      fontSize: 20,
+                      fontWeight: 700,
+                      color: "#0f172a",
+                      margin: 0,
+                    }}
+                  >
+                    {selectedTestimonial.name}
+                  </h2>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      marginTop: 4,
+                    }}
+                  >
                     <StarRating rating={selectedTestimonial.rating} size={16} />
-                    <span style={{ padding: "2px 8px", ...getRatingColor(selectedTestimonial.rating), fontSize: 11, fontWeight: 600, borderRadius: 99 }}>
+                    <span
+                      style={{
+                        padding: "2px 8px",
+                        ...getRatingColor(selectedTestimonial.rating),
+                        fontSize: 11,
+                        fontWeight: 600,
+                        borderRadius: 99,
+                      }}
+                    >
                       {selectedTestimonial.rating}/5
                     </span>
                   </div>
@@ -1521,38 +2109,126 @@ const [sortConfig, setSortConfig] = useState({
 
               {/* Date */}
               {selectedTestimonial.created_at && (
-                <div style={{ background: "#f8fafc", border: "1px solid #f1f5f9", borderRadius: 12, padding: 14, marginBottom: 14 }}>
-                  <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#94a3b8", margin: "0 0 5px", display: "flex", alignItems: "center", gap: 4 }}>
+                <div
+                  style={{
+                    background: "#f8fafc",
+                    border: "1px solid #f1f5f9",
+                    borderRadius: 12,
+                    padding: 14,
+                    marginBottom: 14,
+                  }}
+                >
+                  <p
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.07em",
+                      color: "#94a3b8",
+                      margin: "0 0 5px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 4,
+                    }}
+                  >
                     <Calendar size={11} color="#7c3aed" /> Submitted On
                   </p>
-                  <p style={{ fontSize: 15, fontWeight: 600, color: "#1e293b", margin: 0 }}>
-                    {new Date(selectedTestimonial.created_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+                  <p
+                    style={{
+                      fontSize: 15,
+                      fontWeight: 600,
+                      color: "#1e293b",
+                      margin: 0,
+                    }}
+                  >
+                    {new Date(
+                      selectedTestimonial.created_at,
+                    ).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}
                   </p>
                 </div>
               )}
 
               {/* Review */}
-              <div style={{ background: "#f8fafc", border: "1px solid #f1f5f9", borderRadius: 12, padding: 14 }}>
-                <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "#94a3b8", margin: "0 0 8px" }}>Review</p>
+              <div
+                style={{
+                  background: "#f8fafc",
+                  border: "1px solid #f1f5f9",
+                  borderRadius: 12,
+                  padding: 14,
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.07em",
+                    color: "#94a3b8",
+                    margin: "0 0 8px",
+                  }}
+                >
+                  Review
+                </p>
                 <div style={{ maxHeight: 200, overflowY: "auto" }}>
-                  <p style={{ fontSize: 14, color: "#475569", lineHeight: 1.65, margin: 0, whiteSpace: "pre-wrap" }}>
-                    {selectedTestimonial.review || "No review content available."}
+                  <p
+                    style={{
+                      fontSize: 14,
+                      color: "#475569",
+                      lineHeight: 1.65,
+                      margin: 0,
+                      whiteSpace: "pre-wrap",
+                    }}
+                  >
+                    {selectedTestimonial.review ||
+                      "No review content available."}
                   </p>
                 </div>
               </div>
             </div>
 
             {/* Footer */}
-            <div style={{ padding: "14px 24px", background: "#f8fafc", borderTop: "1px solid #f1f5f9", display: "flex", justifyContent: "flex-end", gap: 10, flexShrink: 0 }}>
-              <button className="test-close-btn" onClick={() => setShowViewModal(false)}>
+            <div
+              style={{
+                padding: "14px 24px",
+                background: "#f8fafc",
+                borderTop: "1px solid #f1f5f9",
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: 10,
+                flexShrink: 0,
+              }}
+            >
+              <button
+                className="test-close-btn"
+                onClick={() => setShowViewModal(false)}
+              >
                 Close
               </button>
               <button
                 onClick={() => {
                   setShowViewModal(false);
-                  navigate(`/edit-testimonial/${selectedTestimonial.id}`, { state: { testimonial: selectedTestimonial } });
+                  navigate(`/edit-testimonial/${selectedTestimonial.id}`, {
+                    state: { testimonial: selectedTestimonial },
+                  });
                 }}
-                style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "9px 18px", background: "#7c3aed", color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "9px 18px",
+                  background: "#7c3aed",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 10,
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                }}
               >
                 <Edit size={14} /> Edit Testimonial
               </button>
@@ -1563,33 +2239,103 @@ const [sortConfig, setSortConfig] = useState({
 
       {/* Delete Modal */}
       {showDeleteModal && testimonialToDelete && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 50,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 16,
+          }}
+        >
           <div
-            style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.5)", backdropFilter: "blur(4px)" }}
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(15,23,42,0.5)",
+              backdropFilter: "blur(4px)",
+            }}
             onClick={() => !deleteLoading && setShowDeleteModal(false)}
           />
-          <div className="test-animate" style={{ position: "relative", background: "#fff", borderRadius: 20, boxShadow: "0 20px 60px rgba(0,0,0,0.15)", maxWidth: 400, width: "100%", zIndex: 10, padding: 24 }}>
-
+          <div
+            className="test-animate"
+            style={{
+              position: "relative",
+              background: "#fff",
+              borderRadius: 20,
+              boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
+              maxWidth: 400,
+              width: "100%",
+              zIndex: 10,
+              padding: 24,
+            }}
+          >
             <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 12, background: "#fef2f2", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <div
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 12,
+                  background: "#fef2f2",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
                 <AlertCircle size={22} color="#ef4444" />
               </div>
               <div style={{ flex: 1 }}>
-                <h3 style={{ fontSize: 18, fontWeight: 700, color: "#0f172a", margin: "0 0 4px" }}>Delete Testimonial</h3>
+                <h3
+                  style={{
+                    fontSize: 18,
+                    fontWeight: 700,
+                    color: "#0f172a",
+                    margin: "0 0 4px",
+                  }}
+                >
+                  Delete Testimonial
+                </h3>
                 <p style={{ fontSize: 14, color: "#64748b", margin: 0 }}>
-                  Are you sure you want to delete the testimonial from "<strong style={{ color: "#1e293b" }}>{testimonialToDelete.name}</strong>"? This action cannot be undone.
+                  Are you sure you want to delete the testimonial from "
+                  <strong style={{ color: "#1e293b" }}>
+                    {testimonialToDelete.name}
+                  </strong>
+                  "? This action cannot be undone.
                 </p>
               </div>
             </div>
 
             {deleteError && (
-              <div style={{ marginTop: 16, padding: 12, background: "#fef2f2", border: "1px solid #fee2e2", borderRadius: 10, display: "flex", alignItems: "center", gap: 8 }}>
+              <div
+                style={{
+                  marginTop: 16,
+                  padding: 12,
+                  background: "#fef2f2",
+                  border: "1px solid #fee2e2",
+                  borderRadius: 10,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
                 <AlertCircle size={15} color="#ef4444" />
-                <span style={{ fontSize: 14, color: "#b91c1c" }}>{deleteError}</span>
+                <span style={{ fontSize: 14, color: "#b91c1c" }}>
+                  {deleteError}
+                </span>
               </div>
             )}
 
-            <div style={{ marginTop: 24, display: "flex", justifyContent: "flex-end", gap: 10 }}>
+            <div
+              style={{
+                marginTop: 24,
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: 10,
+              }}
+            >
               <button
                 className="test-close-btn"
                 onClick={() => setShowDeleteModal(false)}
@@ -1601,11 +2347,34 @@ const [sortConfig, setSortConfig] = useState({
               <button
                 onClick={handleDeleteConfirm}
                 disabled={deleteLoading}
-                style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "9px 18px", background: "#ef4444", color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: deleteLoading ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: deleteLoading ? 0.6 : 1 }}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "9px 18px",
+                  background: "#ef4444",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 10,
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: deleteLoading ? "not-allowed" : "pointer",
+                  fontFamily: "inherit",
+                  opacity: deleteLoading ? 0.6 : 1,
+                }}
               >
                 {deleteLoading ? (
                   <>
-                    <div style={{ width: 14, height: 14, border: "2px solid #fff", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.6s linear infinite" }} />
+                    <div
+                      style={{
+                        width: 14,
+                        height: 14,
+                        border: "2px solid #fff",
+                        borderTopColor: "transparent",
+                        borderRadius: "50%",
+                        animation: "spin 0.6s linear infinite",
+                      }}
+                    />
                     Deleting…
                   </>
                 ) : (

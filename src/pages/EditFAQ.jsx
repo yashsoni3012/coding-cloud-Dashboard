@@ -41,7 +41,7 @@
 //         // Fetch courses for the dropdown
 //         let fetchedCourses = [];
 //         const coursesResponse = await fetch(
-//           "https://codingcloud.pythonanywhere.com/course/",
+//           "https://codingcloudapi.codingcloud.co.in/course/",
 //         );
 //         if (coursesResponse.ok) {
 //           const coursesData = await coursesResponse.json();
@@ -58,7 +58,7 @@
 //         } else {
 //           // Need to fetch individual or from list
 //           const faqsResponse = await fetch(
-//             "https://codingcloud.pythonanywhere.com/faqs/",
+//             "https://codingcloudapi.codingcloud.co.in/faqs/",
 //           );
 //           if (faqsResponse.ok) {
 //             const listDataRes = await faqsResponse.json();
@@ -138,7 +138,7 @@
 //       };
 
 //       const response = await fetch(
-//         `https://codingcloud.pythonanywhere.com/faqs/${id}/`,
+//         `https://codingcloudapi.codingcloud.co.in/faqs/${id}/`,
 //         {
 //           method: "PATCH", // Use PATCH for partial/full updates natively
 //           headers: {
@@ -274,10 +274,10 @@
 //     >
 //       <style>{`
 //                 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
-//                 input:focus, textarea:focus, select:focus { 
-//                     border-color: #2563eb !important; 
-//                     background: #fff !important; 
-//                     box-shadow: 0 0 0 3px rgba(37,99,235,0.08); 
+//                 input:focus, textarea:focus, select:focus {
+//                     border-color: #2563eb !important;
+//                     background: #fff !important;
+//                     box-shadow: 0 0 0 3px rgba(37,99,235,0.08);
 //                 }
 //                 .form-input:hover { border-color: #c7d2fe; }
 //                 @keyframes spin { to { transform: rotate(360deg); } }
@@ -608,453 +608,482 @@
 //   );
 // }
 
-
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { Editor } from "@tinymce/tinymce-react";
 import {
-    ArrowLeft,
-    Save,
-    X,
-    ChevronDown,
-    Info,
-    Layers,
-    HelpCircle,
-    MessageSquare,
-    AlertCircle,
+  ArrowLeft,
+  Save,
+  X,
+  ChevronDown,
+  Info,
+  Layers,
+  HelpCircle,
+  MessageSquare,
+  AlertCircle,
 } from "lucide-react";
 import Toasts from "./Toasts";
 
 export default function EditFAQ() {
-    const navigate = useNavigate();
-    const { id } = useParams();
-    const location = useLocation();
-    const locationState = location.state;
-    const editorRef = useRef(null);
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const location = useLocation();
+  const locationState = location.state;
+  const editorRef = useRef(null);
 
-    const [formData, setFormData] = useState({ course: "", question: "", answer: "" });
-    const [courses, setCourses] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
-    const [fieldErrors, setFieldErrors] = useState({});
+  const [formData, setFormData] = useState({
+    course: "",
+    question: "",
+    answer: "",
+  });
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
 
-    // Editor mode: "tinymce" or "html"
-    const [editorMode, setEditorMode] = useState("tinymce");
+  // Editor mode: "tinymce" or "html"
+  const [editorMode, setEditorMode] = useState("tinymce");
 
-    // Toast state
-    const [toast, setToast] = useState({
-        show: false,
-        message: "",
-        type: "success",
-    });
+  // Toast state
+  const [toast, setToast] = useState({
+    show: false,
+    message: "",
+    type: "success",
+  });
 
-    const showToast = (message, type = "success") => {
-        setToast({ show: true, message, type });
-    };
+  const showToast = (message, type = "success") => {
+    setToast({ show: true, message, type });
+  };
 
-    const closeToast = () => {
-        setToast((prev) => ({ ...prev, show: false }));
-    };
+  const closeToast = () => {
+    setToast((prev) => ({ ...prev, show: false }));
+  };
 
-    useEffect(() => {
-        const initializeData = async () => {
-            try {
-                setLoading(true);
-                // Fetch courses
-                let fetchedCourses = [];
-                const coursesResponse = await fetch("https://codingcloud.pythonanywhere.com/course/");
-                if (coursesResponse.ok) {
-                    const coursesData = await coursesResponse.json();
-                    fetchedCourses = coursesData.data || coursesData;
-                    setCourses(fetchedCourses);
-                } else {
-                    showToast("Failed to fetch available courses.", "error");
-                }
-
-                // Fetch FAQ data
-                let faqData = null;
-                if (locationState && locationState.faq) {
-                    faqData = locationState.faq;
-                } else {
-                    const faqsResponse = await fetch("https://codingcloud.pythonanywhere.com/faqs/");
-                    if (faqsResponse.ok) {
-                        const listDataRes = await faqsResponse.json();
-                        const listData = listDataRes.data || listDataRes;
-                        faqData = Array.isArray(listData)
-                            ? listData.find((f) => f.id === parseInt(id))
-                            : null;
-                    }
-                }
-
-                if (faqData) {
-                    setFormData({
-                        course: faqData.course?.toString() || "",
-                        question: faqData.question || "",
-                        answer: faqData.answer || "",
-                    });
-                } else {
-                    showToast("FAQ not found.", "error");
-                }
-            } catch (err) {
-                console.error("Error fetching data:", err);
-                showToast("Failed to load details. Please try again.", "error");
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        initializeData();
-    }, [id, locationState]);
-
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
-        // Clear error for this field when user types
-        if (fieldErrors[name]) {
-            setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
-        }
-    };
-
-    const handleAnswerChange = (content) => {
-        setFormData((prev) => ({ ...prev, answer: content }));
-        if (fieldErrors.answer) {
-            setFieldErrors((prev) => ({ ...prev, answer: undefined }));
-        }
-    };
-
-    const validateForm = () => {
-        const errors = {};
-
-        if (!formData.course) {
-            errors.course = "Please select a course";
-        }
-
-        if (!formData.question.trim()) {
-            errors.question = "Question is required";
-        }
-
-        if (!formData.answer.trim()) {
-            errors.answer = "Answer is required";
-        }
-
-        setFieldErrors(errors);
-        return Object.keys(errors).length === 0;
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-
-        if (!validateForm()) {
-            const missingFields = Object.keys(fieldErrors).join(", ");
-            showToast(`Please fill required fields`, "error");
-            return;
-        }
-
-        setSaving(true);
-        try {
-            const payload = {
-                course: parseInt(formData.course),
-                question: formData.question.trim(),
-                answer: formData.answer.trim(),
-            };
-            const response = await fetch(`https://codingcloud.pythonanywhere.com/faqs/${id}/`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
-            });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                let errorMessage;
-                try {
-                    const errorData = JSON.parse(errorText);
-                    // Handle structured field errors from backend
-                    if (errorData.errors) {
-                        const backendErrors = {};
-                        Object.keys(errorData.errors).forEach((key) => {
-                            backendErrors[key] = errorData.errors[key].join(", ");
-                        });
-                        setFieldErrors(backendErrors);
-                        showToast("Please correct the errors below", "error");
-                        return; // exit early, keep saving false
-                    }
-                    errorMessage = errorData.message || errorData.detail || JSON.stringify(errorData);
-                } catch {
-                    errorMessage = errorText || `HTTP error ${response.status}`;
-                }
-                throw new Error(errorMessage);
-            }
-
-            showToast("FAQ updated successfully!", "success");
-            setTimeout(() => navigate("/faq"), 2000);
-        } catch (err) {
-            console.error("Error updating FAQ:", err);
-            showToast(err.message || "Failed to update FAQ. Please check your connection.", "error");
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    const selectedCourse = courses.find((c) => c.id === parseInt(formData.course));
-
-    // ── Loading State ──
-    if (loading) {
-        return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="text-center">
-                    <div className="w-14 h-14 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4" />
-                    <p className="text-base text-gray-500 font-medium">Loading FAQ details…</p>
-                </div>
-            </div>
+  useEffect(() => {
+    const initializeData = async () => {
+      try {
+        setLoading(true);
+        // Fetch courses
+        let fetchedCourses = [];
+        const coursesResponse = await fetch(
+          "https://codingcloudapi.codingcloud.co.in/course/",
         );
+        if (coursesResponse.ok) {
+          const coursesData = await coursesResponse.json();
+          fetchedCourses = coursesData.data || coursesData;
+          setCourses(fetchedCourses);
+        } else {
+          showToast("Failed to fetch available courses.", "error");
+        }
+
+        // Fetch FAQ data
+        let faqData = null;
+        if (locationState && locationState.faq) {
+          faqData = locationState.faq;
+        } else {
+          const faqsResponse = await fetch(
+            "https://codingcloudapi.codingcloud.co.in/faqs/",
+          );
+          if (faqsResponse.ok) {
+            const listDataRes = await faqsResponse.json();
+            const listData = listDataRes.data || listDataRes;
+            faqData = Array.isArray(listData)
+              ? listData.find((f) => f.id === parseInt(id))
+              : null;
+          }
+        }
+
+        if (faqData) {
+          setFormData({
+            course: faqData.course?.toString() || "",
+            question: faqData.question || "",
+            answer: faqData.answer || "",
+          });
+        } else {
+          showToast("FAQ not found.", "error");
+        }
+      } catch (err) {
+        console.error("Error fetching data:", err);
+        showToast("Failed to load details. Please try again.", "error");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initializeData();
+  }, [id, locationState]);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    // Clear error for this field when user types
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
+  };
+
+  const handleAnswerChange = (content) => {
+    setFormData((prev) => ({ ...prev, answer: content }));
+    if (fieldErrors.answer) {
+      setFieldErrors((prev) => ({ ...prev, answer: undefined }));
+    }
+  };
+
+  const validateForm = () => {
+    const errors = {};
+
+    if (!formData.course) {
+      errors.course = "Please select a course";
     }
 
+    if (!formData.question.trim()) {
+      errors.question = "Question is required";
+    }
+
+    if (!formData.answer.trim()) {
+      errors.answer = "Answer is required";
+    }
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!validateForm()) {
+      const missingFields = Object.keys(fieldErrors).join(", ");
+      showToast(`Please fill required fields`, "error");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const payload = {
+        course: parseInt(formData.course),
+        question: formData.question.trim(),
+        answer: formData.answer.trim(),
+      };
+      const response = await fetch(
+        `https://codingcloudapi.codingcloud.co.in/faqs/${id}/`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        },
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorMessage;
+        try {
+          const errorData = JSON.parse(errorText);
+          // Handle structured field errors from backend
+          if (errorData.errors) {
+            const backendErrors = {};
+            Object.keys(errorData.errors).forEach((key) => {
+              backendErrors[key] = errorData.errors[key].join(", ");
+            });
+            setFieldErrors(backendErrors);
+            showToast("Please correct the errors below", "error");
+            return; // exit early, keep saving false
+          }
+          errorMessage =
+            errorData.message || errorData.detail || JSON.stringify(errorData);
+        } catch {
+          errorMessage = errorText || `HTTP error ${response.status}`;
+        }
+        throw new Error(errorMessage);
+      }
+
+      showToast("FAQ updated successfully!", "success");
+      setTimeout(() => navigate("/faq"), 2000);
+    } catch (err) {
+      console.error("Error updating FAQ:", err);
+      showToast(
+        err.message || "Failed to update FAQ. Please check your connection.",
+        "error",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const selectedCourse = courses.find(
+    (c) => c.id === parseInt(formData.course),
+  );
+
+  // ── Loading State ──
+  if (loading) {
     return (
-        <div className="min-h-screen bg-gray-50">
-
-            {/* Toast notification */}
-            {toast.show && (
-                <Toasts
-                    message={toast.message}
-                    type={toast.type}
-                    onClose={closeToast}
-                />
-            )}
-
-            {/* ── Header ── */}
-            <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={() => navigate(-1)}
-                            className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-all text-base font-medium"
-                        >
-                            <ArrowLeft size={16} />
-                            <span className="hidden sm:inline">Back</span>
-                        </button>
-                        <div className="w-px h-6 bg-gray-200" />
-                        <div>
-                            <h1 className="text-base sm:text-lg font-bold text-gray-900 leading-tight">Edit FAQ</h1>
-                        </div>
-                    </div>
-                    <button
-                        onClick={handleSubmit}
-                        disabled={saving || !formData.course}
-                        className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-base font-semibold rounded-xl shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {saving ? (
-                            <>
-                                <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                                Updating…
-                            </>
-                        ) : (
-                            <>
-                                <Save size={15} />
-                                Update FAQ
-                            </>
-                        )}
-                    </button>
-                </div>
-            </header>
-
-            {/* ── Main ── */}
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 pb-28 sm:pb-12">
-
-                <form onSubmit={handleSubmit} className="space-y-5">
-
-                    {/* ── Course Selection Card ── */}
-                    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className="w-9 h-9 bg-violet-50 rounded-xl flex items-center justify-center flex-shrink-0">
-                                <Layers size={16} className="text-violet-600" />
-                            </div>
-                            <div>
-                                <label className="block text-base font-semibold text-gray-800">
-                                    Related Course <span className="text-red-500">*</span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <div className="relative">
-                            <select
-                                name="course"
-                                value={formData.course}
-                                onChange={handleInputChange}
-                                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none cursor-pointer ${
-                                    fieldErrors.course ? "border-red-500" : "border-gray-200"
-                                }`}
-                                required
-                            >
-                                <option value="" disabled>— Select a Course —</option>
-                                {courses.map((course) => (
-                                    <option key={course.id} value={course.id}>
-                                        {course.name}
-                                    </option>
-                                ))}
-                            </select>
-                            <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                        </div>
-                        {fieldErrors.course && (
-                            <p className="text-xs text-red-500 mt-1">{fieldErrors.course}</p>
-                        )}
-                    </div>
-
-                    {/* ── Question Card ── */}
-                    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className="w-9 h-9 bg-indigo-50 rounded-xl flex items-center justify-center flex-shrink-0">
-                                <HelpCircle size={16} className="text-indigo-600" />
-                            </div>
-                            <div>
-                                <label htmlFor="question" className="block text-base font-semibold text-gray-800">
-                                    Question <span className="text-red-500">*</span>
-                                </label>
-                            </div>
-                        </div>
-                        <input
-                            id="question"
-                            type="text"
-                            name="question"
-                            value={formData.question}
-                            onChange={handleInputChange}
-                            placeholder="e.g., What is Python used for?"
-                            className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
-                                fieldErrors.question ? "border-red-500" : "border-gray-200"
-                            }`}
-                            required
-                        />
-                        {fieldErrors.question && (
-                            <p className="text-xs text-red-500 mt-1">{fieldErrors.question}</p>
-                        )}
-                    </div>
-
-                    {/* ── Answer Card with Editor ── */}
-                    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 bg-emerald-50 rounded-xl flex items-center justify-center flex-shrink-0">
-                                    <MessageSquare size={16} className="text-emerald-600" />
-                                </div>
-                                <div>
-                                    <label htmlFor="answer" className="block text-base font-semibold text-gray-800">
-                                        Answer <span className="text-red-500">*</span>
-                                    </label>
-                                </div>
-                            </div>
-
-                            {/* Editor Mode Switcher */}
-                            <div className="flex gap-1 p-1 bg-gray-100 rounded-lg">
-                                <button
-                                    type="button"
-                                    onClick={() => setEditorMode("tinymce")}
-                                    className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
-                                        editorMode === "tinymce"
-                                            ? "bg-white text-indigo-600 shadow-sm"
-                                            : "text-gray-600 hover:text-gray-900"
-                                    }`}
-                                >
-                                    TinyMCE
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setEditorMode("html")}
-                                    className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
-                                        editorMode === "html"
-                                            ? "bg-white text-indigo-600 shadow-sm"
-                                            : "text-gray-600 hover:text-gray-900"
-                                    }`}
-                                >
-                                    HTML
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Conditional Editor with keys to force re-render on mode change */}
-                        {editorMode === "tinymce" ? (
-                            <div
-                                key="tinymce-editor"
-                                className={`border rounded-xl overflow-hidden ${
-                                    fieldErrors.answer ? "border-red-500" : "border-gray-200"
-                                }`}
-                            >
-                                <Editor
-                                    apiKey="x5ikrjt2xexo2x73y0uzybqhbjq29owf8drai57qhtew5e0j"
-                                    onInit={(evt, editor) => (editorRef.current = editor)}
-                                    value={formData.answer}
-                                    onEditorChange={handleAnswerChange}
-                                    init={{
-                                        height: 400,
-                                        menubar: true,
-                                        plugins: [
-                                            "advlist",
-                                            "autolink",
-                                            "lists",
-                                            "link",
-                                            "image",
-                                            "charmap",
-                                            "preview",
-                                            "anchor",
-                                            "searchreplace",
-                                            "visualblocks",
-                                            "code",
-                                            "fullscreen",
-                                            "insertdatetime",
-                                            "media",
-                                            "table",
-                                            "help",
-                                            "wordcount",
-                                        ],
-                                        toolbar:
-                                            "undo redo | blocks | " +
-                                            "bold italic forecolor | alignleft aligncenter " +
-                                            "alignright alignjustify | bullist numlist outdent indent | " +
-                                            "removeformat | code | help",
-                                        content_style:
-                                            "body { font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.6; }",
-                                        placeholder: "Write the comprehensive answer here…",
-                                    }}
-                                />
-                            </div>
-                        ) : (
-                            <textarea
-                                key="html-editor"
-                                value={formData.answer}
-                                onChange={(e) => handleAnswerChange(e.target.value)}
-                                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base font-mono placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
-                                    fieldErrors.answer ? "border-red-500" : "border-gray-200"
-                                }`}
-                                rows={12}
-                                placeholder="<!-- Write HTML here -->"
-                            />
-                        )}
-                        {fieldErrors.answer && (
-                            <p className="text-xs text-red-500 mt-1">{fieldErrors.answer}</p>
-                        )}
-                    </div>
-
-                    {/* ── Mobile Submit ── */}
-                    <div className="sm:hidden">
-                        <button
-                            type="submit"
-                            disabled={saving || !formData.course}
-                            className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-base font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                        >
-                            {saving ? (
-                                <>
-                                    <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                                    Updating…
-                                </>
-                            ) : (
-                                <>
-                                    <Save size={16} />
-                                    Update FAQ
-                                </>
-                            )}
-                        </button>
-                    </div>
-
-                </form>
-            </main>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-14 h-14 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-base text-gray-500 font-medium">
+            Loading FAQ details…
+          </p>
         </div>
+      </div>
     );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Toast notification */}
+      {toast.show && (
+        <Toasts
+          message={toast.message}
+          type={toast.type}
+          onClose={closeToast}
+        />
+      )}
+
+      {/* ── Header ── */}
+      <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate(-1)}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-all text-base font-medium"
+            >
+              <ArrowLeft size={16} />
+              <span className="hidden sm:inline">Back</span>
+            </button>
+            <div className="w-px h-6 bg-gray-200" />
+            <div>
+              <h1 className="text-base sm:text-lg font-bold text-gray-900 leading-tight">
+                Edit FAQ
+              </h1>
+            </div>
+          </div>
+          <button
+            onClick={handleSubmit}
+            disabled={saving || !formData.course}
+            className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-base font-semibold rounded-xl shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {saving ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                Updating…
+              </>
+            ) : (
+              <>
+                <Save size={15} />
+                Update FAQ
+              </>
+            )}
+          </button>
+        </div>
+      </header>
+
+      {/* ── Main ── */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 pb-28 sm:pb-12">
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* ── Course Selection Card ── */}
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-9 h-9 bg-violet-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                <Layers size={16} className="text-violet-600" />
+              </div>
+              <div>
+                <label className="block text-base font-semibold text-gray-800">
+                  Related Course <span className="text-red-500">*</span>
+                </label>
+              </div>
+            </div>
+
+            <div className="relative">
+              <select
+                name="course"
+                value={formData.course}
+                onChange={handleInputChange}
+                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none cursor-pointer ${
+                  fieldErrors.course ? "border-red-500" : "border-gray-200"
+                }`}
+                required
+              >
+                <option value="" disabled>
+                  — Select a Course —
+                </option>
+                {courses.map((course) => (
+                  <option key={course.id} value={course.id}>
+                    {course.name}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown
+                size={16}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+              />
+            </div>
+            {fieldErrors.course && (
+              <p className="text-xs text-red-500 mt-1">{fieldErrors.course}</p>
+            )}
+          </div>
+
+          {/* ── Question Card ── */}
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-9 h-9 bg-indigo-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                <HelpCircle size={16} className="text-indigo-600" />
+              </div>
+              <div>
+                <label
+                  htmlFor="question"
+                  className="block text-base font-semibold text-gray-800"
+                >
+                  Question <span className="text-red-500">*</span>
+                </label>
+              </div>
+            </div>
+            <input
+              id="question"
+              type="text"
+              name="question"
+              value={formData.question}
+              onChange={handleInputChange}
+              placeholder="e.g., What is Python used for?"
+              className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
+                fieldErrors.question ? "border-red-500" : "border-gray-200"
+              }`}
+              required
+            />
+            {fieldErrors.question && (
+              <p className="text-xs text-red-500 mt-1">
+                {fieldErrors.question}
+              </p>
+            )}
+          </div>
+
+          {/* ── Answer Card with Editor ── */}
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 bg-emerald-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <MessageSquare size={16} className="text-emerald-600" />
+                </div>
+                <div>
+                  <label
+                    htmlFor="answer"
+                    className="block text-base font-semibold text-gray-800"
+                  >
+                    Answer <span className="text-red-500">*</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Editor Mode Switcher */}
+              <div className="flex gap-1 p-1 bg-gray-100 rounded-lg">
+                <button
+                  type="button"
+                  onClick={() => setEditorMode("tinymce")}
+                  className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
+                    editorMode === "tinymce"
+                      ? "bg-white text-indigo-600 shadow-sm"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  TinyMCE
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditorMode("html")}
+                  className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
+                    editorMode === "html"
+                      ? "bg-white text-indigo-600 shadow-sm"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  HTML
+                </button>
+              </div>
+            </div>
+
+            {/* Conditional Editor with keys to force re-render on mode change */}
+            {editorMode === "tinymce" ? (
+              <div
+                key="tinymce-editor"
+                className={`border rounded-xl overflow-hidden ${
+                  fieldErrors.answer ? "border-red-500" : "border-gray-200"
+                }`}
+              >
+                <Editor
+                  apiKey="x5ikrjt2xexo2x73y0uzybqhbjq29owf8drai57qhtew5e0j"
+                  onInit={(evt, editor) => (editorRef.current = editor)}
+                  value={formData.answer}
+                  onEditorChange={handleAnswerChange}
+                  init={{
+                    height: 400,
+                    menubar: true,
+                    plugins: [
+                      "advlist",
+                      "autolink",
+                      "lists",
+                      "link",
+                      "image",
+                      "charmap",
+                      "preview",
+                      "anchor",
+                      "searchreplace",
+                      "visualblocks",
+                      "code",
+                      "fullscreen",
+                      "insertdatetime",
+                      "media",
+                      "table",
+                      "help",
+                      "wordcount",
+                    ],
+                    toolbar:
+                      "undo redo | blocks | " +
+                      "bold italic forecolor | alignleft aligncenter " +
+                      "alignright alignjustify | bullist numlist outdent indent | " +
+                      "removeformat | code | help",
+                    content_style:
+                      "body { font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.6; }",
+                    placeholder: "Write the comprehensive answer here…",
+                  }}
+                />
+              </div>
+            ) : (
+              <textarea
+                key="html-editor"
+                value={formData.answer}
+                onChange={(e) => handleAnswerChange(e.target.value)}
+                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base font-mono placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
+                  fieldErrors.answer ? "border-red-500" : "border-gray-200"
+                }`}
+                rows={12}
+                placeholder="<!-- Write HTML here -->"
+              />
+            )}
+            {fieldErrors.answer && (
+              <p className="text-xs text-red-500 mt-1">{fieldErrors.answer}</p>
+            )}
+          </div>
+
+          {/* ── Mobile Submit ── */}
+          <div className="sm:hidden">
+            <button
+              type="submit"
+              disabled={saving || !formData.course}
+              className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-base font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {saving ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  Updating…
+                </>
+              ) : (
+                <>
+                  <Save size={16} />
+                  Update FAQ
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </main>
+    </div>
+  );
 }

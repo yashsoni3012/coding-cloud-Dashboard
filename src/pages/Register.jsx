@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import * as XLSX from "xlsx";
 
-const BASE_URL = "https://codingcloud.pythonanywhere.com";
+const BASE_URL = "https://codingcloudapi.codingcloud.co.in";
 
 const fetchMessages = async () => {
   const response = await fetch(`${BASE_URL}/register_msg/`);

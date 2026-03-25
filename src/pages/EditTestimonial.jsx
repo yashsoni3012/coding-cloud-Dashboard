@@ -16,7 +16,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 
-const BASE_URL = "https://codingcloud.pythonanywhere.com";
+const BASE_URL = "https://codingcloudapi.codingcloud.co.in/";
 
 export default function EditTestimonial() {
   const navigate = useNavigate();
@@ -491,7 +491,7 @@ export default function EditTestimonial() {
                   >
                     <option value="">— Select a course —</option>
                     {courses.map((course) => (
-                     <option key={course.id} value={Number(course.id)}>
+                      <option key={course.id} value={Number(course.id)}>
                         {course.name}
                         {course.category_details?.name &&
                           ` (${course.category_details.name})`}
@@ -508,8 +508,6 @@ export default function EditTestimonial() {
                     {fieldErrors.course}
                   </p>
                 )}
-
-                
               </>
             )}
           </div>

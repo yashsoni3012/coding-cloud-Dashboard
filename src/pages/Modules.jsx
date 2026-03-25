@@ -61,8 +61,8 @@
 //     else setLoading(true);
 //     try {
 //       const [modulesRes, coursesRes] = await Promise.all([
-//         fetch("https://codingcloud.pythonanywhere.com/modules/"),
-//         fetch("https://codingcloud.pythonanywhere.com/course/"),
+//         fetch("https://codingcloudapi.codingcloud.co.in/modules/"),
+//         fetch("https://codingcloudapi.codingcloud.co.in/course/"),
 //       ]);
 //       const modulesData = await modulesRes.json();
 //       const coursesData = await coursesRes.json();
@@ -203,7 +203,7 @@
 //     setDeleteLoading(true);
 //     try {
 //       const response = await fetch(
-//         `https://codingcloud.pythonanywhere.com/modules/${moduleToDelete.id}/`,
+//         `https://codingcloudapi.codingcloud.co.in/modules/${moduleToDelete.id}/`,
 //         { method: "DELETE" },
 //       );
 //       if (response.ok || response.status === 204) {
@@ -1367,7 +1367,6 @@
 //   );
 // }
 
-
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -1393,7 +1392,9 @@ import Toasts from "./Toasts";
 
 // Fetch modules
 const fetchModules = async () => {
-  const response = await fetch("https://codingcloud.pythonanywhere.com/modules/");
+  const response = await fetch(
+    "https://codingcloudapi.codingcloud.co.in/modules/",
+  );
   const data = await response.json();
   if (!data.success) throw new Error("Failed to fetch modules");
   return data.data || [];
@@ -1401,7 +1402,9 @@ const fetchModules = async () => {
 
 // Fetch courses
 const fetchCourses = async () => {
-  const response = await fetch("https://codingcloud.pythonanywhere.com/course/");
+  const response = await fetch(
+    "https://codingcloudapi.codingcloud.co.in/course/",
+  );
   const data = await response.json();
   // API returns { success: boolean, data: [...] } or just array?
   return data.data || data || [];
@@ -1409,9 +1412,12 @@ const fetchCourses = async () => {
 
 // Delete module mutation
 const deleteModule = async (id) => {
-  const response = await fetch(`https://codingcloud.pythonanywhere.com/modules/${id}/`, {
-    method: "DELETE",
-  });
+  const response = await fetch(
+    `https://codingcloudapi.codingcloud.co.in/modules/${id}/`,
+    {
+      method: "DELETE",
+    },
+  );
   if (!response.ok && response.status !== 204) {
     const data = await response.json().catch(() => ({}));
     throw new Error(data.message || "Failed to delete module");
@@ -1504,9 +1510,9 @@ export default function Modules() {
   // Local UI state
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState({
-  key: "id",
-  direction: "desc",
-});
+    key: "id",
+    direction: "desc",
+  });
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({ course: "all" });
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -1569,9 +1575,9 @@ export default function Modules() {
     result.sort((a, b) => {
       let aVal, bVal;
       if (sortConfig.key === "id") {
-  aVal = a.id || 0;
-  bVal = b.id || 0;
-} else if (sortConfig.key === "name") {
+        aVal = a.id || 0;
+        bVal = b.id || 0;
+      } else if (sortConfig.key === "name") {
         aVal = a.name?.toLowerCase() || "";
         bVal = b.name?.toLowerCase() || "";
       } else if (sortConfig.key === "course") {
@@ -1588,7 +1594,10 @@ export default function Modules() {
     return result;
   }, [modules, searchTerm, filters, sortConfig, coursesMap]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredModules.length / itemsPerPage));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredModules.length / itemsPerPage),
+  );
   const safePage = Math.min(currentPage, totalPages);
   const indexOfFirstItem = (safePage - 1) * itemsPerPage;
   const paginatedModules = filteredModules.slice(

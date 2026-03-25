@@ -165,7 +165,7 @@
 // //             }
 
 // //             const response = await fetch(
-// //                 "https://codingcloud.pythonanywhere.com/blogs/",
+// //                 "https://codingcloudapi.codingcloud.co.in/blogs/",
 // //                 {
 // //                     method: "POST",
 // //                     body: payload, // Sending FormData (multipart/form-data)
@@ -725,7 +725,7 @@
 //         payload.append("featured_image", formData.featured_image);
 
 //       const response = await fetch(
-//         "https://codingcloud.pythonanywhere.com/blogs/",
+//         "https://codingcloudapi.codingcloud.co.in/blogs/",
 //         { method: "POST", body: payload },
 //       );
 //       if (!response.ok) {
@@ -1440,7 +1440,10 @@ export default function AddBlog() {
     if (fileInputRef.current) fileInputRef.current.value = "";
     // Mark image as missing
     if (!formData.featured_image) {
-      setFieldErrors((prev) => ({ ...prev, featured_image: "Featured image is required" }));
+      setFieldErrors((prev) => ({
+        ...prev,
+        featured_image: "Featured image is required",
+      }));
     }
   };
 
@@ -1508,8 +1511,8 @@ export default function AddBlog() {
         payload.append("featured_image", formData.featured_image);
 
       const response = await fetch(
-        "https://codingcloud.pythonanywhere.com/blogs/",
-        { method: "POST", body: payload }
+        "https://codingcloudapi.codingcloud.co.in/blogs/",
+        { method: "POST", body: payload },
       );
 
       if (!response.ok) {
@@ -1616,7 +1619,6 @@ export default function AddBlog() {
               <h1 className="text-base sm:text-lg font-bold text-gray-900 leading-tight">
                 Add New Blog
               </h1>
-             
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -1699,7 +1701,7 @@ export default function AddBlog() {
                 >
                   Blog Title <span className="text-red-500">*</span>
                 </label>
-                
+
                 <div className="relative">
                   <FileText
                     size={16}
@@ -1719,7 +1721,9 @@ export default function AddBlog() {
                   />
                 </div>
                 {fieldErrors.title && (
-                  <p className="text-xs text-red-500 mt-1">{fieldErrors.title}</p>
+                  <p className="text-xs text-red-500 mt-1">
+                    {fieldErrors.title}
+                  </p>
                 )}
               </div>
 
@@ -1731,7 +1735,7 @@ export default function AddBlog() {
                 >
                   Slug / URL Path <span className="text-red-500">*</span>
                 </label>
-               
+
                 <div className="flex rounded-xl overflow-hidden border border-gray-200 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-transparent transition-all">
                   <span className="inline-flex items-center px-4 py-3 bg-gray-100 text-xs text-gray-500 font-medium border-r border-gray-200 whitespace-nowrap">
                     /blog/
@@ -1747,7 +1751,10 @@ export default function AddBlog() {
                         .replace(/[^a-z0-9-]/g, "-");
                       setFormData((prev) => ({ ...prev, slug: val }));
                       if (fieldErrors.slug) {
-                        setFieldErrors((prev) => ({ ...prev, slug: undefined }));
+                        setFieldErrors((prev) => ({
+                          ...prev,
+                          slug: undefined,
+                        }));
                       }
                     }}
                     placeholder="how-to-learn-react"
@@ -1758,9 +1765,10 @@ export default function AddBlog() {
                   />
                 </div>
                 {fieldErrors.slug && (
-                  <p className="text-xs text-red-500 mt-1">{fieldErrors.slug}</p>
+                  <p className="text-xs text-red-500 mt-1">
+                    {fieldErrors.slug}
+                  </p>
                 )}
-                
               </div>
 
               {/* Short Description */}
@@ -1771,7 +1779,7 @@ export default function AddBlog() {
                 >
                   Short Description
                 </label>
-               
+
                 <textarea
                   id="short_description"
                   name="short_description"
@@ -1823,8 +1831,6 @@ export default function AddBlog() {
                   </div>
                 </div>
 
-                
-
                 {/* Conditional Editor */}
                 {editorMode === "tinymce" ? (
                   <div
@@ -1839,7 +1845,10 @@ export default function AddBlog() {
                       onEditorChange={(content) => {
                         setFormData((prev) => ({ ...prev, content }));
                         if (fieldErrors.content) {
-                          setFieldErrors((prev) => ({ ...prev, content: undefined }));
+                          setFieldErrors((prev) => ({
+                            ...prev,
+                            content: undefined,
+                          }));
                         }
                       }}
                       init={{
@@ -1880,9 +1889,15 @@ export default function AddBlog() {
                   <textarea
                     value={formData.content}
                     onChange={(e) => {
-                      setFormData((prev) => ({ ...prev, content: e.target.value }));
+                      setFormData((prev) => ({
+                        ...prev,
+                        content: e.target.value,
+                      }));
                       if (fieldErrors.content) {
-                        setFieldErrors((prev) => ({ ...prev, content: undefined }));
+                        setFieldErrors((prev) => ({
+                          ...prev,
+                          content: undefined,
+                        }));
                       }
                     }}
                     className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base font-mono placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
@@ -1893,9 +1908,10 @@ export default function AddBlog() {
                   />
                 )}
                 {fieldErrors.content && (
-                  <p className="text-xs text-red-500 mt-1">{fieldErrors.content}</p>
+                  <p className="text-xs text-red-500 mt-1">
+                    {fieldErrors.content}
+                  </p>
                 )}
-               
               </div>
 
               {/* ── SEO & Metadata ── */}
@@ -1918,7 +1934,7 @@ export default function AddBlog() {
                       Meta Title
                     </label>
                   </div>
-                  
+
                   <input
                     id="meta_title"
                     type="text"
@@ -1943,7 +1959,7 @@ export default function AddBlog() {
                   >
                     Meta Description
                   </label>
-                 
+
                   <textarea
                     id="meta_descrtiption"
                     name="meta_descrtiption"
@@ -1971,7 +1987,7 @@ export default function AddBlog() {
                       Meta Keywords
                     </label>
                   </div>
-                 
+
                   <input
                     id="meta_keyword"
                     type="text"
@@ -1996,7 +2012,7 @@ export default function AddBlog() {
                       Hashtags <span className="text-red-500">*</span>
                     </label>
                   </div>
-                 
+
                   <input
                     id="hashtag"
                     type="text"
@@ -2009,7 +2025,9 @@ export default function AddBlog() {
                     }`}
                   />
                   {fieldErrors.hashtag && (
-                    <p className="text-xs text-red-500 mt-1">{fieldErrors.hashtag}</p>
+                    <p className="text-xs text-red-500 mt-1">
+                      {fieldErrors.hashtag}
+                    </p>
                   )}
                 </div>
               </div>
@@ -2036,7 +2054,7 @@ export default function AddBlog() {
                   >
                     Status <span className="text-red-500">*</span>
                   </label>
-                 
+
                   <div className="relative">
                     <select
                       id="status"
@@ -2044,7 +2062,9 @@ export default function AddBlog() {
                       value={formData.status}
                       onChange={handleInputChange}
                       className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none cursor-pointer ${
-                        fieldErrors.status ? "border-red-500" : "border-gray-200"
+                        fieldErrors.status
+                          ? "border-red-500"
+                          : "border-gray-200"
                       }`}
                     >
                       {statusOptions.map((status) => (
@@ -2059,7 +2079,9 @@ export default function AddBlog() {
                     />
                   </div>
                   {fieldErrors.status && (
-                    <p className="text-xs text-red-500 mt-1">{fieldErrors.status}</p>
+                    <p className="text-xs text-red-500 mt-1">
+                      {fieldErrors.status}
+                    </p>
                   )}
                 </div>
 
@@ -2073,7 +2095,7 @@ export default function AddBlog() {
                   >
                     Publish Date <span className="text-red-500">*</span>
                   </label>
-                  
+
                   <input
                     id="publish_date"
                     type="date"
@@ -2081,12 +2103,16 @@ export default function AddBlog() {
                     value={formData.publish_date}
                     onChange={handleInputChange}
                     className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
-                      fieldErrors.publish_date ? "border-red-500" : "border-gray-200"
+                      fieldErrors.publish_date
+                        ? "border-red-500"
+                        : "border-gray-200"
                     }`}
                     required
                   />
                   {fieldErrors.publish_date && (
-                    <p className="text-xs text-red-500 mt-1">{fieldErrors.publish_date}</p>
+                    <p className="text-xs text-red-500 mt-1">
+                      {fieldErrors.publish_date}
+                    </p>
                   )}
                 </div>
 
@@ -2108,7 +2134,7 @@ export default function AddBlog() {
                       {formData.publish_date
                         ? new Date(formData.publish_date).toLocaleDateString(
                             "en-US",
-                            { year: "numeric", month: "short", day: "numeric" }
+                            { year: "numeric", month: "short", day: "numeric" },
                           )
                         : "—"}
                     </span>
@@ -2126,7 +2152,9 @@ export default function AddBlog() {
 
               <div
                 className={`bg-white rounded-2xl border shadow-sm p-6 ${
-                  fieldErrors.featured_image ? "border-red-500" : "border-gray-200"
+                  fieldErrors.featured_image
+                    ? "border-red-500"
+                    : "border-gray-200"
                 }`}
               >
                 {!imagePreview ? (
@@ -2204,7 +2232,9 @@ export default function AddBlog() {
                   </div>
                 )}
                 {fieldErrors.featured_image && (
-                  <p className="text-xs text-red-500 mt-2">{fieldErrors.featured_image}</p>
+                  <p className="text-xs text-red-500 mt-2">
+                    {fieldErrors.featured_image}
+                  </p>
                 )}
                 <input
                   ref={fileInputRef}

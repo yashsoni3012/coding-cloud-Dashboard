@@ -56,7 +56,7 @@ export default function AddTestimonial() {
     try {
       setCoursesLoading(true);
       const response = await fetch(
-        "https://codingcloud.pythonanywhere.com/course/",
+        "https://codingcloudapi.codingcloud.co.in/course/",
       );
       if (!response.ok) throw new Error("Failed to fetch courses");
       const data = await response.json();
@@ -188,7 +188,7 @@ export default function AddTestimonial() {
       if (formData.image) formDataToSend.append("image", formData.image);
 
       const response = await fetch(
-        "https://codingcloud.pythonanywhere.com/testimonials/",
+        "https://codingcloudapi.codingcloud.co.in/testimonials/",
         { method: "POST", body: formDataToSend },
       );
       const responseText = await response.text();
