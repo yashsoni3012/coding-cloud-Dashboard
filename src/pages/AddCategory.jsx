@@ -583,30 +583,24 @@ export default function AddCategory() {
     setError("");
   };
 
-  const handleNameChange = (e) => {
-    let value = e.target.value;
+const handleNameChange = (e) => {
+  let value = e.target.value;
 
-    // Allow only letters, spaces, comma, hyphen
-    if (!/^[A-Za-z\s,-]*$/.test(value)) {
-      return;
-    }
+  setFormData((prev) => ({
+    ...prev,
+    name: value,
+    slug:
+      prev.slug === generateSlug(prev.name) || !prev.slug
+        ? generateSlug(value)
+        : prev.slug,
+  }));
 
-    setFormData((prev) => ({
-      ...prev,
-      name: value,
-      slug:
-        prev.slug === generateSlug(prev.name) || !prev.slug
-          ? generateSlug(value)
-          : prev.slug,
-    }));
+  if (fieldErrors.name) {
+    setFieldErrors((prev) => ({ ...prev, name: undefined }));
+  }
 
-    // Clear name error if it exists
-    if (fieldErrors.name) {
-      setFieldErrors((prev) => ({ ...prev, name: undefined }));
-    }
-    setError("");
-  };
-
+  setError("");
+};
   const processFile = (file) => {
     if (!file) return;
     if (!file.type.startsWith("image/")) {
