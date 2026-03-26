@@ -807,7 +807,7 @@ const getImageUrl = (image) => {
 
   if (image.startsWith("http")) return image;
 
-  return `https://codingcloudapi.codingcloud.co.in/${image}`;
+  return `${BASE_URL}${image.startsWith("/") ? image : `/${image}`}`;
 };
 
 // Fetch testimonials function
@@ -1037,7 +1037,7 @@ export default function Testimonials() {
 
   const activeFiltersCount = [
     filters.rating !== "all",
-    sortConfig.key !== "id" || sortConfig.direction !== "desc",
+    sortConfig.key !== "created_at" || sortConfig.direction !== "desc",
   ].filter(Boolean).length;
 
   const StarRating = ({ rating, size = 13 }) => (

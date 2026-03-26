@@ -2021,10 +2021,10 @@ export default function Blogs() {
     };
   };
 
-  const activeFiltersCount = [
-    filters.status !== "all",
-    sortConfig.key !== "display_id" || sortConfig.direction !== "desc",
-  ].filter(Boolean).length;
+ const activeFiltersCount = [
+  filters.status !== "all",
+  sortConfig.key !== "publish_date" || sortConfig.direction !== "desc",
+].filter(Boolean).length;
 
   const getPageNumbers = () => {
     if (totalPages <= 5)
