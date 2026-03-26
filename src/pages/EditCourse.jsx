@@ -1494,6 +1494,12 @@ export default function EditCourse() {
     enabled: !!id,
   });
 
+  useEffect(() => {
+  if (courseData) {
+    console.log("COURSE DATA FULL:", courseData);
+  }
+}, [courseData]);
+
   // Populate form when course data arrives
   useEffect(() => {
     if (courseData) {
@@ -1504,7 +1510,7 @@ export default function EditCourse() {
         category: courseData.category || "",
         text: courseData.text || "",
         short_description: courseData.short_description || "",
-        duration: courseData.duration || "",
+        duration: courseData.duration ?? "",
         lecture: courseData.lecture || "",
         students: courseData.students || "",
         level: courseData.level || "",

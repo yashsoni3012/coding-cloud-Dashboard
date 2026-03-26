@@ -1280,7 +1280,6 @@
 //     </div>
 //   );
 // }
-
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -1658,6 +1657,9 @@ export default function AddCourse() {
       submitData.append("text", formData.text);
       if (formData.short_description)
         submitData.append("short_description", formData.short_description);
+
+      // ✅ FIX: Add duration to FormData
+      if (formData.duration) submitData.append("duration", formData.duration);
 
       if (formData.lecture) submitData.append("lecture", formData.lecture);
       if (formData.students) submitData.append("students", formData.students);
@@ -2289,15 +2291,15 @@ export default function AddCourse() {
                     onChange={handleInputChange}
                     placeholder={field.placeholder}
                     className={`w-full px-3 py-2.5 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
-                      fieldErrors.duration
+                      fieldErrors[field.name]
                         ? "border-red-500"
                         : "border-gray-200"
                     }`}
                   />
 
-                  {fieldErrors.duration && (
+                  {fieldErrors[field.name] && (
                     <p className="text-xs text-red-500 mt-1">
-                      {fieldErrors.duration}
+                      {fieldErrors[field.name]}
                     </p>
                   )}
                 </div>
