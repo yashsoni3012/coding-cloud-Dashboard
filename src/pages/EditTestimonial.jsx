@@ -16,7 +16,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 
-const BASE_URL = "https://codingcloudapi.codingcloud.co.in/";
+const BASE_URL = "https://codingcloudapi.codingcloud.co.in";
 
 export default function EditTestimonial() {
   const navigate = useNavigate();

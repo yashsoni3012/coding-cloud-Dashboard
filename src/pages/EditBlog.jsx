@@ -691,6 +691,8 @@
 //         </div>
 //     );
 // }
+
+
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { Editor } from "@tinymce/tinymce-react";
@@ -791,11 +793,14 @@ export default function EditBlog() {
             hashtag: blogData.hashtag || "",
             featured_image: null,
           });
-          if (blogData.featured_image) {
-            const fullImageUrl = `https://codingcloudapi.codingcloud.co.in/${blogData.featured_image}`;
-            setImagePreview(fullImageUrl);
-            setOriginalImage(fullImageUrl);
-          }
+         if (blogData.featured_image) {
+  const imageUrl = blogData.featured_image.startsWith("http")
+    ? blogData.featured_image
+    : `https://codingcloudapi.codingcloud.co.in${blogData.featured_image}`;
+
+  setImagePreview(imageUrl);
+  setOriginalImage(imageUrl);
+}
         } else {
           setError("Blog not found.");
         }

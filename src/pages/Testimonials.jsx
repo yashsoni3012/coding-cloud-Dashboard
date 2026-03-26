@@ -788,6 +788,20 @@ import {
 // API base URL – change this if your endpoint moves
 const BASE_URL = "https://codingcloudapi.codingcloud.co.in";
 
+const createTestimonial = async (formData) => {
+  const response = await fetch(`${BASE_URL}/testimonials/`, {
+    method: "POST",
+    body: formData, // ✅ NO JSON.stringify
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to create testimonial");
+  }
+
+  return response.json();
+};
+
 const getImageUrl = (image) => {
   if (!image) return null;
 
@@ -799,38 +813,34 @@ const getImageUrl = (image) => {
 // Fetch testimonials function
 const fetchTestimonials = async () => {
   const response = await fetch(`${BASE_URL}/testimonials/`);
+
+  console.log("STATUS:", response.status);
+
   if (!response.ok) throw new Error(`HTTP error ${response.status}`);
 
   const data = await response.json();
 
-  // Extract the array from various possible response structures
+  console.log("API RESPONSE:", data); // 🔥 IMPORTANT
+
   let testimonialsArray = [];
+
   if (Array.isArray(data)) {
     testimonialsArray = data;
   } else if (data && typeof data === "object") {
-    // Common keys where the array might be nested
     const possibleKeys = ["data", "testimonials", "results", "items"];
+
     for (const key of possibleKeys) {
       if (Array.isArray(data[key])) {
         testimonialsArray = data[key];
         break;
       }
     }
-    // If still not found, maybe it's a single object (unlikely)
-    if (testimonialsArray.length === 0) {
-      if (data.id || data.name) {
-        testimonialsArray = [data];
-      } else {
-        console.warn("No array found in response", data);
-      }
+
+    if (testimonialsArray.length === 0 && (data.id || data.name)) {
+      testimonialsArray = [data];
     }
   }
 
-  if (testimonialsArray.length === 0) {
-    throw new Error("No testimonials found.");
-  }
-
-  // Add a local display ID for each item (for table numbering)
   return testimonialsArray.map((testimonial, index) => ({
     ...testimonial,
     display_id: index + 1,
