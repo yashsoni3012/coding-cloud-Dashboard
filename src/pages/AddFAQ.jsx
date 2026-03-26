@@ -562,9 +562,9 @@
 //     </div>
 //   );
 // }
-
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { useMutation, useQueryClient } from "@tanstack/react-query"; // added
 import { Editor } from "@tinymce/tinymce-react";
 import {
   ArrowLeft,
@@ -579,8 +579,40 @@ import {
 } from "lucide-react";
 import Toasts from "./Toasts";
 
+// API function for creating a new FAQ
+const createFaq = async (payload) => {
+  const response = await fetch("https://codingcloudapi.codingcloud.co.in/faqs/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    let errorMessage;
+    try {
+      const errorData = JSON.parse(errorText);
+      // Handle structured field errors from backend
+      if (errorData.errors) {
+        const backendErrors = {};
+        Object.keys(errorData.errors).forEach((key) => {
+          backendErrors[key] = errorData.errors[key].join(", ");
+        });
+        throw new Error(JSON.stringify(backendErrors));
+      }
+      errorMessage = errorData.message || errorData.detail || JSON.stringify(errorData);
+    } catch {
+      errorMessage = errorText || `HTTP error ${response.status}`;
+    }
+    throw new Error(errorMessage);
+  }
+
+  return response.json();
+};
+
 export default function AddFAQ() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient(); // get query client for invalidation
   const editorRef = useRef(null);
 
   const [formData, setFormData] = useState({
@@ -590,7 +622,6 @@ export default function AddFAQ() {
   });
   const [courses, setCourses] = useState([]);
   const [loadingCourses, setLoadingCourses] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
 
   // Editor mode: "tinymce" or "html"
@@ -610,6 +641,38 @@ export default function AddFAQ() {
   const closeToast = () => {
     setToast((prev) => ({ ...prev, show: false }));
   };
+
+  // --- React Query mutation ---
+  const mutation = useMutation({
+    mutationFn: createFaq,
+    onSuccess: () => {
+      // Invalidate the FAQ list query so it refetches
+      queryClient.invalidateQueries({ queryKey: ["faqs"] });
+      showToast("FAQ created successfully!", "success");
+      setFormData({ course: "", question: "", answer: "" });
+      setFieldErrors({});
+      setTimeout(() => navigate("/faq"), 2000);
+    },
+    onError: (err) => {
+      // Check if error contains structured field errors
+      let errorMsg = err.message;
+      try {
+        const parsed = JSON.parse(errorMsg);
+        if (typeof parsed === "object") {
+          // Set field errors and show generic toast
+          setFieldErrors(parsed);
+          showToast("Please correct the errors below", "error");
+          return;
+        }
+      } catch {
+        // Not JSON, treat as regular error
+      }
+      showToast(errorMsg, "error");
+    },
+    onSettled: () => {
+      // nothing special
+    },
+  });
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -671,62 +734,18 @@ export default function AddFAQ() {
     e.preventDefault();
 
     if (!validateForm()) {
-      const missingFields = Object.keys(fieldErrors).join(", ");
-      showToast(`Please fill required fields`, "error");
+      showToast("Please fill all required fields", "error");
       return;
     }
 
-    setSaving(true);
-    try {
-      const payload = {
-        course: parseInt(formData.course),
-        question: formData.question.trim(),
-        answer: formData.answer.trim(),
-      };
-      const response = await fetch(
-        "https://codingcloudapi.codingcloud.co.in/faqs/",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        },
-      );
+    const payload = {
+      course: parseInt(formData.course),
+      question: formData.question.trim(),
+      answer: formData.answer.trim(),
+    };
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        let errorMessage;
-        try {
-          const errorData = JSON.parse(errorText);
-          // Handle structured field errors from backend
-          if (errorData.errors) {
-            const backendErrors = {};
-            Object.keys(errorData.errors).forEach((key) => {
-              backendErrors[key] = errorData.errors[key].join(", ");
-            });
-            setFieldErrors(backendErrors);
-            showToast("Please correct the errors below", "error");
-            return; // exit early, keep saving false
-          }
-          errorMessage =
-            errorData.message || errorData.detail || JSON.stringify(errorData);
-        } catch {
-          errorMessage = errorText || `HTTP error ${response.status}`;
-        }
-        throw new Error(errorMessage);
-      }
-
-      showToast("FAQ created successfully!", "success");
-      setFormData({ course: "", question: "", answer: "" });
-      setFieldErrors({});
-      setTimeout(() => navigate("/faq"), 2000);
-    } catch (err) {
-      showToast(
-        err.message || "Failed to create FAQ. Please check the API endpoint.",
-        "error",
-      );
-    } finally {
-      setSaving(false);
-    }
+    // Use mutation instead of manual fetch
+    mutation.mutate(payload);
   };
 
   const selectedCourse = courses.find(
@@ -764,10 +783,10 @@ export default function AddFAQ() {
           </div>
           <button
             onClick={handleSubmit}
-            disabled={saving || loadingCourses}
+            disabled={mutation.isPending || loadingCourses}
             className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-base font-semibold rounded-xl shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {saving ? (
+            {mutation.isPending ? (
               <>
                 <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
                 Saving…
@@ -979,10 +998,10 @@ export default function AddFAQ() {
           <div className="sm:hidden">
             <button
               type="submit"
-              disabled={saving || loadingCourses}
+              disabled={mutation.isPending || loadingCourses}
               className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-base font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {saving ? (
+              {mutation.isPending ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
                   Creating…

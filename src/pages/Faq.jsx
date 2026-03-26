@@ -1,5 +1,6 @@
-// import { useState, useEffect } from "react";
+// import { useState, useEffect, useMemo } from "react";
 // import { useNavigate } from "react-router-dom";
+// import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 // import Toasts from "./Toasts";
 // import {
 //   Search,
@@ -19,91 +20,146 @@
 //   ChevronRight,
 // } from "lucide-react";
 
+// // Fetch FAQs and normalize course field to ID
+// const fetchFaqs = async () => {
+//   const response = await fetch("https://codingcloudapi.codingcloud.co.in/faqs/");
+//   if (!response.ok) throw new Error("Failed to fetch FAQs");
+//   const data = await response.json();
+//   const actualFaqs = data.data || data;
+//   if (!Array.isArray(actualFaqs)) return [];
+
+//   // Normalize: ensure faq.course is the course ID (if it's an object, extract id)
+//   return actualFaqs.map((faq) => ({
+//     ...faq,
+//     course: faq.course?.id || faq.course,
+//   }));
+// };
+
+// // Fetch courses and return map id -> name
+// const fetchCoursesMap = async () => {
+//   const response = await fetch("https://codingcloudapi.codingcloud.co.in/course/");
+//   if (!response.ok) throw new Error("Failed to fetch courses");
+//   const data = await response.json();
+//   const actualCourses = data.data || data;
+//   const map = {};
+//   if (Array.isArray(actualCourses)) {
+//     actualCourses.forEach((c) => {
+//       map[c.id] = c.name;
+//     });
+//   } else if (typeof actualCourses === "object") {
+//     // fallback if API returns object with id keys
+//     Object.values(actualCourses).forEach((c) => {
+//       if (c && c.id) map[c.id] = c.name;
+//     });
+//   }
+//   return map;
+// };
+
+// // Delete FAQ mutation
+// const deleteFaq = async (id) => {
+//   const response = await fetch(`https://codingcloudapi.codingcloud.co.in/faqs/${id}/`, {
+//     method: "DELETE",
+//   });
+//   if (!response.ok && response.status !== 204) {
+//     const errorData = await response.json().catch(() => ({}));
+//     throw new Error(errorData.message || "Failed to delete FAQ");
+//   }
+//   return id;
+// };
+
 // export default function FAQs() {
 //   const navigate = useNavigate();
+//   const queryClient = useQueryClient();
 
-//   const [faqs, setFaqs] = useState([]);
-//   const [filteredFaqs, setFilteredFaqs] = useState([]);
-//   const [courses, setCourses] = useState({});
-//   const [loading, setLoading] = useState(true);
-//   const [error, setError] = useState(null);
+//   // --- TanStack Query for FAQs ---
+//   const {
+//     data: faqs = [],
+//     isLoading: faqsLoading,
+//     error: faqsError,
+//   } = useQuery({
+//     queryKey: ["faqs"],
+//     queryFn: fetchFaqs,
+//     select: (data) =>
+//       data.map((faq, index) => ({ ...faq, display_id: index + 1 })),
+//   });
 
-//   // Toast state
+//   // --- TanStack Query for courses map ---
+//   const {
+//     data: coursesMap = {},
+//     isLoading: coursesLoading,
+//     error: coursesError,
+//   } = useQuery({
+//     queryKey: ["courses"],
+//     queryFn: fetchCoursesMap,
+//   });
+
+//   // Combined loading/error states
+//   const loading = faqsLoading || coursesLoading;
+//   const error = faqsError || coursesError;
+
+//   // --- Delete mutation ---
+//   const deleteMutation = useMutation({
+//     mutationFn: deleteFaq,
+//     onSuccess: () => {
+//       queryClient.invalidateQueries({ queryKey: ["faqs"] });
+//       setToastConfig({
+//         show: true,
+//         message: "FAQ deleted successfully!",
+//         type: "error", // original used "error" for success
+//       });
+//       setShowDeleteModal(false);
+//       setFaqToDelete(null);
+//     },
+//     onError: (err) => {
+//       setToastConfig({
+//         show: true,
+//         message: err.message || "Failed to delete FAQ.",
+//         type: "error",
+//       });
+//     },
+//     onSettled: () => setDeleteLoading(false),
+//   });
+
+//   // --- Local UI state (unchanged) ---
+//   const [searchTerm, setSearchTerm] = useState("");
+//   const [sortConfig, setSortConfig] = useState({
+//     key: "id",
+//     direction: "desc",
+//   });
+//   const [showFilters, setShowFilters] = useState(false);
+//   const [filters, setFilters] = useState({ course: "all" });
+//   const [expandedFaqs, setExpandedFaqs] = useState(new Set());
+//   const [showViewModal, setShowViewModal] = useState(false);
+//   const [selectedFaq, setSelectedFaq] = useState(null);
+//   const [showDeleteModal, setShowDeleteModal] = useState(false);
+//   const [faqToDelete, setFaqToDelete] = useState(null);
+//   const [deleteLoading, setDeleteLoading] = useState(false);
+//   const [currentPage, setCurrentPage] = useState(1);
+//   const [itemsPerPage, setItemsPerPage] = useState(10);
 //   const [toastConfig, setToastConfig] = useState({
 //     show: false,
 //     message: "",
 //     type: "success",
 //   });
 
-//   const [searchTerm, setSearchTerm] = useState("");
-//   const [sortConfig, setSortConfig] = useState({
-//     key: "display_id",
-//     direction: "desc",
-//   });
-//   const [showFilters, setShowFilters] = useState(false);
-//   const [filters, setFilters] = useState({ course: "all" });
-//   const [expandedFaqs, setExpandedFaqs] = useState(new Set());
-
-//   const [showViewModal, setShowViewModal] = useState(false);
-//   const [selectedFaq, setSelectedFaq] = useState(null);
-//   const [showDeleteModal, setShowDeleteModal] = useState(false);
-//   const [faqToDelete, setFaqToDelete] = useState(null);
-//   const [deleteLoading, setDeleteLoading] = useState(false);
-
-//   // Pagination state
-//   const [currentPage, setCurrentPage] = useState(1);
-//   const [itemsPerPage, setItemsPerPage] = useState(10);
-
-//   const fetchData = async () => {
-//     try {
-//       setLoading(true);
-//       const [faqsRes, coursesRes] = await Promise.all([
-//         fetch("https://codingcloudapi.codingcloud.co.in/faqs/"),
-//         fetch("https://codingcloudapi.codingcloud.co.in/course/"),
-//       ]);
-
-//       if (faqsRes.ok && coursesRes.ok) {
-//         const faqsData = await faqsRes.json();
-//         const coursesDataRes = await coursesRes.json();
-
-//         const courseMap = {};
-//         const actualCourses = coursesDataRes.data || coursesDataRes;
-//         if (Array.isArray(actualCourses)) {
-//           actualCourses.forEach((c) => {
-//             courseMap[c.id] = c.name;
-//           });
-//         }
-//         setCourses(courseMap);
-
-//         const actualFaqs = faqsData.data || faqsData;
-//         const faqsList = Array.isArray(actualFaqs) ? actualFaqs : [];
-//         const faqsWithDisplayIds = faqsList.map((faq, index) => ({
-//           ...faq,
-//           display_id: index + 1,
-//         }));
-//         setFaqs(faqsWithDisplayIds);
-//         setFilteredFaqs(faqsWithDisplayIds);
-//       } else {
-//         setError("Failed to fetch data.");
-//       }
-//     } catch (err) {
-//       setError("Network error. Please try again.");
-//     } finally {
-//       setLoading(false);
-//     }
+//   // Helper to safely get course name
+//   const getCourseName = (courseValue) => {
+//     if (!courseValue) return "Unknown Course";
+//     // If it's an object with name property, use that (shouldn't happen after normalization)
+//     if (typeof courseValue === "object" && courseValue.name) return courseValue.name;
+//     // If it's a primitive (ID), look up in map
+//     const id = Number(courseValue);
+//     return coursesMap[id] || `Course ${id}`;
 //   };
 
-//   useEffect(() => {
-//     fetchData();
-//   }, []);
-
-//   useEffect(() => {
+//   // --- Derived filtered FAQs (memoized) ---
+//   const filteredFaqs = useMemo(() => {
 //     let result = [...faqs];
 
 //     if (searchTerm) {
 //       const q = searchTerm.toLowerCase();
 //       result = result.filter((faq) => {
-//         const courseName = courses[faq.course] || "";
+//         const courseName = getCourseName(faq.course);
 //         return (
 //           faq.question.toLowerCase().includes(q) ||
 //           faq.answer.toLowerCase().includes(q) ||
@@ -114,30 +170,34 @@
 //     }
 
 //     if (filters.course !== "all") {
-//       result = result.filter((faq) => faq.course === parseInt(filters.course));
+//       const filterId = Number(filters.course);
+//       result = result.filter((faq) => Number(faq.course) === filterId);
 //     }
 
 //     result.sort((a, b) => {
 //       let aVal, bVal;
-//       if (sortConfig.key === "display_id") {
-//         aVal = a.display_id || 0;
-//         bVal = b.display_id || 0;
+//       if (sortConfig.key === "id") {
+//         aVal = a.id || 0;
+//         bVal = b.id || 0;
 //       } else if (sortConfig.key === "question") {
 //         aVal = a.question?.toLowerCase() || "";
 //         bVal = b.question?.toLowerCase() || "";
 //       } else if (sortConfig.key === "course") {
-//         aVal = courses[a.course]?.toLowerCase() || String(a.course);
-//         bVal = courses[b.course]?.toLowerCase() || String(b.course);
+//         aVal = getCourseName(a.course).toLowerCase();
+//         bVal = getCourseName(b.course).toLowerCase();
 //       }
 //       if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
 //       if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
 //       return 0;
 //     });
 
-//     setFilteredFaqs(result);
+//     return result;
+//   }, [faqs, coursesMap, searchTerm, filters, sortConfig]);
+
+//   // Reset page when filters change
+//   useEffect(() => {
 //     setCurrentPage(1);
-//     setExpandedFaqs(new Set());
-//   }, [searchTerm, filters, sortConfig, faqs, courses]);
+//   }, [searchTerm, filters, sortConfig, itemsPerPage]);
 
 //   const handleSort = (key) => {
 //     setSortConfig((cur) => ({
@@ -176,50 +236,19 @@
 //     setShowDeleteModal(true);
 //   };
 
-//   const handleDeleteConfirm = async () => {
+//   const handleDeleteConfirm = () => {
 //     if (!faqToDelete) return;
 //     setDeleteLoading(true);
-//     try {
-//       const response = await fetch(
-//         `https://codingcloudapi.codingcloud.co.in/faqs/${faqToDelete.id}/`,
-//         { method: "DELETE" },
-//       );
-//       if (response.ok || response.status === 204) {
-//         setToastConfig({
-//           show: true,
-//           message: "FAQ deleted successfully!",
-//           type: "error",
-//         });
-//         setShowDeleteModal(false);
-//         setFaqToDelete(null);
-//         fetchData();
-//       } else {
-//         setToastConfig({
-//           show: true,
-//           message: "Failed to delete FAQ.",
-//           type: "error",
-//         });
-//       }
-//     } catch {
-//       setToastConfig({
-//         show: true,
-//         message: "Network error. Please try again.",
-//         type: "error",
-//       });
-//     } finally {
-//       setDeleteLoading(false);
-//     }
+//     deleteMutation.mutate(faqToDelete.id);
 //   };
 
-//   const uniqueCourses = Object.keys(courses).map((id) => ({
+//   // Unique courses for filter dropdown (from coursesMap)
+//   const uniqueCourses = Object.entries(coursesMap).map(([id, name]) => ({
 //     id: parseInt(id),
-//     name: courses[id],
-//   }));
+//     name,
+//   })).sort((a, b) => a.name.localeCompare(b.name));
 
-//   const activeFiltersCount = [
-//     filters.course !== "all",
-//     sortConfig.key !== "display_id" || sortConfig.direction !== "desc",
-//   ].filter(Boolean).length;
+//   const activeFiltersCount = [filters.course !== "all"].filter(Boolean).length;
 
 //   // Helper for consistent avatar colors
 //   const avatarColors = [
@@ -321,7 +350,7 @@
 //             Something went wrong
 //           </h3>
 //           <p style={{ fontSize: 15, color: "#94a3b8", margin: "0 0 20px" }}>
-//             {error}
+//             {error.message}
 //           </p>
 //           <button
 //             onClick={() => window.location.reload()}
@@ -549,8 +578,7 @@
 //               className="faq-add-btn"
 //               onClick={() => navigate("/add-faq")}
 //             >
-//               <Plus size={16} />
-//               Add FAQ
+//               <Plus size={16} /> Add FAQ
 //             </button>
 //           </div>
 
@@ -782,7 +810,7 @@
 //                         Actions
 //                       </span>
 //                     </th>
-//                   </tr>
+//                    </tr>
 //                 </thead>
 //                 <tbody>
 //                   {paginatedFaqs.map((faq, index) => {
@@ -901,7 +929,7 @@
 //                           </div>
 //                         </td>
 
-//                         {/* Course badge */}
+//                         {/* Course badge - fixed to use getCourseName */}
 //                         <td
 //                           style={{ padding: "15px 18px", verticalAlign: "top" }}
 //                         >
@@ -920,7 +948,7 @@
 //                             }}
 //                           >
 //                             <BookOpen size={10} />
-//                             {courses[faq.course] || `Course ${faq.course}`}
+//                             {getCourseName(faq.course)}
 //                           </span>
 //                         </td>
 
@@ -1183,8 +1211,7 @@
 //                     margin: 0,
 //                   }}
 //                 >
-//                   {courses[selectedFaq.course] ||
-//                     `Course ${selectedFaq.course}`}
+//                   {getCourseName(selectedFaq.course)}
 //                 </p>
 //               </div>
 
@@ -1427,6 +1454,7 @@ import {
   SortDesc,
   ChevronLeft,
   ChevronRight,
+  RefreshCw, // ← new icon
 } from "lucide-react";
 
 // Fetch FAQs and normalize course field to ID
@@ -1485,11 +1513,13 @@ export default function FAQs() {
     data: faqs = [],
     isLoading: faqsLoading,
     error: faqsError,
+    refetch, // ← we'll use this for manual refresh
   } = useQuery({
     queryKey: ["faqs"],
     queryFn: fetchFaqs,
     select: (data) =>
       data.map((faq, index) => ({ ...faq, display_id: index + 1 })),
+    // Optional: you can set staleTime to 0 (default) and refetchOnWindowFocus true (default)
   });
 
   // --- TanStack Query for courses map ---
@@ -1554,9 +1584,7 @@ export default function FAQs() {
   // Helper to safely get course name
   const getCourseName = (courseValue) => {
     if (!courseValue) return "Unknown Course";
-    // If it's an object with name property, use that (shouldn't happen after normalization)
     if (typeof courseValue === "object" && courseValue.name) return courseValue.name;
-    // If it's a primitive (ID), look up in map
     const id = Number(courseValue);
     return coursesMap[id] || `Course ${id}`;
   };
@@ -1815,6 +1843,8 @@ export default function FAQs() {
         .faq-filter-btn:hover { background: #f1f5f9; }
         .faq-add-btn { display: flex; align-items: center; gap: 8px; padding: 9px 18px; border: none; border-radius: 10px; background: #7c3aed; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.13s; font-family: inherit; white-space: nowrap; box-shadow: 0 2px 8px rgba(124,58,237,0.25); }
         .faq-add-btn:hover { background: #6d28d9; }
+        .faq-refresh-btn { display: flex; align-items: center; gap: 8px; padding: 9px 14px; border: 1.5px solid #e2e8f0; background: #fff; color: #475569; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.13s; font-family: inherit; }
+        .faq-refresh-btn:hover { background: #f1f5f9; border-color: #cbd5e1; }
         .faq-copy-btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; border: 1.5px solid #e2e8f0; background: #fff; color: #475569; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background 0.13s; }
         .faq-copy-btn:hover { background: #f1f5f9; }
         .faq-close-btn { padding: 9px 16px; border: 1.5px solid #e2e8f0; background: #fff; color: #475569; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background 0.13s; }
@@ -1988,6 +2018,16 @@ export default function FAQs() {
               onClick={() => navigate("/add-faq")}
             >
               <Plus size={16} /> Add FAQ
+            </button>
+
+            {/* 🔁 NEW: Manual Refresh Button */}
+            <button
+              className="faq-refresh-btn"
+              onClick={() => refetch()}
+              title="Refresh list"
+            >
+              <RefreshCw size={15} />
+              Refresh
             </button>
           </div>
 
@@ -2219,7 +2259,7 @@ export default function FAQs() {
                         Actions
                       </span>
                     </th>
-                   </tr>
+                  </tr>
                 </thead>
                 <tbody>
                   {paginatedFaqs.map((faq, index) => {
@@ -2338,7 +2378,7 @@ export default function FAQs() {
                           </div>
                         </td>
 
-                        {/* Course badge - fixed to use getCourseName */}
+                        {/* Course badge */}
                         <td
                           style={{ padding: "15px 18px", verticalAlign: "top" }}
                         >

@@ -610,6 +610,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { useMutation, useQueryClient } from "@tanstack/react-query"; // <-- added
 import { Editor } from "@tinymce/tinymce-react";
 import {
   ArrowLeft,
@@ -624,12 +625,48 @@ import {
 } from "lucide-react";
 import Toasts from "./Toasts";
 
+// API function for updating a FAQ
+const updateFaq = async ({ id, payload }) => {
+  const response = await fetch(
+    `https://codingcloudapi.codingcloud.co.in/faqs/${id}/`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    let errorMessage;
+    try {
+      const errorData = JSON.parse(errorText);
+      // Handle structured field errors from backend
+      if (errorData.errors) {
+        const backendErrors = {};
+        Object.keys(errorData.errors).forEach((key) => {
+          backendErrors[key] = errorData.errors[key].join(", ");
+        });
+        throw new Error(JSON.stringify(backendErrors));
+      }
+      errorMessage =
+        errorData.message || errorData.detail || JSON.stringify(errorData);
+    } catch {
+      errorMessage = errorText || `HTTP error ${response.status}`;
+    }
+    throw new Error(errorMessage);
+  }
+
+  return response.json();
+};
+
 export default function EditFAQ() {
   const navigate = useNavigate();
   const { id } = useParams();
   const location = useLocation();
   const locationState = location.state;
   const editorRef = useRef(null);
+  const queryClient = useQueryClient(); // <-- added
 
   const [formData, setFormData] = useState({
     course: "",
@@ -638,7 +675,6 @@ export default function EditFAQ() {
   });
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
 
   // Editor mode: "tinymce" or "html"
@@ -659,6 +695,32 @@ export default function EditFAQ() {
     setToast((prev) => ({ ...prev, show: false }));
   };
 
+  // --- React Query mutation for updating ---
+  const mutation = useMutation({
+    mutationFn: updateFaq,
+    onSuccess: () => {
+      // Invalidate the FAQ list query so it refetches
+      queryClient.invalidateQueries({ queryKey: ["faqs"] });
+      showToast("FAQ updated successfully!", "success");
+      setTimeout(() => navigate("/faq"), 2000);
+    },
+    onError: (err) => {
+      let errorMsg = err.message;
+      try {
+        const parsed = JSON.parse(errorMsg);
+        if (typeof parsed === "object") {
+          // Set field errors and show generic toast
+          setFieldErrors(parsed);
+          showToast("Please correct the errors below", "error");
+          return;
+        }
+      } catch {
+        // Not JSON, treat as regular error
+      }
+      showToast(errorMsg, "error");
+    },
+  });
+
   useEffect(() => {
     const initializeData = async () => {
       try {
@@ -666,7 +728,7 @@ export default function EditFAQ() {
         // Fetch courses
         let fetchedCourses = [];
         const coursesResponse = await fetch(
-          "https://codingcloudapi.codingcloud.co.in/course/",
+          "https://codingcloudapi.codingcloud.co.in/course/"
         );
         if (coursesResponse.ok) {
           const coursesData = await coursesResponse.json();
@@ -682,7 +744,7 @@ export default function EditFAQ() {
           faqData = locationState.faq;
         } else {
           const faqsResponse = await fetch(
-            "https://codingcloudapi.codingcloud.co.in/faqs/",
+            "https://codingcloudapi.codingcloud.co.in/faqs/"
           );
           if (faqsResponse.ok) {
             const listDataRes = await faqsResponse.json();
@@ -752,65 +814,22 @@ export default function EditFAQ() {
     e.preventDefault();
 
     if (!validateForm()) {
-      const missingFields = Object.keys(fieldErrors).join(", ");
-      showToast(`Please fill required fields`, "error");
+      showToast("Please fill all required fields", "error");
       return;
     }
 
-    setSaving(true);
-    try {
-      const payload = {
-        course: parseInt(formData.course),
-        question: formData.question.trim(),
-        answer: formData.answer.trim(),
-      };
-      const response = await fetch(
-        `https://codingcloudapi.codingcloud.co.in/faqs/${id}/`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        },
-      );
+    const payload = {
+      course: parseInt(formData.course),
+      question: formData.question.trim(),
+      answer: formData.answer.trim(),
+    };
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        let errorMessage;
-        try {
-          const errorData = JSON.parse(errorText);
-          // Handle structured field errors from backend
-          if (errorData.errors) {
-            const backendErrors = {};
-            Object.keys(errorData.errors).forEach((key) => {
-              backendErrors[key] = errorData.errors[key].join(", ");
-            });
-            setFieldErrors(backendErrors);
-            showToast("Please correct the errors below", "error");
-            return; // exit early, keep saving false
-          }
-          errorMessage =
-            errorData.message || errorData.detail || JSON.stringify(errorData);
-        } catch {
-          errorMessage = errorText || `HTTP error ${response.status}`;
-        }
-        throw new Error(errorMessage);
-      }
-
-      showToast("FAQ updated successfully!", "success");
-      setTimeout(() => navigate("/faq"), 2000);
-    } catch (err) {
-      console.error("Error updating FAQ:", err);
-      showToast(
-        err.message || "Failed to update FAQ. Please check your connection.",
-        "error",
-      );
-    } finally {
-      setSaving(false);
-    }
+    // Use mutation instead of manual fetch
+    mutation.mutate({ id: parseInt(id), payload });
   };
 
   const selectedCourse = courses.find(
-    (c) => c.id === parseInt(formData.course),
+    (c) => c.id === parseInt(formData.course)
   );
 
   // ── Loading State ──
@@ -858,10 +877,10 @@ export default function EditFAQ() {
           </div>
           <button
             onClick={handleSubmit}
-            disabled={saving || !formData.course}
+            disabled={mutation.isPending || !formData.course}
             className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-base font-semibold rounded-xl shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {saving ? (
+            {mutation.isPending ? (
               <>
                 <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
                 Updating…
@@ -1066,10 +1085,10 @@ export default function EditFAQ() {
           <div className="sm:hidden">
             <button
               type="submit"
-              disabled={saving || !formData.course}
+              disabled={mutation.isPending || !formData.course}
               className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-base font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {saving ? (
+              {mutation.isPending ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
                   Updating…

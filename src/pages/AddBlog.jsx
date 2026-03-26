@@ -1334,6 +1334,7 @@
 
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { useMutation, useQueryClient } from "@tanstack/react-query"; // added
 import { Editor } from "@tinymce/tinymce-react";
 import Toasts from "../pages/Toasts"; // adjust path if needed
 import {
@@ -1358,8 +1359,40 @@ import {
   Sparkles,
 } from "lucide-react";
 
+// API function to create a blog
+const createBlog = async (formData) => {
+  const response = await fetch(
+    "https://codingcloudapi.codingcloud.co.in/blogs/",
+    { method: "POST", body: formData }
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    let errorMessage;
+    try {
+      const errorData = JSON.parse(errorText);
+      // Handle structured field errors from backend
+      if (errorData.errors) {
+        const backendErrors = {};
+        Object.keys(errorData.errors).forEach((key) => {
+          backendErrors[key] = errorData.errors[key].join(", ");
+        });
+        throw new Error(JSON.stringify(backendErrors));
+      }
+      errorMessage =
+        errorData.message || errorData.detail || JSON.stringify(errorData);
+    } catch {
+      errorMessage = errorText || `HTTP error ${response.status}`;
+    }
+    throw new Error(errorMessage);
+  }
+
+  return response.json();
+};
+
 export default function AddBlog() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient(); // added
   const fileInputRef = useRef(null);
   const editorRef = useRef(null);
 
@@ -1382,7 +1415,6 @@ export default function AddBlog() {
     featured_image: null,
   });
 
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
@@ -1392,6 +1424,44 @@ export default function AddBlog() {
     show: false,
     message: "",
     type: "success",
+  });
+
+  // --- React Query mutation ---
+  const mutation = useMutation({
+    mutationFn: createBlog,
+    onSuccess: () => {
+      // Invalidate the blogs list query so it refetches
+      queryClient.invalidateQueries({ queryKey: ["blogs"] });
+      setToast({
+        show: true,
+        message: "Blog added successfully!",
+        type: "success",
+      });
+      setTimeout(() => navigate("/blogs"), 2000);
+    },
+    onError: (err) => {
+      let errorMsg = err.message;
+      try {
+        const parsed = JSON.parse(errorMsg);
+        if (typeof parsed === "object") {
+          // Set field errors and show generic toast
+          setFieldErrors(parsed);
+          setToast({
+            show: true,
+            message: "Please correct the errors below",
+            type: "error",
+          });
+          return;
+        }
+      } catch {
+        // Not JSON, treat as regular error
+      }
+      setToast({
+        show: true,
+        message: errorMsg,
+        type: "error",
+      });
+    },
   });
 
   const statusOptions = ["Drafts", "Published", "Scheduled"];
@@ -1480,85 +1550,32 @@ export default function AddBlog() {
     e.preventDefault();
 
     if (!validateForm()) {
-      const missingFields = Object.keys(fieldErrors).join(", ");
       setToast({
         show: true,
-        message: `Please fill required fields`,
+        message: "Please fill all required fields",
         type: "error",
       });
       return;
     }
 
-    setSaving(true);
-    setError("");
-    setSuccess("");
-    try {
-      const payload = new FormData();
-      payload.append("title", formData.title.trim());
-      payload.append("content", formData.content.trim()); // rich text content
-      payload.append("slug", formData.slug.trim());
-      payload.append("short_description", formData.short_description.trim());
-      payload.append("status", formData.status);
-      const formattedDate = formData.publish_date.includes("T")
-        ? formData.publish_date
-        : `${formData.publish_date}T00:00:00Z`;
-      payload.append("publish_date", formattedDate);
-      payload.append("meta_title", formData.meta_title.trim());
-      payload.append("meta_descrtiption", formData.meta_descrtiption.trim());
-      payload.append("meta_keyword", formData.meta_keyword.trim());
-      payload.append("hashtag", formData.hashtag.trim());
-      if (formData.featured_image instanceof File)
-        payload.append("featured_image", formData.featured_image);
+    const payload = new FormData();
+    payload.append("title", formData.title.trim());
+    payload.append("content", formData.content.trim());
+    payload.append("slug", formData.slug.trim());
+    payload.append("short_description", formData.short_description.trim());
+    payload.append("status", formData.status);
+    const formattedDate = formData.publish_date.includes("T")
+      ? formData.publish_date
+      : `${formData.publish_date}T00:00:00Z`;
+    payload.append("publish_date", formattedDate);
+    payload.append("meta_title", formData.meta_title.trim());
+    payload.append("meta_descrtiption", formData.meta_descrtiption.trim());
+    payload.append("meta_keyword", formData.meta_keyword.trim());
+    payload.append("hashtag", formData.hashtag.trim());
+    if (formData.featured_image instanceof File)
+      payload.append("featured_image", formData.featured_image);
 
-      const response = await fetch(
-        "https://codingcloudapi.codingcloud.co.in/blogs/",
-        { method: "POST", body: payload },
-      );
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        let errorMessage;
-        try {
-          const errorData = JSON.parse(errorText);
-          // Handle structured field errors from backend
-          if (errorData.errors) {
-            const backendErrors = {};
-            Object.keys(errorData.errors).forEach((key) => {
-              backendErrors[key] = errorData.errors[key].join(", ");
-            });
-            setFieldErrors(backendErrors);
-            setToast({
-              show: true,
-              message: "Please correct the errors below",
-              type: "error",
-            });
-            return; // exit early, keep saving false
-          }
-          errorMessage =
-            errorData.message || errorData.detail || JSON.stringify(errorData);
-        } catch {
-          errorMessage = `HTTP error ${response.status}`;
-        }
-        throw new Error(errorMessage);
-      }
-
-      setToast({
-        show: true,
-        message: "Blog added successfully!",
-        type: "success",
-      });
-
-      setTimeout(() => navigate("/blogs"), 2000);
-    } catch (err) {
-      console.error("Error creating blog:", err);
-      setToast({
-        show: true,
-        message: err.message || "Failed to create blog",
-        type: "error",
-      });
-    } finally {
-      setSaving(false);
-    }
+    mutation.mutate(payload);
   };
 
   // ── Section Header component ──
@@ -1624,10 +1641,10 @@ export default function AddBlog() {
           <div className="flex items-center gap-2">
             <button
               onClick={handleSubmit}
-              disabled={saving}
+              disabled={mutation.isPending}
               className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-base font-semibold rounded-xl shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {saving ? (
+              {mutation.isPending ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
                   Saving…
@@ -2251,10 +2268,10 @@ export default function AddBlog() {
           <div className="sm:hidden mt-4">
             <button
               type="submit"
-              disabled={saving}
+              disabled={mutation.isPending}
               className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white text-base font-semibold rounded-2xl shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {saving ? (
+              {mutation.isPending ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
                   Saving…

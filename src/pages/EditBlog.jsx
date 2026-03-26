@@ -692,9 +692,9 @@
 //     );
 // }
 
-
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { useMutation, useQueryClient } from "@tanstack/react-query"; // <-- added
 import { Editor } from "@tinymce/tinymce-react";
 import Toasts from "../pages/Toasts";
 import {
@@ -714,17 +714,47 @@ import {
   ImagePlus,
 } from "lucide-react";
 
+// API function to update a blog
+const updateBlog = async ({ id, formData }) => {
+  const response = await fetch(
+    `https://codingcloudapi.codingcloud.co.in/blogs/${id}/`,
+    { method: "PATCH", body: formData }
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    let errorMessage;
+    try {
+      const errorData = JSON.parse(errorText);
+      // Handle structured field errors from backend
+      if (errorData.errors) {
+        const backendErrors = {};
+        Object.keys(errorData.errors).forEach((key) => {
+          backendErrors[key] = errorData.errors[key].join(", ");
+        });
+        throw new Error(JSON.stringify(backendErrors));
+      }
+      errorMessage =
+        errorData.message || errorData.detail || JSON.stringify(errorData);
+    } catch {
+      errorMessage = errorText || `HTTP error ${response.status}`;
+    }
+    throw new Error(errorMessage);
+  }
+
+  return response.json();
+};
+
 export default function EditBlog() {
   const navigate = useNavigate();
   const { id } = useParams();
   const location = useLocation();
   const locationState = location.state;
+  const queryClient = useQueryClient(); // <-- added
   const fileInputRef = useRef(null);
   const editorRef = useRef(null);
 
-  // ------------------------------------------------------------------------
   // Editor mode: "tinymce" or "html"
-  // ------------------------------------------------------------------------
   const [editorMode, setEditorMode] = useState("tinymce");
 
   const [formData, setFormData] = useState({
@@ -742,19 +772,56 @@ export default function EditBlog() {
   });
 
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [imagePreview, setImagePreview] = useState(null);
   const [originalImage, setOriginalImage] = useState(null);
   const [dragOver, setDragOver] = useState(false);
-
-  const statusOptions = ["Drafts", "Published", "Scheduled"];
   const [toast, setToast] = useState({
     show: false,
     message: "",
     type: "success",
   });
+
+  // --- React Query mutation for updating ---
+  const mutation = useMutation({
+    mutationFn: updateBlog,
+    onSuccess: () => {
+      // Invalidate the blogs list query so it refetches
+      queryClient.invalidateQueries({ queryKey: ["blogs"] });
+      setToast({
+        show: true,
+        message: "Blog updated successfully!",
+        type: "success",
+      });
+      setTimeout(() => navigate("/blogs"), 2000);
+    },
+    onError: (err) => {
+      let errorMsg = err.message;
+      try {
+        const parsed = JSON.parse(errorMsg);
+        if (typeof parsed === "object") {
+          // Set field errors and show generic toast
+          setFieldErrors(parsed);
+          setToast({
+            show: true,
+            message: "Please correct the errors below",
+            type: "error",
+          });
+          return;
+        }
+      } catch {
+        // Not JSON, treat as regular error
+      }
+      setToast({
+        show: true,
+        message: errorMsg,
+        type: "error",
+      });
+    },
+  });
+
+  const statusOptions = ["Drafts", "Published", "Scheduled"];
 
   useEffect(() => {
     const fetchBlog = async () => {
@@ -766,7 +833,7 @@ export default function EditBlog() {
           blogData = locationState.blog;
         } else {
           const response = await fetch(
-            "https://codingcloudapi.codingcloud.co.in/blogs/",
+            "https://codingcloudapi.codingcloud.co.in/blogs/"
           );
           if (response.ok) {
             const dataRes = await response.json();
@@ -793,14 +860,14 @@ export default function EditBlog() {
             hashtag: blogData.hashtag || "",
             featured_image: null,
           });
-         if (blogData.featured_image) {
-  const imageUrl = blogData.featured_image.startsWith("http")
-    ? blogData.featured_image
-    : `https://codingcloudapi.codingcloud.co.in${blogData.featured_image}`;
+          if (blogData.featured_image) {
+            const imageUrl = blogData.featured_image.startsWith("http")
+              ? blogData.featured_image
+              : `https://codingcloudapi.codingcloud.co.in${blogData.featured_image}`;
 
-  setImagePreview(imageUrl);
-  setOriginalImage(imageUrl);
-}
+            setImagePreview(imageUrl);
+            setOriginalImage(imageUrl);
+          }
         } else {
           setError("Blog not found.");
         }
@@ -909,94 +976,43 @@ export default function EditBlog() {
     e.preventDefault();
 
     if (!validateForm()) {
-      const missingFields = Object.keys(fieldErrors).join(", ");
       setToast({
         show: true,
-        message: `Please fill required fields`,
+        message: "Please fill all required fields",
         type: "error",
       });
       return;
     }
 
-    setSaving(true);
-    setError("");
-    try {
-      const payload = new FormData();
-      payload.append("title", formData.title.trim());
-      payload.append("content", formData.content.trim());
-      payload.append("slug", formData.slug.trim());
-      if (formData.short_description !== undefined)
-        payload.append("short_description", formData.short_description.trim());
-      payload.append("status", formData.status);
-      const formattedDate = formData.publish_date.includes("T")
-        ? formData.publish_date
-        : `${formData.publish_date}T00:00:00Z`;
-      payload.append("publish_date", formattedDate);
-      if (formData.meta_title !== undefined)
-        payload.append("meta_title", formData.meta_title.trim());
-      if (formData.meta_descrtiption !== undefined)
-        payload.append("meta_descrtiption", formData.meta_descrtiption.trim());
-      if (formData.meta_keyword !== undefined)
-        payload.append("meta_keyword", formData.meta_keyword.trim());
-      if (formData.hashtag !== undefined)
-        payload.append("hashtag", formData.hashtag.trim());
+    const payload = new FormData();
+    payload.append("title", formData.title.trim());
+    payload.append("content", formData.content.trim());
+    payload.append("slug", formData.slug.trim());
+    if (formData.short_description !== undefined)
+      payload.append("short_description", formData.short_description.trim());
+    payload.append("status", formData.status);
+    const formattedDate = formData.publish_date.includes("T")
+      ? formData.publish_date
+      : `${formData.publish_date}T00:00:00Z`;
+    payload.append("publish_date", formattedDate);
+    if (formData.meta_title !== undefined)
+      payload.append("meta_title", formData.meta_title.trim());
+    if (formData.meta_descrtiption !== undefined)
+      payload.append("meta_descrtiption", formData.meta_descrtiption.trim());
+    if (formData.meta_keyword !== undefined)
+      payload.append("meta_keyword", formData.meta_keyword.trim());
+    if (formData.hashtag !== undefined)
+      payload.append("hashtag", formData.hashtag.trim());
 
-      // Handle image: if new file, append it; if removed and no original, send empty to clear
-      if (formData.featured_image && formData.featured_image instanceof File) {
-        payload.append("featured_image", formData.featured_image);
-      } else if (imagePreview === null && originalImage) {
-        payload.append("featured_image", "");
-      }
-
-      const response = await fetch(
-        `https://codingcloudapi.codingcloud.co.in/blogs/${id}/`,
-        { method: "PATCH", body: payload },
-      );
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        let errorMessage;
-        try {
-          const errorData = JSON.parse(errorText);
-          // Handle structured field errors from backend
-          if (errorData.errors) {
-            const backendErrors = {};
-            Object.keys(errorData.errors).forEach((key) => {
-              backendErrors[key] = errorData.errors[key].join(", ");
-            });
-            setFieldErrors(backendErrors);
-            setToast({
-              show: true,
-              message: "Please correct the errors below",
-              type: "error",
-            });
-            return; // exit early, keep saving false
-          }
-          errorMessage =
-            errorData.message || errorData.detail || JSON.stringify(errorData);
-        } catch {
-          errorMessage = `HTTP error ${response.status}`;
-        }
-        throw new Error(errorMessage);
-      }
-
-      setToast({
-        show: true,
-        message: "Blog updated successfully!",
-        type: "success",
-      });
-
-      setTimeout(() => navigate("/blogs"), 2000);
-    } catch (err) {
-      console.error("Error updating blog:", err);
-      setToast({
-        show: true,
-        message: err.message || "Failed to update blog",
-        type: "error",
-      });
-    } finally {
-      setSaving(false);
+    // Handle image: if new file, append it; if removed and no original, send empty to clear
+    if (formData.featured_image && formData.featured_image instanceof File) {
+      payload.append("featured_image", formData.featured_image);
+    } else if (imagePreview === null && originalImage) {
+      payload.append("featured_image", "");
     }
+
+    // Use mutation instead of manual fetch
+    mutation.mutate({ id: parseInt(id), formData: payload });
   };
 
   const isNewImage = formData.featured_image instanceof File;
@@ -1078,10 +1094,10 @@ export default function EditBlog() {
           <div className="flex items-center gap-2">
             <button
               onClick={handleSubmit}
-              disabled={saving}
+              disabled={mutation.isPending}
               className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-base font-semibold rounded-xl shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {saving ? (
+              {mutation.isPending ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
                   Updating…
@@ -1706,10 +1722,10 @@ export default function EditBlog() {
           <div className="sm:hidden mt-4">
             <button
               type="submit"
-              disabled={saving}
+              disabled={mutation.isPending}
               className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white text-base font-semibold rounded-2xl shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {saving ? (
+              {mutation.isPending ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
                   Updating…

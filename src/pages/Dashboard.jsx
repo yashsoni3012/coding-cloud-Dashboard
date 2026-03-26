@@ -863,42 +863,6 @@ export default function Dashboard() {
               })}
             </div>
           </div>
-
-          {/* System Status */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-            <h3 className="text-sm font-semibold text-slate-900 mb-4 flex items-center gap-2">
-              <div className="w-1.5 h-1.5 bg-emerald-600 rounded-full" />
-              System Status
-            </h3>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-600">API Connection</span>
-                <span className="text-xs font-medium px-2 py-1 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-200">
-                  Connected
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-600">Last Updated</span>
-                <span className="text-sm text-slate-500">
-                  {new Date().toLocaleTimeString()}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-600">Total Records</span>
-                <span className="text-sm font-semibold text-slate-900">
-                  {totalItems}
-                </span>
-              </div>
-              {/* <div className="pt-2">
-                <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-violet-500 to-purple-600 rounded-full"
-                    style={{ width: "100%" }}
-                  />
-                </div>
-              </div> */}
-            </div>
-          </div>
         </div>
 
         {/* Bottom spacing */}
