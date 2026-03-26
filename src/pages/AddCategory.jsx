@@ -14,8 +14,27 @@
 // } from "lucide-react";
 // import Toasts from "../pages/Toasts";
 
+// // Mutation function for creating a category
+// const createCategory = async (formData) => {
+//   const response = await fetch(
+//     "https://codingcloudapi.codingcloud.co.in/category/",
+//     {
+//       method: "POST",
+//       body: formData,
+//     },
+//   );
+
+//   if (!response.ok) {
+//     const data = await response.json().catch(() => ({}));
+//     throw new Error(data.message || data.detail || "Failed to create category");
+//   }
+
+//   return response.json();
+// };
+
 // export default function AddCategory() {
 //   const navigate = useNavigate();
+//   const queryClient = useQueryClient();
 //   const fileInputRef = useRef(null);
 //   const timeoutRef = useRef(null);
 
@@ -25,7 +44,6 @@
 //     image: null,
 //     slug: "",
 //   });
-//   const [saving, setSaving] = useState(false);
 //   const [error, setError] = useState("");
 //   const [fieldErrors, setFieldErrors] = useState({});
 //   const [toast, setToast] = useState({
@@ -41,6 +59,26 @@
 //       if (timeoutRef.current) clearTimeout(timeoutRef.current);
 //     };
 //   }, []);
+
+//   // --- TanStack Mutation ---
+//   const mutation = useMutation({
+//     mutationFn: createCategory,
+//     onSuccess: () => {
+//       // Invalidate and refetch categories list
+//       queryClient.invalidateQueries({ queryKey: ["categories"] });
+//       setToast({
+//         show: true,
+//         message: "Category created successfully!",
+//         type: "success",
+//       });
+//       timeoutRef.current = setTimeout(() => {
+//         navigate("/category");
+//       }, 1400);
+//     },
+//     onError: (err) => {
+//       setError(err.message || "Failed to create category");
+//     },
+//   });
 
 //   const generateSlug = (name) => {
 //     return name
@@ -61,30 +99,24 @@
 //     setError("");
 //   };
 
-//   const handleNameChange = (e) => {
-//     let value = e.target.value;
+// const handleNameChange = (e) => {
+//   let value = e.target.value;
 
-//     // Allow only letters, spaces, comma, hyphen
-//     if (!/^[A-Za-z\s,-]*$/.test(value)) {
-//       return;
-//     }
+//   setFormData((prev) => ({
+//     ...prev,
+//     name: value,
+//     slug:
+//       prev.slug === generateSlug(prev.name) || !prev.slug
+//         ? generateSlug(value)
+//         : prev.slug,
+//   }));
 
-//     setFormData((prev) => ({
-//       ...prev,
-//       name: value,
-//       slug:
-//         prev.slug === generateSlug(prev.name) || !prev.slug
-//           ? generateSlug(value)
-//           : prev.slug,
-//     }));
+//   if (fieldErrors.name) {
+//     setFieldErrors((prev) => ({ ...prev, name: undefined }));
+//   }
 
-//     // Clear name error if it exists
-//     if (fieldErrors.name) {
-//       setFieldErrors((prev) => ({ ...prev, name: undefined }));
-//     }
-//     setError("");
-//   };
-
+//   setError("");
+// };
 //   const processFile = (file) => {
 //     if (!file) return;
 //     if (!file.type.startsWith("image/")) {
@@ -140,7 +172,6 @@
 //     e.preventDefault();
 
 //     if (!validateForm()) {
-//       const missingFields = Object.keys(fieldErrors).join(", ");
 //       setToast({
 //         show: true,
 //         message: `Please fill required fields`,
@@ -152,47 +183,16 @@
 //     // Clear any pending navigation
 //     if (timeoutRef.current) clearTimeout(timeoutRef.current);
 
-//     setSaving(true);
 //     setError("");
 
-//     try {
-//       const payload = new FormData();
-//       payload.append("name", formData.name.trim());
-//       payload.append("text", formData.text.trim());
-//       if (formData.image) payload.append("image", formData.image);
-//       payload.append(
-//         "slug",
-//         formData.slug.trim() || generateSlug(formData.name)
-//       );
+//     const payload = new FormData();
+//     payload.append("name", formData.name.trim());
+//     payload.append("text", formData.text.trim());
+//     if (formData.image) payload.append("image", formData.image);
+//     payload.append("slug", formData.slug.trim() || generateSlug(formData.name));
 
-//       const response = await fetch(
-//         "https://codingcloudapi.codingcloud.co.in/category/",
-//         {
-//           method: "POST",
-//           body: payload,
-//         }
-//       );
-
-//       if (!response.ok) {
-//         const data = await response.json();
-//         throw new Error(
-//           data.message || data.detail || "Failed to create category"
-//         );
-//       }
-
-//       setToast({
-//         show: true,
-//         message: "Category created successfully!",
-//         type: "success",
-//       });
-
-//       timeoutRef.current = setTimeout(() => {
-//         navigate("/category");
-//       }, 1400);
-//     } catch (err) {
-//       setError(err.message || "Failed to create category");
-//       setSaving(false);
-//     }
+//     // Use mutation instead of manual fetch
+//     mutation.mutate(payload);
 //   };
 
 //   return (
@@ -206,7 +206,7 @@
 //       )}
 
 //       {/* Header */}
-//       <header className=" top-0 z-50 bg-white border-b border-gray-200 shadow-sm sticky" >
+//       <header className=" top-0 z-50 bg-white border-b border-gray-200 shadow-sm sticky">
 //         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
 //           <div className="flex items-center gap-3">
 //             <button
@@ -221,16 +221,15 @@
 //               <h1 className="text-base sm:text-lg font-bold text-gray-900 leading-tight">
 //                 Add Category
 //               </h1>
-
 //             </div>
 //           </div>
 
 //           <button
 //             onClick={handleSubmit}
-//             disabled={saving}
+//             disabled={mutation.isPending}
 //             className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-base font-semibold rounded-xl shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
 //           >
-//             {saving ? (
+//             {mutation.isPending ? (
 //               <>
 //                 <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
 //                 Saving…
@@ -272,7 +271,6 @@
 //                 >
 //                   Category Name <span className="text-red-500">*</span>
 //                 </label>
-
 //               </div>
 //             </div>
 //             <input
@@ -305,7 +303,6 @@
 //                 >
 //                   Slug
 //                 </label>
-
 //               </div>
 //             </div>
 //             <div className="relative">
@@ -322,7 +319,6 @@
 //                 className="w-full pl-8 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
 //               />
 //             </div>
-
 //           </div>
 
 //           {/* Description Card */}
@@ -338,7 +334,6 @@
 //                 >
 //                   Description <span className="text-red-500">*</span>
 //                 </label>
-
 //               </div>
 //             </div>
 //             <textarea
@@ -370,7 +365,6 @@
 //                 <p className="text-base font-semibold text-gray-800">
 //                   Cover Image
 //                 </p>
-
 //               </div>
 //             </div>
 
@@ -408,7 +402,6 @@
 //                   <span className="text-indigo-500 font-medium">
 //                     Browse files
 //                   </span>{" "}
-
 //                 </p>
 //                 <input
 //                   type="file"
@@ -460,10 +453,10 @@
 //           <div className="sm:hidden">
 //             <button
 //               type="submit"
-//               disabled={saving}
+//               disabled={mutation.isPending}
 //               className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-base font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
 //             >
-//               {saving ? (
+//               {mutation.isPending ? (
 //                 <>
 //                   <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
 //                   Creating…
@@ -481,6 +474,7 @@
 //     </div>
 //   );
 // }
+
 
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -583,24 +577,25 @@ export default function AddCategory() {
     setError("");
   };
 
-const handleNameChange = (e) => {
-  let value = e.target.value;
+  const handleNameChange = (e) => {
+    let value = e.target.value;
 
-  setFormData((prev) => ({
-    ...prev,
-    name: value,
-    slug:
-      prev.slug === generateSlug(prev.name) || !prev.slug
-        ? generateSlug(value)
-        : prev.slug,
-  }));
+    setFormData((prev) => ({
+      ...prev,
+      name: value,
+      slug:
+        prev.slug === generateSlug(prev.name) || !prev.slug
+          ? generateSlug(value)
+          : prev.slug,
+    }));
 
-  if (fieldErrors.name) {
-    setFieldErrors((prev) => ({ ...prev, name: undefined }));
-  }
+    if (fieldErrors.name) {
+      setFieldErrors((prev) => ({ ...prev, name: undefined }));
+    }
 
-  setError("");
-};
+    setError("");
+  };
+
   const processFile = (file) => {
     if (!file) return;
     if (!file.type.startsWith("image/")) {
@@ -637,11 +632,9 @@ const handleNameChange = (e) => {
   const validateForm = () => {
     const errors = {};
 
+    // ✅ Allow any characters, just ensure not empty
     if (!formData.name.trim()) {
       errors.name = "Category name is required";
-    } else if (!/^[A-Za-z\s,-]+$/.test(formData.name.trim())) {
-      errors.name =
-        "Category name can contain letters, spaces, comma (,) and hyphen (-)";
     }
 
     if (!formData.text.trim()) {
