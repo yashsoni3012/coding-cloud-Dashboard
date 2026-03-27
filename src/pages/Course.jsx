@@ -52,7 +52,6 @@ export default function Courses() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  // --- TanStack Query for courses ---
   const {
     data: courses = [],
     isLoading,
@@ -575,7 +574,6 @@ export default function Courses() {
               {courses.length}
             </span>
           </div>
-         
         </div>
 
         {/* Toolbar */}
