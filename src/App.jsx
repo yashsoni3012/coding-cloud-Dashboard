@@ -29,6 +29,9 @@ import AddCategory from "./pages/AddCategory";
 import EditCategory from "./pages/EditCategory";
 import Profile from "./pages/Profile";
 import Register from "./pages/Register";
+import SEO from "./pages/SEO";
+import Add_SEO from "./pages/Add_SEO";
+import Edit_SEO from "./pages/Edit_SEO";
 
 
 // import Users from './pages/Users'
@@ -93,6 +96,11 @@ export default function App() {
           <Route path="/edit-category/:id" element={<EditCategory />} />
 
           <Route path="/profile" element={<Profile />} />
+
+
+          <Route path="/SEO" element={<SEO />} />
+          <Route path="/add-SEO" element={<Add_SEO />} />
+          <Route path="/edit-SEO/:id" element={<Edit_SEO />} />
 
           {/* <Route path="users" element={<Users />} />
           <Route path="analytics" element={<Analytics />} />

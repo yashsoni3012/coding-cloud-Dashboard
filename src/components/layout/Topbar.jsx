@@ -13,6 +13,7 @@ const pageTitles = {
   "/orders": "Orders",
   "/settings": "Settings",
   "/category": "Categories",
+  "/seo": "SEO",
 };
 
 export default function Topbar() {
