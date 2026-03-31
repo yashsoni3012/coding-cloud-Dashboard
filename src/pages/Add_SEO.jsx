@@ -273,7 +273,7 @@ export default function AddSeo() {
                     name="meta_title"
                     value={formData.meta_title}
                     onChange={handleInputChange}
-                    placeholder="Enter meta title (50-60 characters)"
+                    placeholder="Enter meta title"
                     className={`w-full pl-11 pr-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
                       fieldErrors.meta_title
                         ? "border-red-500"
@@ -305,7 +305,7 @@ export default function AddSeo() {
                   value={formData.meta_description}
                   onChange={handleInputChange}
                   rows={3}
-                  placeholder="A brief description for search result snippets (150-160 characters)"
+                  placeholder="A brief description for search result snippets"
                   className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-none ${
                     fieldErrors.meta_description
                       ? "border-red-500"
