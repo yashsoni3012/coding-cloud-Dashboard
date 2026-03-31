@@ -2215,7 +2215,7 @@ export default function Modules() {
           VIEW MODAL
       ══════════════════════════════════════ */}
       {showViewModal && selectedModule && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div className="fixed inset-0 z-10 flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div
             className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm"
             onClick={() => setShowViewModal(false)}
@@ -2303,7 +2303,7 @@ export default function Modules() {
           DELETE MODAL
       ══════════════════════════════════════ */}
       {showDeleteModal && moduleToDelete && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div className="fixed inset-0 z-10 flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div
             className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm"
             onClick={() => !deleteLoading && setShowDeleteModal(false)}

@@ -1492,15 +1492,29 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Search, Mail, Phone, Tag, X, Copy, MessageSquare,
-  User, SortAsc, SortDesc, Eye, ChevronLeft, ChevronRight,
-  Download, Calendar,
+  Search,
+  Mail,
+  Phone,
+  Tag,
+  X,
+  Copy,
+  MessageSquare,
+  User,
+  SortAsc,
+  SortDesc,
+  Eye,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Calendar,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 
 /* ─── API ────────────────────────────────────── */
 const fetchContacts = async () => {
-  const response = await fetch("https://codingcloudapi.codingcloud.co.in/contacts/");
+  const response = await fetch(
+    "https://codingcloudapi.codingcloud.co.in/contacts/",
+  );
   if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
   const data = await response.json();
   if (data.status === "success" && data.data) return data.data;
@@ -1508,9 +1522,16 @@ const fetchContacts = async () => {
 };
 
 /* ─── Helpers ────────────────────────────────── */
-const getInitials  = (name) => (name ? name.slice(0, 2).toUpperCase() : "??");
-const avatarColors = ["#7c3aed","#2563eb","#0891b2","#059669","#d97706","#dc2626"];
-const getColor     = (id) => avatarColors[(id || 0) % avatarColors.length];
+const getInitials = (name) => (name ? name.slice(0, 2).toUpperCase() : "??");
+const avatarColors = [
+  "#7c3aed",
+  "#2563eb",
+  "#0891b2",
+  "#059669",
+  "#d97706",
+  "#dc2626",
+];
+const getColor = (id) => avatarColors[(id || 0) % avatarColors.length];
 
 const getLocalDate = (isoString) => {
   if (!isoString) return null;
@@ -1519,28 +1540,54 @@ const getLocalDate = (isoString) => {
 
 /* ─── Component ──────────────────────────────── */
 export default function Contact() {
-  const { data: contacts = [], isLoading, error, refetch } = useQuery({
+  const {
+    data: contacts = [],
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ["contacts"],
     queryFn: fetchContacts,
   });
 
-  const [searchTerm,   setSearchTerm]   = useState("");
-  const [startDate,    setStartDate]    = useState("");
-  const [endDate,      setEndDate]      = useState("");
-  const [sortConfig,   setSortConfig]   = useState({ key: "id", direction: "desc" });
+  const [searchTerm, setSearchTerm] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [sortConfig, setSortConfig] = useState({
+    key: "id",
+    direction: "desc",
+  });
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [currentPage,  setCurrentPage]  = useState(1);
-  const [showViewModal,    setShowViewModal]    = useState(false);
-  const [selectedContact,  setSelectedContact]  = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [selectedContact, setSelectedContact] = useState(null);
   const [copied, setCopied] = useState(null);
 
   /* reset page on dep change */
-  const prevDeps = useRef({ searchTerm, sortConfig, itemsPerPage, startDate, endDate });
+  const prevDeps = useRef({
+    searchTerm,
+    sortConfig,
+    itemsPerPage,
+    startDate,
+    endDate,
+  });
   useEffect(() => {
     const p = prevDeps.current;
-    if (p.searchTerm !== searchTerm || p.sortConfig !== sortConfig || p.itemsPerPage !== itemsPerPage || p.startDate !== startDate || p.endDate !== endDate) {
+    if (
+      p.searchTerm !== searchTerm ||
+      p.sortConfig !== sortConfig ||
+      p.itemsPerPage !== itemsPerPage ||
+      p.startDate !== startDate ||
+      p.endDate !== endDate
+    ) {
       setCurrentPage(1);
-      prevDeps.current = { searchTerm, sortConfig, itemsPerPage, startDate, endDate };
+      prevDeps.current = {
+        searchTerm,
+        sortConfig,
+        itemsPerPage,
+        startDate,
+        endDate,
+      };
     }
   }, [searchTerm, sortConfig, itemsPerPage, startDate, endDate]);
 
@@ -1559,48 +1606,78 @@ export default function Contact() {
     let result = contacts.filter(isWithinDateRange);
     if (searchTerm.trim()) {
       const q = searchTerm.toLowerCase();
-      result = result.filter((c) =>
-        c.full_name?.toLowerCase().includes(q) ||
-        c.email?.toLowerCase().includes(q) ||
-        c.subject?.toLowerCase().includes(q) ||
-        c.message?.toLowerCase().includes(q) ||
-        c.mobile_no?.includes(searchTerm) ||
-        c.id.toString().includes(searchTerm)
+      result = result.filter(
+        (c) =>
+          c.full_name?.toLowerCase().includes(q) ||
+          c.email?.toLowerCase().includes(q) ||
+          c.subject?.toLowerCase().includes(q) ||
+          c.message?.toLowerCase().includes(q) ||
+          c.mobile_no?.includes(searchTerm) ||
+          c.id.toString().includes(searchTerm),
       );
     }
     result.sort((a, b) => {
       let aVal, bVal;
-      if      (sortConfig.key === "id")        { aVal = parseInt(a.id) || 0; bVal = parseInt(b.id) || 0; }
-      else if (sortConfig.key === "full_name") { aVal = a.full_name?.toLowerCase() || ""; bVal = b.full_name?.toLowerCase() || ""; }
-      else if (sortConfig.key === "email")     { aVal = a.email?.toLowerCase() || ""; bVal = b.email?.toLowerCase() || ""; }
-      else { aVal = 0; bVal = 0; }
+      if (sortConfig.key === "id") {
+        aVal = parseInt(a.id) || 0;
+        bVal = parseInt(b.id) || 0;
+      } else if (sortConfig.key === "full_name") {
+        aVal = a.full_name?.toLowerCase() || "";
+        bVal = b.full_name?.toLowerCase() || "";
+      } else if (sortConfig.key === "email") {
+        aVal = a.email?.toLowerCase() || "";
+        bVal = b.email?.toLowerCase() || "";
+      } else {
+        aVal = 0;
+        bVal = 0;
+      }
       if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
-      if (aVal > bVal) return sortConfig.direction === "asc" ?  1 : -1;
+      if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
       return 0;
     });
     return result;
   })();
 
-  const totalPages       = Math.max(1, Math.ceil(filteredContacts.length / itemsPerPage));
-  const safePage         = Math.min(currentPage, totalPages);
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredContacts.length / itemsPerPage),
+  );
+  const safePage = Math.min(currentPage, totalPages);
   const indexOfFirstItem = (safePage - 1) * itemsPerPage;
-  const paginatedContacts = filteredContacts.slice(indexOfFirstItem, indexOfFirstItem + itemsPerPage);
+  const paginatedContacts = filteredContacts.slice(
+    indexOfFirstItem,
+    indexOfFirstItem + itemsPerPage,
+  );
 
   const handleSort = (key) =>
-    setSortConfig((c) => ({ key, direction: c.key === key && c.direction === "asc" ? "desc" : "asc" }));
+    setSortConfig((c) => ({
+      key,
+      direction: c.key === key && c.direction === "asc" ? "desc" : "asc",
+    }));
 
   const SortIcon = ({ col }) => {
-    if (sortConfig.key !== col) return <SortAsc size={13} className="text-slate-300" />;
-    return sortConfig.direction === "asc"
-      ? <SortAsc  size={13} className="text-violet-600" />
-      : <SortDesc size={13} className="text-violet-600" />;
+    if (sortConfig.key !== col)
+      return <SortAsc size={13} className="text-slate-300" />;
+    return sortConfig.direction === "asc" ? (
+      <SortAsc size={13} className="text-violet-600" />
+    ) : (
+      <SortDesc size={13} className="text-violet-600" />
+    );
   };
 
   const getPageNumbers = () => {
-    if (totalPages <= 5) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    if (totalPages <= 5)
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
     if (safePage <= 3) return [1, 2, 3, 4, 5];
-    if (safePage >= totalPages - 2) return [totalPages-4, totalPages-3, totalPages-2, totalPages-1, totalPages];
-    return [safePage-2, safePage-1, safePage, safePage+1, safePage+2];
+    if (safePage >= totalPages - 2)
+      return [
+        totalPages - 4,
+        totalPages - 3,
+        totalPages - 2,
+        totalPages - 1,
+        totalPages,
+      ];
+    return [safePage - 2, safePage - 1, safePage, safePage + 1, safePage + 2];
   };
 
   const handleCopy = (text, id) => {
@@ -1611,20 +1688,33 @@ export default function Contact() {
 
   const exportToExcel = () => {
     if (!filteredContacts.length) return;
-    const sorted = [...filteredContacts].sort((a, b) => (parseInt(a.id) || 0) - (parseInt(b.id) || 0));
+    const sorted = [...filteredContacts].sort(
+      (a, b) => (parseInt(a.id) || 0) - (parseInt(b.id) || 0),
+    );
     const excelData = sorted.map((c, i) => ({
-      "No.": i + 1, ID: c.id, "Full Name": c.full_name || "",
-      Email: c.email || "", "Mobile No": c.mobile_no || "",
-      Subject: c.subject || "", Message: c.message || "",
+      "No.": i + 1,
+      ID: c.id,
+      "Full Name": c.full_name || "",
+      Email: c.email || "",
+      "Mobile No": c.mobile_no || "",
+      Subject: c.subject || "",
+      Message: c.message || "",
       "Created At": c.created_at ? new Date(c.created_at).toLocaleString() : "",
     }));
     const ws = XLSX.utils.json_to_sheet(excelData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Contact Messages");
-    XLSX.writeFile(wb, `contacts_${startDate || "all"}_${endDate || "all"}_${new Date().toISOString().slice(0, 19)}.xlsx`);
+    XLSX.writeFile(
+      wb,
+      `contacts_${startDate || "all"}_${endDate || "all"}_${new Date().toISOString().slice(0, 19)}.xlsx`,
+    );
   };
 
-  const clearAllFilters = () => { setSearchTerm(""); setStartDate(""); setEndDate(""); };
+  const clearAllFilters = () => {
+    setSearchTerm("");
+    setStartDate("");
+    setEndDate("");
+  };
   const hasFilters = searchTerm || startDate || endDate;
 
   /* ── Loading ── */
@@ -1633,7 +1723,9 @@ export default function Contact() {
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-11 h-11 border-4 border-violet-100 border-t-violet-600 rounded-full mx-auto animate-spin" />
-          <p className="mt-4 text-slate-400 text-sm font-medium">Loading contacts…</p>
+          <p className="mt-4 text-slate-400 text-sm font-medium">
+            Loading contacts…
+          </p>
         </div>
       </div>
     );
@@ -1647,9 +1739,14 @@ export default function Contact() {
           <div className="w-14 h-14 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
             <X size={22} className="text-red-500" />
           </div>
-          <h3 className="text-base font-bold text-slate-900 mb-2">Something went wrong</h3>
+          <h3 className="text-base font-bold text-slate-900 mb-2">
+            Something went wrong
+          </h3>
           <p className="text-sm text-slate-400 mb-5">{error.message}</p>
-          <button onClick={() => refetch()} className="px-6 py-2.5 bg-violet-600 text-white rounded-xl text-sm font-semibold hover:bg-violet-700 transition">
+          <button
+            onClick={() => refetch()}
+            className="px-6 py-2.5 bg-violet-600 text-white rounded-xl text-sm font-semibold hover:bg-violet-700 transition"
+          >
             Try Again
           </button>
         </div>
@@ -1666,7 +1763,6 @@ export default function Contact() {
       `}</style>
 
       <div className="w-fullmax-w-screen-xl mx-auto">
-
         {/* ── Header ── */}
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
@@ -1674,10 +1770,13 @@ export default function Contact() {
               <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-violet-600 to-violet-400 rounded-xl flex items-center justify-center shadow-md shadow-violet-200 flex-shrink-0">
                 <MessageSquare size={16} className="text-white" />
               </div>
-              <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-slate-900">Contact Messages</h1>
-              <span className="px-2.5 py-0.5 bg-violet-100 text-violet-700 text-xs font-bold rounded-full">{contacts.length}</span>
+              <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-slate-900">
+                Contact Messages
+              </h1>
+              <span className="px-2.5 py-0.5 bg-violet-100 text-violet-700 text-xs font-bold rounded-full">
+                {contacts.length}
+              </span>
             </div>
-          
           </div>
 
           {/* Export button */}
@@ -1697,33 +1796,65 @@ export default function Contact() {
 
         {/* ── Toolbar ── */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-3 py-3 sm:px-4 sm:py-3.5">
-
           {/* Row 1 mobile: search */}
           <div className="relative w-full mb-2.5 sm:hidden">
-            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
+            <Search
+              size={15}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none"
+            />
             <input
-              type="text" placeholder="Search contacts…" value={searchTerm}
+              type="text"
+              placeholder="Search contacts…"
+              value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-9 pr-8 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-800 bg-slate-50 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100 focus:bg-white transition placeholder:text-slate-300"
             />
-            {searchTerm && <button onClick={() => setSearchTerm("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 p-0.5"><X size={13} /></button>}
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 p-0.5"
+              >
+                <X size={13} />
+              </button>
+            )}
           </div>
 
           {/* Row 2 mobile: date range */}
           <div className="flex items-center gap-2 mb-2.5 sm:hidden">
             <div className="relative flex-1">
-              <Calendar size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)}
-                className="w-full pl-8 pr-2 py-2 border border-slate-200 rounded-xl text-xs text-slate-700 bg-slate-50 outline-none focus:border-violet-500 transition" />
+              <Calendar
+                size={13}
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+              />
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-full pl-8 pr-2 py-2 border border-slate-200 rounded-xl text-xs text-slate-700 bg-slate-50 outline-none focus:border-violet-500 transition"
+              />
             </div>
             <span className="text-slate-300 text-xs flex-shrink-0">—</span>
             <div className="relative flex-1">
-              <Calendar size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)}
-                className="w-full pl-8 pr-2 py-2 border border-slate-200 rounded-xl text-xs text-slate-700 bg-slate-50 outline-none focus:border-violet-500 transition" />
+              <Calendar
+                size={13}
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+              />
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-full pl-8 pr-2 py-2 border border-slate-200 rounded-xl text-xs text-slate-700 bg-slate-50 outline-none focus:border-violet-500 transition"
+              />
             </div>
             {(startDate || endDate) && (
-              <button onClick={() => { setStartDate(""); setEndDate(""); }} className="flex-shrink-0 p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition" title="Clear dates">
+              <button
+                onClick={() => {
+                  setStartDate("");
+                  setEndDate("");
+                }}
+                className="flex-shrink-0 p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition"
+                title="Clear dates"
+              >
                 <X size={14} />
               </button>
             )}
@@ -1732,9 +1863,16 @@ export default function Contact() {
           {/* Row 3 mobile: per page */}
           <div className="flex items-center gap-2 sm:hidden">
             <span className="text-xs text-slate-400 font-medium">Show</span>
-            <select value={itemsPerPage} onChange={(e) => setItemsPerPage(Number(e.target.value))}
-              className="px-2.5 py-2 border border-slate-200 rounded-xl text-sm text-slate-600 bg-slate-50 outline-none cursor-pointer font-medium focus:border-violet-500 transition">
-              {[5,10,25,50].map(n => <option key={n} value={n}>{n}</option>)}
+            <select
+              value={itemsPerPage}
+              onChange={(e) => setItemsPerPage(Number(e.target.value))}
+              className="px-2.5 py-2 border border-slate-200 rounded-xl text-sm text-slate-600 bg-slate-50 outline-none cursor-pointer font-medium focus:border-violet-500 transition"
+            >
+              {[5, 10, 25, 50].map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
             </select>
             <span className="text-xs text-slate-400 font-medium">per page</span>
           </div>
@@ -1743,30 +1881,62 @@ export default function Contact() {
           <div className="hidden sm:flex items-center gap-2.5 flex-wrap">
             {/* Search */}
             <div className="relative flex-1 min-w-[180px]">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
-              <input type="text" placeholder="Search by name, email, subject, message or ID…" value={searchTerm}
+              <Search
+                size={15}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none"
+              />
+              <input
+                type="text"
+                placeholder="Search by name, email, subject, message or ID…"
+                value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-9 pr-8 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-800 bg-slate-50 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100 focus:bg-white transition placeholder:text-slate-300"
               />
-              {searchTerm && <button onClick={() => setSearchTerm("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 p-0.5"><X size={13} /></button>}
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 p-0.5"
+                >
+                  <X size={13} />
+                </button>
+              )}
             </div>
 
             {/* Date range */}
             <div className="flex items-center gap-2 flex-shrink-0">
               <div className="relative">
-                <Calendar size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)}
-                  className="pl-8 pr-3 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-700 bg-slate-50 outline-none focus:border-violet-500 transition w-[140px]" />
+                <Calendar
+                  size={13}
+                  className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+                />
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="pl-8 pr-3 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-700 bg-slate-50 outline-none focus:border-violet-500 transition w-[140px]"
+                />
               </div>
               <span className="text-slate-300">—</span>
               <div className="relative">
-                <Calendar size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)}
-                  className="pl-8 pr-3 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-700 bg-slate-50 outline-none focus:border-violet-500 transition w-[140px]" />
+                <Calendar
+                  size={13}
+                  className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+                />
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="pl-8 pr-3 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-700 bg-slate-50 outline-none focus:border-violet-500 transition w-[140px]"
+                />
               </div>
               {(startDate || endDate) && (
-                <button onClick={() => { setStartDate(""); setEndDate(""); }}
-                  className="flex items-center gap-1.5 px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-medium transition flex-shrink-0">
+                <button
+                  onClick={() => {
+                    setStartDate("");
+                    setEndDate("");
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-medium transition flex-shrink-0"
+                >
                   <X size={12} /> Clear
                 </button>
               )}
@@ -1774,20 +1944,33 @@ export default function Contact() {
 
             {/* Per page */}
             <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
-              <span className="text-xs text-slate-400 font-medium whitespace-nowrap">Show</span>
-              <select value={itemsPerPage} onChange={(e) => setItemsPerPage(Number(e.target.value))}
-                className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-600 bg-slate-50 outline-none cursor-pointer font-medium focus:border-violet-500 transition">
-                {[5,10,25,50].map(n => <option key={n} value={n}>{n}</option>)}
+              <span className="text-xs text-slate-400 font-medium whitespace-nowrap">
+                Show
+              </span>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-600 bg-slate-50 outline-none cursor-pointer font-medium focus:border-violet-500 transition"
+              >
+                {[5, 10, 25, 50].map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
               </select>
-              <span className="text-xs text-slate-400 font-medium whitespace-nowrap">per page</span>
+              <span className="text-xs text-slate-400 font-medium whitespace-nowrap">
+                per page
+              </span>
             </div>
           </div>
 
           {/* Clear all row */}
           {hasFilters && (
             <div className="mt-2.5 flex justify-end">
-              <button onClick={clearAllFilters}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 border border-red-200 text-red-600 rounded-lg text-xs font-medium hover:bg-red-100 transition">
+              <button
+                onClick={clearAllFilters}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 border border-red-200 text-red-600 rounded-lg text-xs font-medium hover:bg-red-100 transition"
+              >
                 <X size={11} /> Clear all filters
               </button>
             </div>
@@ -1802,20 +1985,25 @@ export default function Contact() {
             <div className="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <User size={26} className="text-slate-300" />
             </div>
-            <h3 className="text-base font-bold text-slate-800 mb-1.5">No contacts found</h3>
+            <h3 className="text-base font-bold text-slate-800 mb-1.5">
+              No contacts found
+            </h3>
             <p className="text-sm text-slate-400 mb-5">
-              {hasFilters ? "Try adjusting your filters." : "No contact messages yet."}
+              {hasFilters
+                ? "Try adjusting your filters."
+                : "No contact messages yet."}
             </p>
             {hasFilters && (
-              <button onClick={clearAllFilters}
-                className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-violet-600 text-white rounded-xl text-sm font-semibold hover:bg-violet-700 transition">
+              <button
+                onClick={clearAllFilters}
+                className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-violet-600 text-white rounded-xl text-sm font-semibold hover:bg-violet-700 transition"
+              >
                 Clear all filters
               </button>
             )}
           </div>
         ) : (
           <div className="con-animate">
-
             {/* ══════════════════════════════
                 MOBILE CARDS  (< sm)
             ══════════════════════════════ */}
@@ -1823,37 +2011,53 @@ export default function Contact() {
               {paginatedContacts.map((contact, index) => {
                 const color = getColor(contact.id);
                 return (
-                  <div key={contact.id}
+                  <div
+                    key={contact.id}
                     className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm active:scale-[0.99] transition-transform"
-                    onClick={() => { setSelectedContact(contact); setShowViewModal(true); }}
+                    onClick={() => {
+                      setSelectedContact(contact);
+                      setShowViewModal(true);
+                    }}
                   >
                     <div className="flex items-start gap-3 px-4 pt-4 pb-3">
                       {/* Avatar */}
-                      <div className="w-11 h-11 rounded-xl flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
-                        style={{ background: color }}>
+                      <div
+                        className="w-11 h-11 rounded-xl flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
+                        style={{ background: color }}
+                      >
                         {getInitials(contact.full_name)}
                       </div>
                       {/* Info */}
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-slate-800 truncate">{contact.full_name || "No Name"}</p>
-                        <a href={`mailto:${contact.email}`} onClick={(e) => e.stopPropagation()}
-                          className="flex items-center gap-1 mt-0.5 text-xs text-violet-600 font-medium truncate no-underline">
-                          <Mail size={11} className="flex-shrink-0" />{contact.email || "—"}
+                        <p className="text-sm font-semibold text-slate-800 truncate">
+                          {contact.full_name || "No Name"}
+                        </p>
+                        <a
+                          href={`mailto:${contact.email}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="flex items-center gap-1 mt-0.5 text-xs text-violet-600 font-medium truncate no-underline"
+                        >
+                          <Mail size={11} className="flex-shrink-0" />
+                          {contact.email || "—"}
                         </a>
                       </div>
-                      <span className="text-xs text-slate-300 font-semibold flex-shrink-0">#{indexOfFirstItem + index + 1}</span>
+                      <span className="text-xs text-slate-300 font-semibold flex-shrink-0">
+                        #{indexOfFirstItem + index + 1}
+                      </span>
                     </div>
 
                     {/* Subject + phone */}
                     <div className="px-4 pb-3 flex flex-wrap items-center gap-2">
                       {contact.subject && (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-violet-50 text-violet-700 border border-violet-200 text-xs font-semibold rounded-full max-w-[160px] truncate">
-                          <Tag size={9} className="flex-shrink-0" /> <span className="truncate">{contact.subject}</span>
+                          <Tag size={9} className="flex-shrink-0" />{" "}
+                          <span className="truncate">{contact.subject}</span>
                         </span>
                       )}
                       {contact.mobile_no && (
                         <span className="inline-flex items-center gap-1 text-xs text-slate-500">
-                          <Phone size={11} className="text-slate-400" /> {contact.mobile_no}
+                          <Phone size={11} className="text-slate-400" />{" "}
+                          {contact.mobile_no}
                         </span>
                       )}
                     </div>
@@ -1861,14 +2065,20 @@ export default function Contact() {
                     {/* Message preview */}
                     {contact.message && (
                       <div className="px-4 pb-3">
-                        <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">{contact.message}</p>
+                        <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
+                          {contact.message}
+                        </p>
                       </div>
                     )}
 
                     {/* Action */}
                     <div className="border-t border-slate-100">
                       <button
-                        onClick={(e) => { e.stopPropagation(); setSelectedContact(contact); setShowViewModal(true); }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedContact(contact);
+                          setShowViewModal(true);
+                        }}
                         className="w-full py-2.5 flex items-center justify-center gap-1.5 text-xs font-semibold text-violet-600 hover:bg-violet-50 transition"
                       >
                         <Eye size={13} /> View Details
@@ -1888,31 +2098,48 @@ export default function Contact() {
                   <thead>
                     <tr className="border-b-2 border-slate-100 bg-slate-50/80">
                       <th className="px-4 py-3.5 text-left w-12">
-                        <button onClick={() => handleSort("id")} className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-slate-600 transition bg-transparent border-0 cursor-pointer p-0">
+                        <button
+                          onClick={() => handleSort("id")}
+                          className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-slate-600 transition bg-transparent border-0 cursor-pointer p-0"
+                        >
                           # <SortIcon col="id" />
                         </button>
                       </th>
                       <th className="px-4 py-3.5 text-left">
-                        <button onClick={() => handleSort("full_name")} className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-slate-600 transition bg-transparent border-0 cursor-pointer p-0">
+                        <button
+                          onClick={() => handleSort("full_name")}
+                          className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-slate-600 transition bg-transparent border-0 cursor-pointer p-0"
+                        >
                           Contact <SortIcon col="full_name" />
                         </button>
                       </th>
                       <th className="px-4 py-3.5 text-left hidden md:table-cell">
-                        <button onClick={() => handleSort("email")} className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-slate-600 transition bg-transparent border-0 cursor-pointer p-0">
+                        <button
+                          onClick={() => handleSort("email")}
+                          className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-slate-600 transition bg-transparent border-0 cursor-pointer p-0"
+                        >
                           Email <SortIcon col="email" />
                         </button>
                       </th>
                       <th className="px-4 py-3.5 text-left hidden lg:table-cell">
-                        <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Phone</span>
+                        <span className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                          Phone
+                        </span>
                       </th>
                       <th className="px-4 py-3.5 text-left hidden lg:table-cell">
-                        <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Subject</span>
+                        <span className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                          Subject
+                        </span>
                       </th>
                       <th className="px-4 py-3.5 text-left hidden xl:table-cell">
-                        <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Message Preview</span>
+                        <span className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                          Message Preview
+                        </span>
                       </th>
                       <th className="px-4 py-3.5 text-right">
-                        <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Actions</span>
+                        <span className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                          Actions
+                        </span>
                       </th>
                     </tr>
                   </thead>
@@ -1920,9 +2147,13 @@ export default function Contact() {
                     {paginatedContacts.map((contact, index) => {
                       const color = getColor(contact.id);
                       return (
-                        <tr key={contact.id}
+                        <tr
+                          key={contact.id}
                           className="border-b border-slate-100 hover:bg-slate-50/70 transition-colors cursor-pointer"
-                          onClick={() => { setSelectedContact(contact); setShowViewModal(true); }}
+                          onClick={() => {
+                            setSelectedContact(contact);
+                            setShowViewModal(true);
+                          }}
                         >
                           <td className="px-4 py-4 text-sm font-semibold text-slate-300">
                             {indexOfFirstItem + index + 1}
@@ -1931,8 +2162,10 @@ export default function Contact() {
                           {/* Contact — always visible, shows email/subject inline on sm */}
                           <td className="px-4 py-4">
                             <div className="flex items-center gap-3">
-                              <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                                style={{ background: color }}>
+                              <div
+                                className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                                style={{ background: color }}
+                              >
                                 {getInitials(contact.full_name)}
                               </div>
                               <div className="min-w-0">
@@ -1940,14 +2173,21 @@ export default function Contact() {
                                   {contact.full_name || "No Name"}
                                 </p>
                                 {/* email inline on sm only */}
-                                <a href={`mailto:${contact.email}`} onClick={(e) => e.stopPropagation()}
-                                  className="md:hidden flex items-center gap-1 mt-0.5 text-xs text-violet-600 font-medium truncate max-w-[140px] no-underline">
-                                  <Mail size={10} className="flex-shrink-0" />{contact.email || "—"}
+                                <a
+                                  href={`mailto:${contact.email}`}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="md:hidden flex items-center gap-1 mt-0.5 text-xs text-violet-600 font-medium truncate max-w-[140px] no-underline"
+                                >
+                                  <Mail size={10} className="flex-shrink-0" />
+                                  {contact.email || "—"}
                                 </a>
                                 {/* subject inline on sm/md only */}
                                 {contact.subject && (
                                   <span className="lg:hidden mt-0.5 inline-flex items-center gap-1 px-2 py-0.5 bg-violet-50 text-violet-600 border border-violet-100 text-xs font-medium rounded-full max-w-[140px] truncate">
-                                    <Tag size={9} className="flex-shrink-0" /><span className="truncate">{contact.subject}</span>
+                                    <Tag size={9} className="flex-shrink-0" />
+                                    <span className="truncate">
+                                      {contact.subject}
+                                    </span>
                                   </span>
                                 )}
                               </div>
@@ -1956,44 +2196,72 @@ export default function Contact() {
 
                           {/* Email — md+ */}
                           <td className="px-4 py-4 hidden md:table-cell">
-                            <a href={`mailto:${contact.email}`} onClick={(e) => e.stopPropagation()}
-                              className="inline-flex items-center gap-1.5 text-sm text-violet-600 font-medium hover:underline no-underline truncate max-w-[180px]">
+                            <a
+                              href={`mailto:${contact.email}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="inline-flex items-center gap-1.5 text-sm text-violet-600 font-medium hover:underline no-underline truncate max-w-[180px]"
+                            >
                               <Mail size={13} className="flex-shrink-0" />
-                              <span className="truncate">{contact.email || "—"}</span>
+                              <span className="truncate">
+                                {contact.email || "—"}
+                              </span>
                             </a>
                           </td>
 
                           {/* Phone — lg+ */}
                           <td className="px-4 py-4 hidden lg:table-cell">
-                            {contact.mobile_no
-                              ? <a href={`tel:${contact.mobile_no}`} onClick={(e) => e.stopPropagation()}
-                                  className="inline-flex items-center gap-1.5 text-sm text-slate-600 font-medium no-underline">
-                                  <Phone size={13} className="text-slate-400 flex-shrink-0" />{contact.mobile_no}
-                                </a>
-                              : <span className="text-slate-300 text-sm">—</span>}
+                            {contact.mobile_no ? (
+                              <a
+                                href={`tel:${contact.mobile_no}`}
+                                onClick={(e) => e.stopPropagation()}
+                                className="inline-flex items-center gap-1.5 text-sm text-slate-600 font-medium no-underline"
+                              >
+                                <Phone
+                                  size={13}
+                                  className="text-slate-400 flex-shrink-0"
+                                />
+                                {contact.mobile_no}
+                              </a>
+                            ) : (
+                              <span className="text-slate-300 text-sm">—</span>
+                            )}
                           </td>
 
                           {/* Subject — lg+ */}
                           <td className="px-4 py-4 hidden lg:table-cell">
-                            {contact.subject
-                              ? <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-violet-50 text-violet-700 border border-violet-200 text-xs font-semibold rounded-full max-w-[140px] truncate">
-                                  <Tag size={10} className="flex-shrink-0" /><span className="truncate">{contact.subject}</span>
+                            {contact.subject ? (
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-violet-50 text-violet-700 border border-violet-200 text-xs font-semibold rounded-full max-w-[140px] truncate">
+                                <Tag size={10} className="flex-shrink-0" />
+                                <span className="truncate">
+                                  {contact.subject}
                                 </span>
-                              : <span className="text-slate-300 text-sm">—</span>}
+                              </span>
+                            ) : (
+                              <span className="text-slate-300 text-sm">—</span>
+                            )}
                           </td>
 
                           {/* Message preview — xl+ */}
                           <td className="px-4 py-4 hidden xl:table-cell">
                             <span className="text-sm text-slate-400 truncate max-w-[200px] block">
-                              {contact.message || <span className="italic">No message</span>}
+                              {contact.message || (
+                                <span className="italic">No message</span>
+                              )}
                             </span>
                           </td>
 
                           {/* Actions */}
-                          <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
+                          <td
+                            className="px-4 py-4"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <div className="flex justify-end">
                               <button
-                                onClick={(e) => { e.stopPropagation(); setSelectedContact(contact); setShowViewModal(true); }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedContact(contact);
+                                  setShowViewModal(true);
+                                }}
                                 className="p-2 rounded-lg text-slate-400 hover:bg-violet-50 hover:text-violet-600 transition"
                                 title="View Details"
                               >
@@ -2011,14 +2279,46 @@ export default function Contact() {
               {/* Pagination inside card */}
               <div className="px-4 py-3 bg-slate-50/80 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <span className="text-xs sm:text-sm text-slate-400 font-medium text-center sm:text-left">
-                  Showing <strong className="text-slate-600">{indexOfFirstItem + 1}–{Math.min(indexOfFirstItem + itemsPerPage, filteredContacts.length)}</strong> of <strong className="text-slate-600">{filteredContacts.length}</strong> contacts
+                  Showing{" "}
+                  <strong className="text-slate-600">
+                    {indexOfFirstItem + 1}–
+                    {Math.min(
+                      indexOfFirstItem + itemsPerPage,
+                      filteredContacts.length,
+                    )}
+                  </strong>{" "}
+                  of{" "}
+                  <strong className="text-slate-600">
+                    {filteredContacts.length}
+                  </strong>{" "}
+                  contacts
                 </span>
                 <div className="flex items-center justify-center gap-1.5 flex-wrap">
-                  <button onClick={() => setCurrentPage((p) => Math.max(p-1, 1))} disabled={safePage === 1} className="w-9 h-9 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition"><ChevronLeft size={15} /></button>
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                    disabled={safePage === 1}
+                    className="w-9 h-9 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                  >
+                    <ChevronLeft size={15} />
+                  </button>
                   {getPageNumbers().map((page) => (
-                    <button key={page} onClick={() => setCurrentPage(page)} className={`w-9 h-9 rounded-lg border text-sm font-semibold flex items-center justify-center transition ${safePage === page ? "bg-violet-600 border-violet-600 text-white shadow-md shadow-violet-200" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-100"}`}>{page}</button>
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`w-9 h-9 rounded-lg border text-sm font-semibold flex items-center justify-center transition ${safePage === page ? "bg-violet-600 border-violet-600 text-white shadow-md shadow-violet-200" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-100"}`}
+                    >
+                      {page}
+                    </button>
                   ))}
-                  <button onClick={() => setCurrentPage((p) => Math.min(p+1, totalPages))} disabled={safePage === totalPages} className="w-9 h-9 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition"><ChevronRight size={15} /></button>
+                  <button
+                    onClick={() =>
+                      setCurrentPage((p) => Math.min(p + 1, totalPages))
+                    }
+                    disabled={safePage === totalPages}
+                    className="w-9 h-9 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                  >
+                    <ChevronRight size={15} />
+                  </button>
                 </div>
               </div>
             </div>
@@ -2026,17 +2326,47 @@ export default function Contact() {
             {/* Mobile pagination */}
             <div className="sm:hidden mt-4 flex flex-col items-center gap-3">
               <span className="text-xs text-slate-400 font-medium">
-                Showing <strong className="text-slate-600">{indexOfFirstItem + 1}–{Math.min(indexOfFirstItem + itemsPerPage, filteredContacts.length)}</strong> of <strong className="text-slate-600">{filteredContacts.length}</strong>
+                Showing{" "}
+                <strong className="text-slate-600">
+                  {indexOfFirstItem + 1}–
+                  {Math.min(
+                    indexOfFirstItem + itemsPerPage,
+                    filteredContacts.length,
+                  )}
+                </strong>{" "}
+                of{" "}
+                <strong className="text-slate-600">
+                  {filteredContacts.length}
+                </strong>
               </span>
               <div className="flex items-center gap-1.5 flex-wrap justify-center">
-                <button onClick={() => setCurrentPage((p) => Math.max(p-1, 1))} disabled={safePage === 1} className="w-9 h-9 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 disabled:opacity-30 disabled:cursor-not-allowed"><ChevronLeft size={15} /></button>
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                  disabled={safePage === 1}
+                  className="w-9 h-9 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft size={15} />
+                </button>
                 {getPageNumbers().map((page) => (
-                  <button key={page} onClick={() => setCurrentPage(page)} className={`w-9 h-9 rounded-lg border text-sm font-semibold flex items-center justify-center transition ${safePage === page ? "bg-violet-600 border-violet-600 text-white shadow-md shadow-violet-200" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-100"}`}>{page}</button>
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`w-9 h-9 rounded-lg border text-sm font-semibold flex items-center justify-center transition ${safePage === page ? "bg-violet-600 border-violet-600 text-white shadow-md shadow-violet-200" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-100"}`}
+                  >
+                    {page}
+                  </button>
                 ))}
-                <button onClick={() => setCurrentPage((p) => Math.min(p+1, totalPages))} disabled={safePage === totalPages} className="w-9 h-9 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 disabled:opacity-30 disabled:cursor-not-allowed"><ChevronRight size={15} /></button>
+                <button
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(p + 1, totalPages))
+                  }
+                  disabled={safePage === totalPages}
+                  className="w-9 h-9 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <ChevronRight size={15} />
+                </button>
               </div>
             </div>
-
           </div>
         )}
       </div>
@@ -2045,15 +2375,20 @@ export default function Contact() {
           VIEW CONTACT MODAL
       ══════════════════════════════════════ */}
       {showViewModal && selectedContact && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => setShowViewModal(false)} />
+        <div className="fixed inset-0 z-10 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div
+            className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm"
+            onClick={() => setShowViewModal(false)}
+          />
           <div className="con-animate relative bg-white w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl shadow-2xl z-10 overflow-hidden flex flex-col max-h-[92vh]">
-
             {/* Drag handle */}
             <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mt-3 sm:hidden" />
 
             {/* Close */}
-            <button onClick={() => setShowViewModal(false)} className="absolute top-3.5 right-3.5 p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition z-10">
+            <button
+              onClick={() => setShowViewModal(false)}
+              className="absolute top-3.5 right-3.5 p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition z-10"
+            >
               <X size={15} />
             </button>
 
@@ -2061,13 +2396,19 @@ export default function Contact() {
             <div className="px-5 sm:px-6 py-5 sm:py-6 overflow-y-auto flex-1">
               {/* Avatar + name */}
               <div className="flex items-center gap-4 mb-5">
-                <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-white text-lg font-bold flex-shrink-0"
-                  style={{ background: getColor(selectedContact.id) }}>
+                <div
+                  className="w-12 h-12 rounded-2xl flex items-center justify-center text-white text-lg font-bold flex-shrink-0"
+                  style={{ background: getColor(selectedContact.id) }}
+                >
                   {getInitials(selectedContact.full_name)}
                 </div>
                 <div>
-                  <h2 className="text-lg sm:text-xl font-bold text-slate-900">{selectedContact.full_name || "No Name"}</h2>
-                  <p className="text-xs text-slate-400 mt-0.5">Contact #{selectedContact.id}</p>
+                  <h2 className="text-lg sm:text-xl font-bold text-slate-900">
+                    {selectedContact.full_name || "No Name"}
+                  </h2>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Contact #{selectedContact.id}
+                  </p>
                 </div>
               </div>
 
@@ -2077,8 +2418,10 @@ export default function Contact() {
                   <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1.5">
                     <Mail size={11} className="text-violet-600" /> Email
                   </p>
-                  <a href={`mailto:${selectedContact.email}`}
-                    className="text-sm font-semibold text-violet-600 hover:underline break-all no-underline">
+                  <a
+                    href={`mailto:${selectedContact.email}`}
+                    className="text-sm font-semibold text-violet-600 hover:underline break-all no-underline"
+                  >
                     {selectedContact.email || "—"}
                   </a>
                 </div>
@@ -2086,9 +2429,18 @@ export default function Contact() {
                   <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1.5">
                     <Phone size={11} className="text-emerald-600" /> Phone
                   </p>
-                  {selectedContact.mobile_no
-                    ? <a href={`tel:${selectedContact.mobile_no}`} className="text-sm font-semibold text-slate-800 no-underline">{selectedContact.mobile_no}</a>
-                    : <span className="text-sm text-slate-400 italic">No phone provided</span>}
+                  {selectedContact.mobile_no ? (
+                    <a
+                      href={`tel:${selectedContact.mobile_no}`}
+                      className="text-sm font-semibold text-slate-800 no-underline"
+                    >
+                      {selectedContact.mobile_no}
+                    </a>
+                  ) : (
+                    <span className="text-sm text-slate-400 italic">
+                      No phone provided
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -2098,14 +2450,17 @@ export default function Contact() {
                   <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1.5">
                     <Tag size={11} className="text-violet-600" /> Subject
                   </p>
-                  <p className="text-sm font-semibold text-slate-800">{selectedContact.subject}</p>
+                  <p className="text-sm font-semibold text-slate-800">
+                    {selectedContact.subject}
+                  </p>
                 </div>
               )}
 
               {/* Message */}
               <div className="bg-slate-50 border border-slate-100 rounded-xl p-4">
                 <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2.5 flex items-center gap-1.5">
-                  <MessageSquare size={11} className="text-violet-600" /> Message
+                  <MessageSquare size={11} className="text-violet-600" />{" "}
+                  Message
                 </p>
                 <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">
                   {selectedContact.message || "No message provided."}
@@ -2116,19 +2471,29 @@ export default function Contact() {
             {/* Footer */}
             <div className="px-5 sm:px-6 py-3.5 bg-slate-50 border-t border-slate-100 flex flex-col-reverse sm:flex-row items-stretch sm:items-center sm:justify-end gap-2 flex-shrink-0">
               <button
-                onClick={() => handleCopy(selectedContact.email, `modal-${selectedContact.id}`)}
+                onClick={() =>
+                  handleCopy(
+                    selectedContact.email,
+                    `modal-${selectedContact.id}`,
+                  )
+                }
                 className="flex items-center justify-center gap-1.5 px-4 py-2.5 border border-slate-200 bg-white text-slate-600 rounded-xl text-sm font-semibold hover:bg-slate-50 transition"
               >
                 <Copy size={13} />
-                {copied === `modal-${selectedContact.id}` ? "Copied!" : "Copy Email"}
+                {copied === `modal-${selectedContact.id}`
+                  ? "Copied!"
+                  : "Copy Email"}
               </button>
-              <button onClick={() => setShowViewModal(false)}
-                className="px-4 py-2.5 border border-slate-200 bg-white text-slate-600 rounded-xl text-sm font-semibold hover:bg-slate-50 transition">
+              <button
+                onClick={() => setShowViewModal(false)}
+                className="px-4 py-2.5 border border-slate-200 bg-white text-slate-600 rounded-xl text-sm font-semibold hover:bg-slate-50 transition"
+              >
                 Close
               </button>
               <a
                 href={`mailto:${selectedContact.email}?subject=Re: ${selectedContact.subject || "Your inquiry"}`}
-                target="_blank" rel="noopener noreferrer"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-violet-600 text-white rounded-xl text-sm font-semibold hover:bg-violet-700 transition no-underline"
               >
                 <Mail size={14} /> Reply via Email

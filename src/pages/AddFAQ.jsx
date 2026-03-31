@@ -563,7 +563,6 @@
 //   );
 // }
 
-
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query"; // added
@@ -583,11 +582,14 @@ import Toasts from "./Toasts";
 
 // API function for creating a new FAQ
 const createFaq = async (payload) => {
-  const response = await fetch("https://codingcloudapi.codingcloud.co.in/faqs/", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+  const response = await fetch(
+    "https://codingcloudapi.codingcloud.co.in/faqs/",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    },
+  );
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -602,7 +604,8 @@ const createFaq = async (payload) => {
         });
         throw new Error(JSON.stringify(backendErrors));
       }
-      errorMessage = errorData.message || errorData.detail || JSON.stringify(errorData);
+      errorMessage =
+        errorData.message || errorData.detail || JSON.stringify(errorData);
     } catch {
       errorMessage = errorText || `HTTP error ${response.status}`;
     }
@@ -766,7 +769,7 @@ export default function AddFAQ() {
       )}
 
       {/* ── Header ── */}
-      <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+      <header className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button

@@ -380,7 +380,7 @@
 //       )}
 
 //       {/* Header */}
-//       <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+//       <header className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
 //         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
 //           <div className="flex items-center gap-3">
 //             <button
@@ -785,7 +785,6 @@
 //   );
 // }
 
-
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query"; // added
@@ -808,7 +807,12 @@ import {
 const BASE_URL = "https://codingcloudapi.codingcloud.co.in";
 
 // API function to update a testimonial
-const updateTestimonial = async ({ id, formData, imageChanged, imageRemoved }) => {
+const updateTestimonial = async ({
+  id,
+  formData,
+  imageChanged,
+  imageRemoved,
+}) => {
   let response;
 
   // CASE 1: Image was changed AND we have a new file → use FormData
@@ -871,7 +875,9 @@ const updateTestimonial = async ({ id, formData, imageChanged, imageRemoved }) =
       });
       throw new Error(JSON.stringify(backendErrors));
     }
-    throw new Error(data.message || data.detail || `HTTP error ${response.status}`);
+    throw new Error(
+      data.message || data.detail || `HTTP error ${response.status}`,
+    );
   }
 
   return data;
@@ -1166,7 +1172,7 @@ export default function EditTestimonial() {
       )}
 
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+      <header className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
@@ -1378,21 +1384,21 @@ export default function EditTestimonial() {
                   formData.rating === 5
                     ? "bg-emerald-100 text-emerald-700"
                     : formData.rating === 4
-                    ? "bg-green-100 text-green-700"
-                    : formData.rating === 3
-                    ? "bg-yellow-100 text-yellow-700"
-                    : "bg-red-100 text-red-700"
+                      ? "bg-green-100 text-green-700"
+                      : formData.rating === 3
+                        ? "bg-yellow-100 text-yellow-700"
+                        : "bg-red-100 text-red-700"
                 }`}
               >
                 {formData.rating === 5
                   ? "Excellent"
                   : formData.rating === 4
-                  ? "Good"
-                  : formData.rating === 3
-                  ? "Average"
-                  : formData.rating === 2
-                  ? "Poor"
-                  : "Very Poor"}
+                    ? "Good"
+                    : formData.rating === 3
+                      ? "Average"
+                      : formData.rating === 2
+                        ? "Poor"
+                        : "Very Poor"}
               </span>
             </div>
             {fieldErrors.rating && (
@@ -1494,7 +1500,8 @@ export default function EditTestimonial() {
                     className="w-24 h-24 rounded-2xl object-cover border border-gray-200 shadow-sm"
                     onError={(e) => {
                       e.target.onerror = null;
-                      e.target.src = "https://via.placeholder.com/96?text=Error";
+                      e.target.src =
+                        "https://via.placeholder.com/96?text=Error";
                     }}
                   />
                   <button

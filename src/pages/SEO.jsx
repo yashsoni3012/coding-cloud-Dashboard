@@ -22,7 +22,8 @@ const BASE_URL = "https://codingcloud.pythonanywhere.com";
 // ✅ Fetch all SEO entries – handles both array and {data: [...]} responses
 const fetchSeoData = async () => {
   const response = await fetch(`${BASE_URL}/page-seo/`);
-  if (!response.ok) throw new Error(`HTTP ${response.status}: Failed to fetch SEO data`);
+  if (!response.ok)
+    throw new Error(`HTTP ${response.status}: Failed to fetch SEO data`);
   const json = await response.json();
   // API might return an array directly or an object with a 'data' property
   return Array.isArray(json) ? json : json.data || [];
@@ -107,7 +108,7 @@ export default function SEO() {
           item.page_name?.toLowerCase().includes(term) ||
           item.meta_title?.toLowerCase().includes(term) ||
           item.meta_keywords?.toLowerCase().includes(term) ||
-          item.id?.toString().includes(term)
+          item.id?.toString().includes(term),
       );
     }
     result.sort((a, b) => {
@@ -129,7 +130,7 @@ export default function SEO() {
   const indexOfFirstItem = (safePage - 1) * itemsPerPage;
   const paginatedSeo = filteredSeo.slice(
     indexOfFirstItem,
-    indexOfFirstItem + itemsPerPage
+    indexOfFirstItem + itemsPerPage,
   );
 
   // Reset page when filters change
@@ -423,7 +424,9 @@ export default function SEO() {
                   <div className="flex gap-1 flex-shrink-0">
                     <button
                       onClick={() =>
-                        navigate(`/edit-seo/${item.id}`, { state: { seo: item } })
+                        navigate(`/edit-seo/${item.id}`, {
+                          state: { seo: item },
+                        })
                       }
                       className="p-2.5 rounded-xl text-slate-400 hover:bg-violet-50 hover:text-violet-600 transition active:scale-95"
                       title="Edit"
@@ -551,7 +554,7 @@ export default function SEO() {
                     {indexOfFirstItem + 1}–
                     {Math.min(
                       indexOfFirstItem + itemsPerPage,
-                      filteredSeo.length
+                      filteredSeo.length,
                     )}
                   </strong>{" "}
                   of{" "}
@@ -603,13 +606,11 @@ export default function SEO() {
                   {indexOfFirstItem + 1}–
                   {Math.min(
                     indexOfFirstItem + itemsPerPage,
-                    filteredSeo.length
+                    filteredSeo.length,
                   )}
                 </strong>{" "}
                 of{" "}
-                <strong className="text-slate-600">
-                  {filteredSeo.length}
-                </strong>
+                <strong className="text-slate-600">{filteredSeo.length}</strong>
               </span>
               <div className="flex items-center gap-1.5 flex-wrap justify-center">
                 <button
@@ -649,7 +650,7 @@ export default function SEO() {
 
       {/* Delete Modal */}
       {showDeleteModal && seoToDelete && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div className="fixed inset-0 z-10 flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div
             className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm"
             onClick={() =>

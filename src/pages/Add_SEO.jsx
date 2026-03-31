@@ -28,7 +28,7 @@ const createPageSeo = async (seoData) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(seoData),
-    }
+    },
   );
 
   if (!response.ok) {
@@ -72,7 +72,7 @@ export default function AddSeo() {
   ];
 
   const [formData, setFormData] = useState({
-    page_name: "Home",
+    page_name: "",
     meta_title: "",
     meta_description: "",
     meta_keywords: "",
@@ -201,7 +201,7 @@ export default function AddSeo() {
       )}
 
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+      <header className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
@@ -241,7 +241,7 @@ export default function AddSeo() {
       </header>
 
       {/* Main */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 pb-28 sm:pb-12">
+      <main className="max-w-6xl mx-auto pb-28 sm:pb-12">
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* LEFT COLUMN – Main SEO fields */}
@@ -252,7 +252,6 @@ export default function AddSeo() {
                 label="SEO Information"
                 iconBg="bg-indigo-50"
                 iconColor="text-indigo-600"
-                description="Meta tags for search engines and social sharing"
               />
 
               {/* Meta Title */}
@@ -276,12 +275,16 @@ export default function AddSeo() {
                     onChange={handleInputChange}
                     placeholder="Enter meta title (50-60 characters)"
                     className={`w-full pl-11 pr-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
-                      fieldErrors.meta_title ? "border-red-500" : "border-gray-200"
+                      fieldErrors.meta_title
+                        ? "border-red-500"
+                        : "border-gray-200"
                     }`}
                   />
                 </div>
                 {fieldErrors.meta_title && (
-                  <p className="text-xs text-red-500 mt-1">{fieldErrors.meta_title}</p>
+                  <p className="text-xs text-red-500 mt-1">
+                    {fieldErrors.meta_title}
+                  </p>
                 )}
                 <p className="text-xs text-gray-400 text-right mt-1">
                   {formData.meta_title.length} / 60
@@ -304,11 +307,15 @@ export default function AddSeo() {
                   rows={3}
                   placeholder="A brief description for search result snippets (150-160 characters)"
                   className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-none ${
-                    fieldErrors.meta_description ? "border-red-500" : "border-gray-200"
+                    fieldErrors.meta_description
+                      ? "border-red-500"
+                      : "border-gray-200"
                   }`}
                 />
                 {fieldErrors.meta_description && (
-                  <p className="text-xs text-red-500 mt-1">{fieldErrors.meta_description}</p>
+                  <p className="text-xs text-red-500 mt-1">
+                    {fieldErrors.meta_description}
+                  </p>
                 )}
                 <p className="text-xs text-gray-400 text-right mt-1">
                   {formData.meta_description.length} / 160
@@ -334,15 +341,16 @@ export default function AddSeo() {
                   onChange={handleInputChange}
                   placeholder="keyword1, keyword2, keyword3"
                   className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
-                    fieldErrors.meta_keywords ? "border-red-500" : "border-gray-200"
+                    fieldErrors.meta_keywords
+                      ? "border-red-500"
+                      : "border-gray-200"
                   }`}
                 />
                 {fieldErrors.meta_keywords && (
-                  <p className="text-xs text-red-500 mt-1">{fieldErrors.meta_keywords}</p>
+                  <p className="text-xs text-red-500 mt-1">
+                    {fieldErrors.meta_keywords}
+                  </p>
                 )}
-                <p className="text-xs text-gray-400 mt-1">
-                  Comma-separated, relevant keywords
-                </p>
               </div>
             </div>
 
@@ -353,7 +361,6 @@ export default function AddSeo() {
                 label="Page"
                 iconBg="bg-amber-50"
                 iconColor="text-amber-600"
-                description="Select the page to optimize"
               />
 
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-5">
@@ -371,9 +378,14 @@ export default function AddSeo() {
                       value={formData.page_name}
                       onChange={handleInputChange}
                       className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none cursor-pointer ${
-                        fieldErrors.page_name ? "border-red-500" : "border-gray-200"
+                        fieldErrors.page_name
+                          ? "border-red-500"
+                          : "border-gray-200"
                       }`}
                     >
+                      <option value="" disabled>
+                        Select Page
+                      </option>
                       {PAGE_CHOICES.map((page) => (
                         <option key={page.value} value={page.value}>
                           {page.label}

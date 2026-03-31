@@ -633,7 +633,7 @@ const updateFaq = async ({ id, payload }) => {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
-    }
+    },
   );
 
   if (!response.ok) {
@@ -728,7 +728,7 @@ export default function EditFAQ() {
         // Fetch courses
         let fetchedCourses = [];
         const coursesResponse = await fetch(
-          "https://codingcloudapi.codingcloud.co.in/course/"
+          "https://codingcloudapi.codingcloud.co.in/course/",
         );
         if (coursesResponse.ok) {
           const coursesData = await coursesResponse.json();
@@ -744,7 +744,7 @@ export default function EditFAQ() {
           faqData = locationState.faq;
         } else {
           const faqsResponse = await fetch(
-            "https://codingcloudapi.codingcloud.co.in/faqs/"
+            "https://codingcloudapi.codingcloud.co.in/faqs/",
           );
           if (faqsResponse.ok) {
             const listDataRes = await faqsResponse.json();
@@ -829,7 +829,7 @@ export default function EditFAQ() {
   };
 
   const selectedCourse = courses.find(
-    (c) => c.id === parseInt(formData.course)
+    (c) => c.id === parseInt(formData.course),
   );
 
   // ── Loading State ──
@@ -858,7 +858,7 @@ export default function EditFAQ() {
       )}
 
       {/* ── Header ── */}
-      <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+      <header className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button

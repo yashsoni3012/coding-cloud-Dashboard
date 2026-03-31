@@ -165,7 +165,7 @@
 //             )}
 
 //             {/* ── Header ── */}
-//             <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+//             <header className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
 //                 <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
 //                     <div className="flex items-center gap-3">
 //                         <button
@@ -441,7 +441,7 @@ import Toasts from "./Toasts";
 // Fetch courses
 const fetchCourses = async () => {
   const response = await fetch(
-    "https://codingcloudapi.codingcloud.co.in/course/"
+    "https://codingcloudapi.codingcloud.co.in/course/",
   );
   const data = await response.json();
 
@@ -449,8 +449,8 @@ const fetchCourses = async () => {
   const coursesArray = Array.isArray(data)
     ? data
     : Array.isArray(data.data)
-    ? data.data
-    : [];
+      ? data.data
+      : [];
 
   return coursesArray.map((course) => ({
     id: course.id,
@@ -601,11 +601,9 @@ export default function AddModule() {
   };
 
   // Selected course name for preview (optional, can be used)
-const selectedCourse = Array.isArray(courses)
-  ? courses.find(
-      (c) => String(c.id) === String(formData.course_data)
-    )
-  : null;
+  const selectedCourse = Array.isArray(courses)
+    ? courses.find((c) => String(c.id) === String(formData.course_data))
+    : null;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -619,7 +617,7 @@ const selectedCourse = Array.isArray(courses)
       )}
 
       {/* ── Header ── */}
-      <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+      <header className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button

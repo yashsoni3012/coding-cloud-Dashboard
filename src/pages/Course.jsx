@@ -2161,7 +2161,7 @@ export default function Courses() {
       )}
 
       {toastError && (
-        <div className="fixed top-4 right-4 z-50 bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-center gap-2 shadow-lg max-w-xs">
+        <div className="fixed top-4 right-4 z-10 bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-center gap-2 shadow-lg max-w-xs">
           <AlertCircle size={15} className="text-red-500 flex-shrink-0" />
           <p className="text-sm text-red-600 flex-1">{toastError}</p>
           <button
@@ -2790,7 +2790,7 @@ export default function Courses() {
           VIEW MODAL
       ══════════════════════════════════════ */}
       {showViewModal && selectedCourse && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div className="fixed inset-0 z-10 flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div
             className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm"
             onClick={() => setShowViewModal(false)}
@@ -2965,7 +2965,7 @@ export default function Courses() {
           DELETE MODAL
       ══════════════════════════════════════ */}
       {showDeleteModal && courseToDelete && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div className="fixed inset-0 z-10 flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div
             className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm"
             onClick={() =>

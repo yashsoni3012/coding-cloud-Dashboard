@@ -698,7 +698,7 @@
 //       )}
 
 //       {/* ── Header ── */}
-//       <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+//       <header className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
 //         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
 //           <div className="flex items-center gap-3">
 //             <button
@@ -1495,10 +1495,10 @@ export default function EditCourse() {
   });
 
   useEffect(() => {
-  if (courseData) {
-    console.log("COURSE DATA FULL:", courseData);
-  }
-}, [courseData]);
+    if (courseData) {
+      console.log("COURSE DATA FULL:", courseData);
+    }
+  }, [courseData]);
 
   // Populate form when course data arrives
   useEffect(() => {
@@ -1670,7 +1670,7 @@ export default function EditCourse() {
       }
     }
 
-   const hasExisting = formData[`existing_${field}`];
+    const hasExisting = formData[`existing_${field}`];
     const hasNew = formData[field];
     const empty = !hasExisting && !hasNew;
     if (empty) {
@@ -2050,7 +2050,7 @@ export default function EditCourse() {
       )}
 
       {/* ── Header ── */}
-      <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+      <header className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
