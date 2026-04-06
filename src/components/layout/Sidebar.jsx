@@ -363,14 +363,14 @@ const navItems = [
   { to: "category", icon: Layers, label: "Category" },
   { to: "/course", icon: BookOpen, label: "Courses" },
   { to: "/modules", icon: Layers, label: "Modules" },
-  // { to: "/topics", icon: Tag, label: "Topics" },
-  { to: "/contact", icon: Mail, label: "Contact" },
-  { to: "enroll", icon: UserPlus, label: "Enroll" },
   { to: "faq", icon: HelpCircle, label: "FAQ" },
-  { to: "Blogs", icon: FileText, label: "Blogs" },
-  { to: "testimonials", icon: Star, label: "Testimonials" },
-  { to: "register", icon: ClipboardList, label: "Register Users" },
+  { to: "enroll", icon: UserPlus, label: "Enroll" },
+  // { to: "/topics", icon: Tag, label: "Topics" },
   { to: "SEO", icon: Globe, label: "SEO" },
+  { to: "Blogs", icon: FileText, label: "Blogs" },
+  { to: "/contact", icon: Mail, label: "Contact" },
+  { to: "register", icon: ClipboardList, label: "Register Users" },
+  { to: "testimonials", icon: Star, label: "Testimonials" },
 ];
 
 function RippleNavLink({ to, icon: Icon, label, onLinkClick }) {
