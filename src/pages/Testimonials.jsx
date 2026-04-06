@@ -623,13 +623,13 @@ export default function Testimonials() {
             </button>
 
             {/* Add Testimonial */}
-            {/* <button
+            <button
               className="test-add-btn"
               onClick={() => navigate("/add-testimonial")}
             >
               <Plus size={16} />
               Add Testimonial
-            </button> */}
+            </button>
           </div>
 
           {/* Expandable filter panel */}
