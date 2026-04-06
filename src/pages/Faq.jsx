@@ -1522,8 +1522,11 @@ export default function FAQs() {
   }, [coursesData]);
 
   const uniqueCourses = useMemo(
-    () => [...new Set(rawFaqs.map((f) => f.course).filter(Boolean))].sort((a, b) => a - b),
-    [rawFaqs]
+    () =>
+      [...new Set(rawFaqs.map((f) => f.course).filter(Boolean))].sort(
+        (a, b) => a - b,
+      ),
+    [rawFaqs],
   );
 
   const faqs = useMemo(() => {
@@ -1606,7 +1609,8 @@ export default function FAQs() {
         (f) =>
           f.question.toLowerCase().includes(q) ||
           f.display_id.toString().includes(q) ||
-          (coursesMap[f.course] && coursesMap[f.course].toLowerCase().includes(q))
+          (coursesMap[f.course] &&
+            coursesMap[f.course].toLowerCase().includes(q)),
       );
     }
     if (filters.course !== "all")
@@ -1636,7 +1640,7 @@ export default function FAQs() {
   const indexOfFirstItem = (safePage - 1) * itemsPerPage;
   const paginatedFaqs = filteredFaqs.slice(
     indexOfFirstItem,
-    indexOfFirstItem + itemsPerPage
+    indexOfFirstItem + itemsPerPage,
   );
 
   const handleSort = (key) =>
@@ -1670,10 +1674,17 @@ export default function FAQs() {
   const activeFiltersCount = [filters.course !== "all"].filter(Boolean).length;
 
   const getPageNumbers = () => {
-    if (totalPages <= 5) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    if (totalPages <= 5)
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
     if (safePage <= 3) return [1, 2, 3, 4, 5];
     if (safePage >= totalPages - 2)
-      return [totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+      return [
+        totalPages - 4,
+        totalPages - 3,
+        totalPages - 2,
+        totalPages - 1,
+        totalPages,
+      ];
     return [safePage - 2, safePage - 1, safePage, safePage + 1, safePage + 2];
   };
 
@@ -1686,7 +1697,9 @@ export default function FAQs() {
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-11 h-11 border-4 border-violet-100 border-t-violet-600 rounded-full mx-auto animate-spin" />
-          <p className="mt-4 text-slate-400 text-sm font-medium">Loading FAQs…</p>
+          <p className="mt-4 text-slate-400 text-sm font-medium">
+            Loading FAQs…
+          </p>
         </div>
       </div>
     );
@@ -1700,7 +1713,9 @@ export default function FAQs() {
           <div className="w-14 h-14 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
             <X size={22} className="text-red-500" />
           </div>
-          <h3 className="text-base font-bold text-slate-900 mb-2">Something went wrong</h3>
+          <h3 className="text-base font-bold text-slate-900 mb-2">
+            Something went wrong
+          </h3>
           <p className="text-sm text-slate-400 mb-5">{error.message}</p>
           <button
             onClick={() => refetchFaqs()}
@@ -1738,7 +1753,9 @@ export default function FAQs() {
             <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-violet-600 to-violet-400 rounded-xl flex items-center justify-center shadow-md shadow-violet-200 flex-shrink-0">
               <MessageCircleQuestion size={16} className="text-white" />
             </div>
-            <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-slate-900">FAQs</h1>
+            <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-slate-900">
+              FAQs
+            </h1>
             <span className="px-2.5 py-0.5 bg-violet-100 text-violet-700 text-xs font-bold rounded-full">
               {faqs.length}
             </span>
@@ -1833,7 +1850,9 @@ export default function FAQs() {
               )}
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
-              <span className="text-xs text-slate-400 font-medium whitespace-nowrap">Show</span>
+              <span className="text-xs text-slate-400 font-medium whitespace-nowrap">
+                Show
+              </span>
               <select
                 value={itemsPerPage}
                 onChange={(e) => setItemsPerPage(Number(e.target.value))}
@@ -1845,7 +1864,9 @@ export default function FAQs() {
                   </option>
                 ))}
               </select>
-              <span className="text-xs text-slate-400 font-medium whitespace-nowrap">per page</span>
+              <span className="text-xs text-slate-400 font-medium whitespace-nowrap">
+                per page
+              </span>
             </div>
             <button
               onClick={() => setShowFilters(!showFilters)}
@@ -1908,7 +1929,9 @@ export default function FAQs() {
             <div className="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <MessageCircleQuestion size={26} className="text-slate-300" />
             </div>
-            <h3 className="text-base font-bold text-slate-800 mb-1.5">No FAQs found</h3>
+            <h3 className="text-base font-bold text-slate-800 mb-1.5">
+              No FAQs found
+            </h3>
             <p className="text-sm text-slate-400 mb-5">
               {searchTerm || filters.course !== "all"
                 ? "Try adjusting your filters or search term."
@@ -1938,14 +1961,20 @@ export default function FAQs() {
                 >
                   <div className="flex items-center gap-3 px-4 py-4">
                     <div className="w-11 h-11 bg-violet-50 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <MessageCircleQuestion size={18} className="text-violet-600" />
+                      <MessageCircleQuestion
+                        size={18}
+                        className="text-violet-600"
+                      />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-slate-800 truncate">
                         {faq.question}
                       </p>
                       <div className="flex items-center gap-1.5 mt-1">
-                        <BookOpen size={11} className="text-violet-400 flex-shrink-0" />
+                        <BookOpen
+                          size={11}
+                          className="text-violet-400 flex-shrink-0"
+                        />
                         <span className="text-xs text-violet-600 font-medium truncate">
                           {coursesMap[faq.course] || `Course ${faq.course}`}
                         </span>
@@ -1992,7 +2021,9 @@ export default function FAQs() {
                         >
                           <Icon size={13} /> {label}
                         </button>
-                        {i < arr.length - 1 && <div className="w-px bg-slate-100" />}
+                        {i < arr.length - 1 && (
+                          <div className="w-px bg-slate-100" />
+                        )}
                       </span>
                     ))}
                   </div>
@@ -2057,16 +2088,23 @@ export default function FAQs() {
                         <td className="px-4 py-4">
                           <div className="flex items-center gap-3">
                             <div className="w-9 h-9 bg-violet-50 rounded-xl flex items-center justify-center flex-shrink-0">
-                              <MessageCircleQuestion size={15} className="text-violet-600" />
+                              <MessageCircleQuestion
+                                size={15}
+                                className="text-violet-600"
+                              />
                             </div>
                             <div className="min-w-0">
                               <span className="text-sm font-semibold text-slate-800 block truncate max-w-[200px] sm:max-w-[260px]">
                                 {faq.question}
                               </span>
                               <div className="flex items-center gap-1 mt-0.5 md:hidden">
-                                <BookOpen size={10} className="text-violet-400 flex-shrink-0" />
+                                <BookOpen
+                                  size={10}
+                                  className="text-violet-400 flex-shrink-0"
+                                />
                                 <span className="text-xs text-violet-600 font-medium truncate max-w-[180px]">
-                                  {coursesMap[faq.course] || `Course ${faq.course}`}
+                                  {coursesMap[faq.course] ||
+                                    `Course ${faq.course}`}
                                 </span>
                               </div>
                             </div>
@@ -2078,7 +2116,10 @@ export default function FAQs() {
                             {coursesMap[faq.course] || `Course ${faq.course}`}
                           </span>
                         </td>
-                        <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
+                        <td
+                          className="px-4 py-4"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <div className="flex items-center justify-end gap-1">
                             <button
                               onClick={(e) => {
@@ -2094,7 +2135,9 @@ export default function FAQs() {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                navigate(`/edit-faq/${faq.id}`, { state: { faq } });
+                                navigate(`/edit-faq/${faq.id}`, {
+                                  state: { faq },
+                                });
                               }}
                               className="p-2 rounded-lg text-slate-400 hover:bg-violet-50 hover:text-violet-600 transition"
                               title="Edit"
@@ -2122,10 +2165,16 @@ export default function FAQs() {
                   Showing{" "}
                   <strong className="text-slate-600">
                     {indexOfFirstItem + 1}–
-                    {Math.min(indexOfFirstItem + itemsPerPage, filteredFaqs.length)}
+                    {Math.min(
+                      indexOfFirstItem + itemsPerPage,
+                      filteredFaqs.length,
+                    )}
                   </strong>{" "}
                   of{" "}
-                  <strong className="text-slate-600">{filteredFaqs.length}</strong> FAQs
+                  <strong className="text-slate-600">
+                    {filteredFaqs.length}
+                  </strong>{" "}
+                  FAQs
                 </span>
                 <div className="flex items-center justify-center gap-1.5 flex-wrap">
                   <button
@@ -2149,7 +2198,9 @@ export default function FAQs() {
                     </button>
                   ))}
                   <button
-                    onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                    onClick={() =>
+                      setCurrentPage((p) => Math.min(p + 1, totalPages))
+                    }
                     disabled={safePage === totalPages}
                     className="w-9 h-9 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
                   >
@@ -2164,9 +2215,16 @@ export default function FAQs() {
               <span className="text-xs text-slate-400 font-medium">
                 Showing{" "}
                 <strong className="text-slate-600">
-                  {indexOfFirstItem + 1}–{Math.min(indexOfFirstItem + itemsPerPage, filteredFaqs.length)}
+                  {indexOfFirstItem + 1}–
+                  {Math.min(
+                    indexOfFirstItem + itemsPerPage,
+                    filteredFaqs.length,
+                  )}
                 </strong>{" "}
-                of <strong className="text-slate-600">{filteredFaqs.length}</strong>
+                of{" "}
+                <strong className="text-slate-600">
+                  {filteredFaqs.length}
+                </strong>
               </span>
               <div className="flex items-center gap-1.5 flex-wrap justify-center">
                 <button
@@ -2190,7 +2248,9 @@ export default function FAQs() {
                   </button>
                 ))}
                 <button
-                  onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(p + 1, totalPages))
+                  }
                   disabled={safePage === totalPages}
                   className="w-9 h-9 rounded-lg border border-slate-200 bg-white flex items-center justify-center text-slate-500 disabled:opacity-30 disabled:cursor-not-allowed"
                 >
@@ -2227,7 +2287,10 @@ export default function FAQs() {
             <div className="px-5 sm:px-6 py-5 sm:py-6">
               <div className="flex items-center gap-4 mb-5">
                 <div className="w-12 h-12 bg-violet-50 rounded-2xl flex items-center justify-center flex-shrink-0">
-                  <MessageCircleQuestion size={22} className="text-violet-600" />
+                  <MessageCircleQuestion
+                    size={22}
+                    className="text-violet-600"
+                  />
                 </div>
                 <h2 className="text-lg sm:text-xl font-bold text-slate-900 leading-snug">
                   {selectedFaq.question}
@@ -2240,9 +2303,13 @@ export default function FAQs() {
                   Course
                 </p>
                 <div className="flex items-center gap-2">
-                  <BookOpen size={15} className="text-violet-600 flex-shrink-0" />
+                  <BookOpen
+                    size={15}
+                    className="text-violet-600 flex-shrink-0"
+                  />
                   <p className="text-sm font-semibold text-slate-800">
-                    {coursesMap[selectedFaq.course] || `Course ${selectedFaq.course}`}
+                    {coursesMap[selectedFaq.course] ||
+                      `Course ${selectedFaq.course}`}
                   </p>
                 </div>
               </div>
@@ -2270,7 +2337,9 @@ export default function FAQs() {
               <button
                 onClick={() => {
                   setShowViewModal(false);
-                  navigate(`/edit-faq/${selectedFaq.id}`, { state: { faq: selectedFaq } });
+                  navigate(`/edit-faq/${selectedFaq.id}`, {
+                    state: { faq: selectedFaq },
+                  });
                 }}
                 className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2.5 bg-violet-600 text-white rounded-xl text-sm font-semibold hover:bg-violet-700 transition"
               >
@@ -2304,11 +2373,15 @@ export default function FAQs() {
                 <AlertCircle size={22} className="text-red-500" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-base font-bold text-slate-900 mb-1.5">Delete FAQ</h3>
+                <h3 className="text-base font-bold text-slate-900 mb-1.5">
+                  Delete FAQ
+                </h3>
                 <p className="text-sm text-slate-500 leading-relaxed">
                   Are you sure you want to delete{" "}
-                  <strong className="text-slate-800">“{faqToDelete.question}”</strong>? This
-                  action cannot be undone.
+                  <strong className="text-slate-800">
+                    “{faqToDelete.question}”
+                  </strong>
+                  ? This action cannot be undone.
                 </p>
               </div>
             </div>

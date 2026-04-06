@@ -1,5 +1,6 @@
 // import { useState, useEffect, useRef } from "react";
 // import { useNavigate } from "react-router-dom";
+// import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 // import { Editor } from "@tinymce/tinymce-react";
 // import {
 //   ArrowLeft,
@@ -23,52 +24,126 @@
 // } from "lucide-react";
 // import Toasts from "../pages/Toasts";
 
+// // Fetch categories function
+// const fetchCategories = async () => {
+//   const response = await fetch(
+//     "https://codingcloudapi.codingcloud.co.in/category/",
+//   );
+//   if (!response.ok) throw new Error("Failed to load categories");
+//   const data = await response.json();
+//   return data.data || [];
+// };
+
+// // Create course mutation function
+// const createCourse = async (formData) => {
+//   const response = await fetch(
+//     "https://codingcloudapi.codingcloud.co.in/course/",
+//     {
+//       method: "POST",
+//       body: formData,
+//     },
+//   );
+
+//   let data;
+//   const contentType = response.headers.get("content-type");
+//   if (contentType && contentType.includes("application/json")) {
+//     data = await response.json();
+//   } else {
+//     data = { message: await response.text() };
+//   }
+
+//   if (!response.ok && response.status !== 201) {
+//     // Handle structured field errors
+//     if (data.errors) {
+//       const backendErrors = {};
+//       Object.keys(data.errors).forEach((key) => {
+//         backendErrors[key] = data.errors[key].join(", ");
+//       });
+//       throw {
+//         message: "Please correct the errors below",
+//         errors: backendErrors,
+//       };
+//     }
+//     const errorMsg =
+//       data.message ||
+//       data.detail ||
+//       data.error ||
+//       data.non_field_errors?.[0] ||
+//       "Failed to create course.";
+//     throw new Error(errorMsg);
+//   }
+//   return data;
+// };
+
 // export default function AddCourse() {
 //   const navigate = useNavigate();
+//   const queryClient = useQueryClient();
 //   const timeoutRef = useRef(null);
 
 //   // ⚙️ Adjust this constant based on your backend limit (if known)
 //   const MAX_DESCRIPTION_LENGTH = 10000;
 
-//   const [loading, setLoading] = useState(false);
 //   const [error, setError] = useState("");
 //   const [toast, setToast] = useState({
 //     show: false,
 //     message: "",
 //     type: "success",
 //   });
-//   const [categories, setCategories] = useState([]);
-//   const [loadingCategories, setLoadingCategories] = useState(true);
 
-//   // ------------------------------------------------------------------------
-//   // Editor mode: "tinymce" or "html"
-//   // ------------------------------------------------------------------------
-//   const [editorMode, setEditorMode] = useState("tinymce");
+//   // --- TanStack Query: fetch categories with caching ---
+//   const {
+//     data: categories = [],
+//     isLoading: loadingCategories,
+//     error: categoriesError,
+//   } = useQuery({
+//     queryKey: ["categories"],
+//     queryFn: fetchCategories,
+//   });
+
+//   // Show categories loading error if needed (matches original behavior)
+//   useEffect(() => {
+//     if (categoriesError) {
+//       setError("Failed to load categories");
+//     }
+//   }, [categoriesError]);
+
+//   // --- TanStack Mutation: create course ---
+//   const mutation = useMutation({
+//     mutationFn: createCourse,
+//     onSuccess: () => {
+//       // Invalidate courses list so it refreshes
+//       queryClient.invalidateQueries({ queryKey: ["courses"] });
+//       setToast({
+//         show: true,
+//         message: "Course created successfully!",
+//         type: "success",
+//       });
+//       timeoutRef.current = setTimeout(() => {
+//         navigate("/course");
+//       }, 1500);
+//     },
+//     onError: (err) => {
+//       if (err.errors) {
+//         setFieldErrors(err.errors);
+//         setToast({
+//           show: true,
+//           message: "Please correct the errors below",
+//           type: "error",
+//         });
+//       } else {
+//         setError(err.message || "Failed to create course.");
+//       }
+//     },
+//     onSettled: () => {
+//       setLoading(false);
+//     },
+//   });
 
 //   // Clear timeout on unmount
 //   useEffect(() => {
 //     return () => {
 //       if (timeoutRef.current) clearTimeout(timeoutRef.current);
 //     };
-//   }, []);
-
-//   // Fetch categories
-//   useEffect(() => {
-//     const fetchCategories = async () => {
-//       try {
-//         const response = await fetch(
-//           "https://codingcloudapi.codingcloud.co.in/category/",
-//         );
-//         const data = await response.json();
-//         setCategories(data.data || []);
-//       } catch (err) {
-//         console.error("Error fetching categories:", err);
-//         setError("Failed to load categories");
-//       } finally {
-//         setLoadingCategories(false);
-//       }
-//     };
-//     fetchCategories();
 //   }, []);
 
 //   const [formData, setFormData] = useState({
@@ -101,30 +176,39 @@
 //   const [image2Preview, setImage2Preview] = useState("");
 //   const [pdfName, setPdfName] = useState("");
 //   const [fieldErrors, setFieldErrors] = useState({});
+//   const [loading, setLoading] = useState(false); // for button state
+//   const [editorMode, setEditorMode] = useState("tinymce");
 
 //   // 🟥 RED BORDER LOGIC: Clear error for a field when user types
-//   const handleInputChange = (e) => {
-//     const { name, value } = e.target;
+// const handleInputChange = (e) => {
+//   const { name, value } = e.target;
+
+//   // Only allow numbers for students
+//   if (name === "students") {
+//     const numericValue = value.replace(/[^0-9]/g, "");
+//     setFormData((prev) => ({ ...prev, students: numericValue }));
+//   } else {
 //     setFormData((prev) => ({ ...prev, [name]: value }));
+//   }
 
-//     // Clear error for this field if it exists
-//     if (fieldErrors[name]) {
-//       setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
-//     }
+//   // Clear error
+//   if (fieldErrors[name]) {
+//     setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
+//   }
 
-//     if (name === "name" && !formData.slug) {
-//       const generatedSlug = value
-//         .toLowerCase()
-//         .replace(/[^a-z0-9]+/g, "-")
-//         .replace(/^-|-$/g, "");
-//       setFormData((prev) => ({ ...prev, slug: generatedSlug }));
-//     }
-//   };
+//   // Slug logic
+//   if (name === "name" && !formData.slug) {
+//     const generatedSlug = value
+//       .toLowerCase()
+//       .replace(/[^a-z0-9]+/g, "-")
+//       .replace(/^-|-$/g, "");
+//     setFormData((prev) => ({ ...prev, slug: generatedSlug }));
+//   }
+// };
 
 //   // Handle toggle changes for boolean fields
 //   const handleToggleChange = (name, checked) => {
 //     setFormData((prev) => ({ ...prev, [name]: checked }));
-//     // Clear error for this field if any (though toggles are always valid)
 //     if (fieldErrors[name]) {
 //       setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
 //     }
@@ -185,7 +269,6 @@
 //       document.getElementById("pdf-upload").value = "";
 //     }
 
-//     // Clear error for this field
 //     if (fieldErrors[field]) {
 //       setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
 //     }
@@ -231,25 +314,21 @@
 //       errors.keywords = "Keywords are required";
 //     }
 
-//     // File fields are required
-//     if (!formData.image) {
-//       errors.image = "Course image is required";
-//     }
-//     if (!formData.banner_img) {
-//       errors.banner_img = "Banner image is required";
-//     }
-//     if (!formData.pdf_file) {
-//       errors.pdf_file = "Syllabus PDF is required";
-//     }
-//     if (!formData.icon) {
-//       errors.icon = "Course icon is required";
-//     }
-//     if (!formData.image2) {
-//       errors.image2 = "Additional image is required";
+//     // ✅ Duration validation
+//     if (formData.duration) {
+//       const durationNumber = parseFloat(formData.duration);
+
+//       if (durationNumber < 0) {
+//         errors.duration = "Duration cannot be negative";
+//       }
 //     }
 
-//     // Certificate is already "No" or "Yes", but ensure it's set (it always is)
-//     // Optionally we could require it, but it defaults to "No"
+//     // File fields
+//     if (!formData.image) errors.image = "Course image is required";
+//     if (!formData.banner_img) errors.banner_img = "Banner image is required";
+//     if (!formData.pdf_file) errors.pdf_file = "Syllabus PDF is required";
+//     if (!formData.icon) errors.icon = "Course icon is required";
+//     if (!formData.image2) errors.image2 = "Additional image is required";
 
 //     setFieldErrors(errors);
 //     return Object.keys(errors).length === 0;
@@ -284,7 +363,7 @@
 //       const missingFields = getEmptyFieldsList(fieldErrors);
 //       setToast({
 //         show: true,
-//         message: `Please fill required fields: ${missingFields}`,
+//         message: `Please fill required fields`,
 //         type: "error",
 //       });
 //       return;
@@ -304,9 +383,16 @@
 //       submitData.append("text", formData.text);
 //       if (formData.short_description)
 //         submitData.append("short_description", formData.short_description);
+
+//       // ✅ FIX: Add duration to FormData
 //       if (formData.duration) submitData.append("duration", formData.duration);
+
 //       if (formData.lecture) submitData.append("lecture", formData.lecture);
-//       if (formData.students) submitData.append("students", formData.students);
+//       if (formData.students) {
+//   if (!/^\d+$/.test(formData.students)) {
+//     errors.students = "Students must be a number";
+//   }
+// }
 //       if (formData.level) submitData.append("level", formData.level);
 //       if (formData.language) submitData.append("language", formData.language);
 //       submitData.append("certificate", formData.certificate);
@@ -324,71 +410,21 @@
 //       if (formData.icon) submitData.append("icon", formData.icon);
 //       if (formData.image2) submitData.append("image2", formData.image2);
 
-//       const response = await fetch(
-//         "https://codingcloudapi.codingcloud.co.in/course/",
-//         {
-//           method: "POST",
-//           body: submitData,
-//         },
-//       );
-
-//       let data;
-//       const contentType = response.headers.get("content-type");
-//       if (contentType && contentType.includes("application/json")) {
-//         data = await response.json();
-//       } else {
-//         data = { message: await response.text() };
-//       }
-
-//       if (response.ok || response.status === 201) {
-//         setToast({
-//           show: true,
-//           message: "Course created successfully!",
-//           type: "success",
-//         });
-//         timeoutRef.current = setTimeout(() => {
-//           navigate("/course");
-//         }, 1500);
-//       } else {
-//         // Handle structured field errors from backend
-//         if (data.errors) {
-//           const backendErrors = {};
-//           Object.keys(data.errors).forEach((key) => {
-//             backendErrors[key] = data.errors[key].join(", ");
-//           });
-//           setFieldErrors(backendErrors);
-//           setToast({
-//             show: true,
-//             message: "Please correct the errors below",
-//             type: "error",
-//           });
-//         } else {
-//           const errorMsg =
-//             data.message ||
-//             data.detail ||
-//             data.error ||
-//             data.non_field_errors?.[0] ||
-//             JSON.stringify(data);
-//           setError(errorMsg || "Failed to create course.");
-//         }
-//         setLoading(false);
-//       }
+//       // Use mutation instead of manual fetch
+//       mutation.mutate(submitData);
 //     } catch (err) {
-//       console.error("Submission error:", err);
+//       // This catch block is unlikely to run because mutation handles errors, but kept for safety
+//       console.error("Unexpected error:", err);
 //       setError("Network error. Please check your connection.");
 //       setLoading(false);
 //     }
 //   };
 
-//   // ------------------------------------------------------------------------
 //   // Generate short description from main description (plain text)
-//   // ------------------------------------------------------------------------
 //   const generateShortDescription = () => {
-//     // Simple HTML‑to‑text conversion (strip tags)
 //     const plainText = formData.text.replace(/<[^>]*>/g, "");
 //     const truncated = plainText.slice(0, 200);
 //     setFormData((prev) => ({ ...prev, short_description: truncated }));
-//     // Clear any error for short_description
 //     if (fieldErrors.short_description) {
 //       setFieldErrors((prev) => ({ ...prev, short_description: undefined }));
 //     }
@@ -501,7 +537,6 @@
 //           <p className="text-base font-semibold text-gray-800">
 //             Syllabus PDF <span className="text-red-500">*</span>
 //           </p>
-
 //         </div>
 //       </div>
 
@@ -674,7 +709,7 @@
 //           </div>
 //         )}
 
-//         {/* Categories loading */}
+//         {/* Categories loading (using query's loading state) */}
 //         {loadingCategories && (
 //           <div className="flex items-center gap-3 p-4 mb-6 bg-indigo-50 border border-indigo-100 rounded-2xl text-base text-indigo-600">
 //             <div className="w-4 h-4 border-2 border-indigo-300 border-t-indigo-600 rounded-full animate-spin flex-shrink-0" />
@@ -782,7 +817,9 @@
 //               />
 //             </div>
 //             {fieldErrors.category && (
-//               <p className="text-xs text-red-500 mt-1">{fieldErrors.category}</p>
+//               <p className="text-xs text-red-500 mt-1">
+//                 {fieldErrors.category}
+//               </p>
 //             )}
 //           </div>
 
@@ -921,7 +958,9 @@
 //               }`}
 //             />
 //             {fieldErrors.short_description && (
-//               <p className="text-xs text-red-500 mt-1">{fieldErrors.short_description}</p>
+//               <p className="text-xs text-red-500 mt-1">
+//                 {fieldErrors.short_description}
+//               </p>
 //             )}
 //           </div>
 
@@ -931,7 +970,6 @@
 //             label="Course Details"
 //             iconBg="bg-violet-50"
 //             iconColor="text-violet-600"
-//             required={true}
 //           />
 
 //           {/* Duration / Lectures / Students */}
@@ -942,7 +980,7 @@
 //                   icon: Clock,
 //                   label: "Duration",
 //                   name: "duration",
-//                   placeholder: "e.g., 40 hours",
+//                   placeholder: "e.g., 40",
 //                   bg: "bg-blue-50",
 //                   color: "text-blue-500",
 //                 },
@@ -950,7 +988,7 @@
 //                   icon: BookOpen,
 //                   label: "Lectures",
 //                   name: "lecture",
-//                   placeholder: "e.g., 98 lectures",
+//                   placeholder: "e.g., 98",
 //                   bg: "bg-emerald-50",
 //                   color: "text-emerald-500",
 //                 },
@@ -974,14 +1012,26 @@
 //                       {field.label}
 //                     </label>
 //                   </div>
+
 //                   <input
-//                     type="text"
+//                     type="number"
+//                     min={0}
 //                     name={field.name}
 //                     value={formData[field.name]}
 //                     onChange={handleInputChange}
 //                     placeholder={field.placeholder}
-//                     className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+//                     className={`w-full px-3 py-2.5 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
+//                       fieldErrors[field.name]
+//                         ? "border-red-500"
+//                         : "border-gray-200"
+//                     }`}
 //                   />
+
+//                   {fieldErrors[field.name] && (
+//                     <p className="text-xs text-red-500 mt-1">
+//                       {fieldErrors[field.name]}
+//                     </p>
+//                   )}
 //                 </div>
 //               ))}
 //             </div>
@@ -1074,7 +1124,9 @@
 //                   ))}
 //                 </div>
 //                 {fieldErrors.certificate && (
-//                   <p className="text-xs text-red-500 mt-1">{fieldErrors.certificate}</p>
+//                   <p className="text-xs text-red-500 mt-1">
+//                     {fieldErrors.certificate}
+//                   </p>
 //                 )}
 //               </div>
 //             </div>
@@ -1190,7 +1242,9 @@
 //                 }`}
 //               />
 //               {fieldErrors.meta_title && (
-//                 <p className="text-xs text-red-500 mt-1">{fieldErrors.meta_title}</p>
+//                 <p className="text-xs text-red-500 mt-1">
+//                   {fieldErrors.meta_title}
+//                 </p>
 //               )}
 //               <p className="text-xs text-gray-400 text-right mt-1">
 //                 {formData.meta_title.length} / 60
@@ -1221,7 +1275,9 @@
 //                 }`}
 //               />
 //               {fieldErrors.meta_description && (
-//                 <p className="text-xs text-red-500 mt-1">{fieldErrors.meta_description}</p>
+//                 <p className="text-xs text-red-500 mt-1">
+//                   {fieldErrors.meta_description}
+//                 </p>
 //               )}
 //               <p className="text-xs text-gray-400 text-right mt-1">
 //                 {formData.meta_description.length} / 160
@@ -1250,7 +1306,9 @@
 //                 }`}
 //               />
 //               {fieldErrors.keywords && (
-//                 <p className="text-xs text-red-500 mt-1">{fieldErrors.keywords}</p>
+//                 <p className="text-xs text-red-500 mt-1">
+//                   {fieldErrors.keywords}
+//                 </p>
 //               )}
 //             </div>
 //           </div>
@@ -1280,6 +1338,7 @@
 //     </div>
 //   );
 // }
+
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -1464,13 +1523,21 @@ export default function AddCourse() {
   // 🟥 RED BORDER LOGIC: Clear error for a field when user types
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
 
-    // Clear error for this field if it exists
+    // Only allow numbers for students
+    if (name === "students") {
+      const numericValue = value.replace(/[^0-9]/g, "");
+      setFormData((prev) => ({ ...prev, students: numericValue }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
+
+    // Clear error
     if (fieldErrors[name]) {
       setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
     }
 
+    // Slug logic
     if (name === "name" && !formData.slug) {
       const generatedSlug = value
         .toLowerCase()
@@ -1591,10 +1658,16 @@ export default function AddCourse() {
     // ✅ Duration validation
     if (formData.duration) {
       const durationNumber = parseFloat(formData.duration);
-
-      if (durationNumber < 0) {
+      if (isNaN(durationNumber)) {
+        errors.duration = "Duration must be a number";
+      } else if (durationNumber < 0) {
         errors.duration = "Duration cannot be negative";
       }
+    }
+
+    // ✅ Students validation (must be a number if provided)
+    if (formData.students && !/^\d+$/.test(formData.students)) {
+      errors.students = "Students must be a number";
     }
 
     // File fields
@@ -1651,6 +1724,8 @@ export default function AddCourse() {
 
     try {
       const submitData = new FormData();
+      
+      // Basic Information
       submitData.append("name", formData.name);
       submitData.append("slug", formData.slug);
       submitData.append("category", formData.category);
@@ -1658,21 +1733,29 @@ export default function AddCourse() {
       if (formData.short_description)
         submitData.append("short_description", formData.short_description);
 
-      // ✅ FIX: Add duration to FormData
+      // ✅ Course Details - Fixed: Added all fields properly
       if (formData.duration) submitData.append("duration", formData.duration);
-
       if (formData.lecture) submitData.append("lecture", formData.lecture);
       if (formData.students) submitData.append("students", formData.students);
       if (formData.level) submitData.append("level", formData.level);
       if (formData.language) submitData.append("language", formData.language);
-      submitData.append("certificate", formData.certificate);
+      
+      // ✅ Fixed: Convert certificate to boolean (backend expects true/false)
+      const certificateBoolean = formData.certificate === "Yes";
+      submitData.append("certificate", certificateBoolean.toString());
+      
+      // Toggle fields
       submitData.append("featured", formData.featured.toString());
       submitData.append("kids_course", formData.kids_course.toString());
+      
+      // SEO & Metadata
       if (formData.meta_title)
         submitData.append("meta_title", formData.meta_title);
       if (formData.meta_description)
         submitData.append("meta_description", formData.meta_description);
       if (formData.keywords) submitData.append("keywords", formData.keywords);
+      
+      // Media Files
       if (formData.image) submitData.append("image", formData.image);
       if (formData.banner_img)
         submitData.append("banner_img", formData.banner_img);
@@ -1683,7 +1766,6 @@ export default function AddCourse() {
       // Use mutation instead of manual fetch
       mutation.mutate(submitData);
     } catch (err) {
-      // This catch block is unlikely to run because mutation handles errors, but kept for safety
       console.error("Unexpected error:", err);
       setError("Network error. Please check your connection.");
       setLoading(false);
@@ -2266,7 +2348,7 @@ export default function AddCourse() {
                   icon: Users,
                   label: "Students",
                   name: "students",
-                  placeholder: "e.g., 1,000+",
+                  placeholder: "e.g., 1000",
                   bg: "bg-orange-50",
                   color: "text-orange-500",
                 },
