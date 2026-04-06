@@ -1,3 +1,5 @@
+
+
 // import { useState, useEffect, useRef } from "react";
 // import { useNavigate } from "react-router-dom";
 // import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -180,32 +182,84 @@
 //   const [editorMode, setEditorMode] = useState("tinymce");
 
 //   // 🟥 RED BORDER LOGIC: Clear error for a field when user types
+// // const handleInputChange = (e) => {
+// //   const { name, value } = e.target;
+
+// //   // 🚫 Remove + character (for both typing & paste)
+// //   let sanitizedValue = value.replace(/\+/g, "");
+
+// //   // ✅ Students → only numbers
+// //   if (name === "students") {
+// //     sanitizedValue = sanitizedValue.replace(/[^0-9]/g, "");
+// //   }
+
+// //   // ✅ Update state
+// //   setFormData((prev) => ({
+// //     ...prev,
+// //     [name]: sanitizedValue,
+// //   }));
+
+// //   // ✅ Clear field error if exists
+// //   if (fieldErrors[name]) {
+// //     setFieldErrors((prev) => ({
+// //       ...prev,
+// //       [name]: undefined,
+// //     }));
+// //   }
+
+// //   // ✅ Auto-generate slug (only if empty)
+// //   if (name === "name" && !formData.slug) {
+// //     const generatedSlug = sanitizedValue
+// //       .toLowerCase()
+// //       .replace(/[^a-z0-9]+/g, "-")
+// //       .replace(/^-|-$/g, "");
+
+// //     setFormData((prev) => ({
+// //       ...prev,
+// //       slug: generatedSlug,
+// //     }));
+// //   }
+// // };
+
 // const handleInputChange = (e) => {
 //   const { name, value } = e.target;
 
-//   // Only allow numbers for students
+//   // 🚫 Remove + character
+//   let sanitizedValue = value.replace(/\+/g, "");
+
+//   // ✅ Students → only numbers
 //   if (name === "students") {
-//     const numericValue = value.replace(/[^0-9]/g, "");
-//     setFormData((prev) => ({ ...prev, students: numericValue }));
-//   } else {
-//     setFormData((prev) => ({ ...prev, [name]: value }));
+//     sanitizedValue = sanitizedValue.replace(/[^0-9]/g, "");
 //   }
 
-//   // Clear error
-//   if (fieldErrors[name]) {
-//     setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
-//   }
+//   // ✅ Generate slug if name changes
+//   let updatedData = {
+//     [name]: sanitizedValue,
+//   };
 
-//   // Slug logic
-//   if (name === "name" && !formData.slug) {
-//     const generatedSlug = value
+//   if (name === "name") {
+//     const generatedSlug = sanitizedValue
 //       .toLowerCase()
 //       .replace(/[^a-z0-9]+/g, "-")
 //       .replace(/^-|-$/g, "");
-//     setFormData((prev) => ({ ...prev, slug: generatedSlug }));
+
+//     updatedData.slug = generatedSlug;
+//   }
+
+//   // ✅ Update state
+//   setFormData((prev) => ({
+//     ...prev,
+//     ...updatedData,
+//   }));
+
+//   // ✅ Clear field error
+//   if (fieldErrors[name]) {
+//     setFieldErrors((prev) => ({
+//       ...prev,
+//       [name]: undefined,
+//     }));
 //   }
 // };
-
 //   // Handle toggle changes for boolean fields
 //   const handleToggleChange = (name, checked) => {
 //     setFormData((prev) => ({ ...prev, [name]: checked }));
@@ -248,6 +302,12 @@
 //       setError("");
 //     }
 //   };
+
+//   const blockPlusKey = (e) => {
+//   if (e.key === "+") {
+//     e.preventDefault();
+//   }
+// };
 
 //   // 🟥 Clear error when file is removed
 //   const removeFile = (field) => {
@@ -317,10 +377,16 @@
 //     // ✅ Duration validation
 //     if (formData.duration) {
 //       const durationNumber = parseFloat(formData.duration);
-
-//       if (durationNumber < 0) {
+//       if (isNaN(durationNumber)) {
+//         errors.duration = "Duration must be a number";
+//       } else if (durationNumber < 0) {
 //         errors.duration = "Duration cannot be negative";
 //       }
+//     }
+
+//     // ✅ Students validation (must be a number if provided)
+//     if (formData.students && !/^\d+$/.test(formData.students)) {
+//       errors.students = "Students must be a number";
 //     }
 
 //     // File fields
@@ -377,6 +443,8 @@
 
 //     try {
 //       const submitData = new FormData();
+
+//       // Basic Information
 //       submitData.append("name", formData.name);
 //       submitData.append("slug", formData.slug);
 //       submitData.append("category", formData.category);
@@ -384,25 +452,29 @@
 //       if (formData.short_description)
 //         submitData.append("short_description", formData.short_description);
 
-//       // ✅ FIX: Add duration to FormData
+//       // ✅ Course Details - Fixed: Added all fields properly
 //       if (formData.duration) submitData.append("duration", formData.duration);
-
 //       if (formData.lecture) submitData.append("lecture", formData.lecture);
-//       if (formData.students) {
-//   if (!/^\d+$/.test(formData.students)) {
-//     errors.students = "Students must be a number";
-//   }
-// }
+//       if (formData.students) submitData.append("students", formData.students);
 //       if (formData.level) submitData.append("level", formData.level);
 //       if (formData.language) submitData.append("language", formData.language);
-//       submitData.append("certificate", formData.certificate);
+
+//       // ✅ Fixed: Convert certificate to boolean (backend expects true/false)
+//       const certificateBoolean = formData.certificate === "Yes";
+//       submitData.append("certificate", certificateBoolean.toString());
+
+//       // Toggle fields
 //       submitData.append("featured", formData.featured.toString());
 //       submitData.append("kids_course", formData.kids_course.toString());
+
+//       // SEO & Metadata
 //       if (formData.meta_title)
 //         submitData.append("meta_title", formData.meta_title);
 //       if (formData.meta_description)
 //         submitData.append("meta_description", formData.meta_description);
 //       if (formData.keywords) submitData.append("keywords", formData.keywords);
+
+//       // Media Files
 //       if (formData.image) submitData.append("image", formData.image);
 //       if (formData.banner_img)
 //         submitData.append("banner_img", formData.banner_img);
@@ -413,7 +485,6 @@
 //       // Use mutation instead of manual fetch
 //       mutation.mutate(submitData);
 //     } catch (err) {
-//       // This catch block is unlikely to run because mutation handles errors, but kept for safety
 //       console.error("Unexpected error:", err);
 //       setError("Network error. Please check your connection.");
 //       setLoading(false);
@@ -746,6 +817,7 @@
 //                 fieldErrors.name ? "border-red-500" : "border-gray-200"
 //               }`}
 //               required
+//                onKeyDown={blockPlusKey}
 //             />
 //             {fieldErrors.name && (
 //               <p className="text-xs text-red-500 mt-1">{fieldErrors.name}</p>
@@ -868,7 +940,7 @@
 //                 }`}
 //               >
 //                 <Editor
-//                   apiKey="x5ikrjt2xexo2x73y0uzybqhbjq29owf8drai57qhtew5e0j"
+//                   apiKey="f45j826wq94pn0e0xseucsvqi8k7xug5idltalwrry8pevjm"
 //                   value={formData.text}
 //                   onEditorChange={handleEditorChange}
 //                   init={{
@@ -996,7 +1068,7 @@
 //                   icon: Users,
 //                   label: "Students",
 //                   name: "students",
-//                   placeholder: "e.g., 1,000+",
+//                   placeholder: "e.g., 1000",
 //                   bg: "bg-orange-50",
 //                   color: "text-orange-500",
 //                 },
@@ -1362,6 +1434,7 @@ import {
   BookMarked,
   Search,
   Sparkles,
+  ListOrdered,
 } from "lucide-react";
 import Toasts from "../pages/Toasts";
 
@@ -1394,7 +1467,6 @@ const createCourse = async (formData) => {
   }
 
   if (!response.ok && response.status !== 201) {
-    // Handle structured field errors
     if (data.errors) {
       const backendErrors = {};
       Object.keys(data.errors).forEach((key) => {
@@ -1421,7 +1493,6 @@ export default function AddCourse() {
   const queryClient = useQueryClient();
   const timeoutRef = useRef(null);
 
-  // ⚙️ Adjust this constant based on your backend limit (if known)
   const MAX_DESCRIPTION_LENGTH = 10000;
 
   const [error, setError] = useState("");
@@ -1431,7 +1502,7 @@ export default function AddCourse() {
     type: "success",
   });
 
-  // --- TanStack Query: fetch categories with caching ---
+  // --- TanStack Query: fetch categories ---
   const {
     data: categories = [],
     isLoading: loadingCategories,
@@ -1441,18 +1512,16 @@ export default function AddCourse() {
     queryFn: fetchCategories,
   });
 
-  // Show categories loading error if needed (matches original behavior)
   useEffect(() => {
     if (categoriesError) {
       setError("Failed to load categories");
     }
   }, [categoriesError]);
 
-  // --- TanStack Mutation: create course ---
+  // --- TanStack Mutation ---
   const mutation = useMutation({
     mutationFn: createCourse,
     onSuccess: () => {
-      // Invalidate courses list so it refreshes
       queryClient.invalidateQueries({ queryKey: ["courses"] });
       setToast({
         show: true,
@@ -1480,7 +1549,6 @@ export default function AddCourse() {
     },
   });
 
-  // Clear timeout on unmount
   useEffect(() => {
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -1501,6 +1569,7 @@ export default function AddCourse() {
     certificate: "No",
     featured: false,
     kids_course: false,
+    course_sequence: "", // new field (optional)
     meta_title: "",
     meta_description: "",
     keywords: "",
@@ -1517,89 +1586,46 @@ export default function AddCourse() {
   const [image2Preview, setImage2Preview] = useState("");
   const [pdfName, setPdfName] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
-  const [loading, setLoading] = useState(false); // for button state
+  const [loading, setLoading] = useState(false);
   const [editorMode, setEditorMode] = useState("tinymce");
 
-  // 🟥 RED BORDER LOGIC: Clear error for a field when user types
-// const handleInputChange = (e) => {
-//   const { name, value } = e.target;
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
 
-//   // 🚫 Remove + character (for both typing & paste)
-//   let sanitizedValue = value.replace(/\+/g, "");
+    let sanitizedValue = value.replace(/\+/g, "");
 
-//   // ✅ Students → only numbers
-//   if (name === "students") {
-//     sanitizedValue = sanitizedValue.replace(/[^0-9]/g, "");
-//   }
+    if (name === "students") {
+      sanitizedValue = sanitizedValue.replace(/[^0-9]/g, "");
+    }
+    if (name === "course_sequence") {
+      sanitizedValue = sanitizedValue.replace(/[^0-9]/g, "");
+    }
 
-//   // ✅ Update state
-//   setFormData((prev) => ({
-//     ...prev,
-//     [name]: sanitizedValue,
-//   }));
+    let updatedData = {
+      [name]: sanitizedValue,
+    };
 
-//   // ✅ Clear field error if exists
-//   if (fieldErrors[name]) {
-//     setFieldErrors((prev) => ({
-//       ...prev,
-//       [name]: undefined,
-//     }));
-//   }
+    if (name === "name") {
+      const generatedSlug = sanitizedValue
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
+      updatedData.slug = generatedSlug;
+    }
 
-//   // ✅ Auto-generate slug (only if empty)
-//   if (name === "name" && !formData.slug) {
-//     const generatedSlug = sanitizedValue
-//       .toLowerCase()
-//       .replace(/[^a-z0-9]+/g, "-")
-//       .replace(/^-|-$/g, "");
+    setFormData((prev) => ({
+      ...prev,
+      ...updatedData,
+    }));
 
-//     setFormData((prev) => ({
-//       ...prev,
-//       slug: generatedSlug,
-//     }));
-//   }
-// };
-
-const handleInputChange = (e) => {
-  const { name, value } = e.target;
-
-  // 🚫 Remove + character
-  let sanitizedValue = value.replace(/\+/g, "");
-
-  // ✅ Students → only numbers
-  if (name === "students") {
-    sanitizedValue = sanitizedValue.replace(/[^0-9]/g, "");
-  }
-
-  // ✅ Generate slug if name changes
-  let updatedData = {
-    [name]: sanitizedValue,
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => ({
+        ...prev,
+        [name]: undefined,
+      }));
+    }
   };
 
-  if (name === "name") {
-    const generatedSlug = sanitizedValue
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "");
-
-    updatedData.slug = generatedSlug;
-  }
-
-  // ✅ Update state
-  setFormData((prev) => ({
-    ...prev,
-    ...updatedData,
-  }));
-
-  // ✅ Clear field error
-  if (fieldErrors[name]) {
-    setFieldErrors((prev) => ({
-      ...prev,
-      [name]: undefined,
-    }));
-  }
-};
-  // Handle toggle changes for boolean fields
   const handleToggleChange = (name, checked) => {
     setFormData((prev) => ({ ...prev, [name]: checked }));
     if (fieldErrors[name]) {
@@ -1607,7 +1633,6 @@ const handleInputChange = (e) => {
     }
   };
 
-  // 🟥 Clear file field error when a file is selected
   const handleFileChange = (e) => {
     const { name, files } = e.target;
     const file = files[0];
@@ -1633,7 +1658,6 @@ const handleInputChange = (e) => {
       else if (name === "image2") setImage2Preview(URL.createObjectURL(file));
       else if (name === "pdf_file") setPdfName(file.name);
 
-      // Clear error for this file field
       if (fieldErrors[name]) {
         setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
       }
@@ -1643,12 +1667,11 @@ const handleInputChange = (e) => {
   };
 
   const blockPlusKey = (e) => {
-  if (e.key === "+") {
-    e.preventDefault();
-  }
-};
+    if (e.key === "+") {
+      e.preventDefault();
+    }
+  };
 
-  // 🟥 Clear error when file is removed
   const removeFile = (field) => {
     setFormData((prev) => ({ ...prev, [field]: null }));
     if (field === "image") {
@@ -1673,7 +1696,6 @@ const handleInputChange = (e) => {
     }
   };
 
-  // 🟥 Validate all required fields
   const validateForm = () => {
     const errors = {};
 
@@ -1713,7 +1735,6 @@ const handleInputChange = (e) => {
       errors.keywords = "Keywords are required";
     }
 
-    // ✅ Duration validation
     if (formData.duration) {
       const durationNumber = parseFloat(formData.duration);
       if (isNaN(durationNumber)) {
@@ -1723,9 +1744,13 @@ const handleInputChange = (e) => {
       }
     }
 
-    // ✅ Students validation (must be a number if provided)
     if (formData.students && !/^\d+$/.test(formData.students)) {
       errors.students = "Students must be a number";
+    }
+
+    // course_sequence validation (optional, but if present must be numeric)
+    if (formData.course_sequence && !/^\d+$/.test(formData.course_sequence)) {
+      errors.course_sequence = "Course sequence must be a number";
     }
 
     // File fields
@@ -1739,7 +1764,6 @@ const handleInputChange = (e) => {
     return Object.keys(errors).length === 0;
   };
 
-  // Helper to build a user‑friendly list of empty fields
   const getEmptyFieldsList = (errors) => {
     const fieldLabels = {
       name: "Course name",
@@ -1765,7 +1789,6 @@ const handleInputChange = (e) => {
     e.preventDefault();
 
     if (!validateForm()) {
-      const missingFields = getEmptyFieldsList(fieldErrors);
       setToast({
         show: true,
         message: `Please fill required fields`,
@@ -1791,18 +1814,17 @@ const handleInputChange = (e) => {
       if (formData.short_description)
         submitData.append("short_description", formData.short_description);
 
-      // ✅ Course Details - Fixed: Added all fields properly
+      // Course Details
       if (formData.duration) submitData.append("duration", formData.duration);
       if (formData.lecture) submitData.append("lecture", formData.lecture);
       if (formData.students) submitData.append("students", formData.students);
       if (formData.level) submitData.append("level", formData.level);
       if (formData.language) submitData.append("language", formData.language);
+      if (formData.course_sequence) submitData.append("course_sequence", formData.course_sequence);
 
-      // ✅ Fixed: Convert certificate to boolean (backend expects true/false)
       const certificateBoolean = formData.certificate === "Yes";
       submitData.append("certificate", certificateBoolean.toString());
 
-      // Toggle fields
       submitData.append("featured", formData.featured.toString());
       submitData.append("kids_course", formData.kids_course.toString());
 
@@ -1821,7 +1843,6 @@ const handleInputChange = (e) => {
       if (formData.icon) submitData.append("icon", formData.icon);
       if (formData.image2) submitData.append("image2", formData.image2);
 
-      // Use mutation instead of manual fetch
       mutation.mutate(submitData);
     } catch (err) {
       console.error("Unexpected error:", err);
@@ -1830,7 +1851,6 @@ const handleInputChange = (e) => {
     }
   };
 
-  // Generate short description from main description (plain text)
   const generateShortDescription = () => {
     const plainText = formData.text.replace(/<[^>]*>/g, "");
     const truncated = plainText.slice(0, 200);
@@ -1845,7 +1865,6 @@ const handleInputChange = (e) => {
     });
   };
 
-  // 🟥 Clear text error when editor content changes
   const handleEditorChange = (content) => {
     setFormData((prev) => ({ ...prev, text: content }));
     if (fieldErrors.text) {
@@ -1853,7 +1872,7 @@ const handleInputChange = (e) => {
     }
   };
 
-  // ── Reusable Image Upload Box with error styling ──
+  // Reusable components (ImageUploadBox, PdfUploadBox, ToggleSwitch, SectionHeader)
   const ImageUploadBox = ({
     preview,
     onRemove,
@@ -1932,7 +1951,6 @@ const handleInputChange = (e) => {
     </div>
   );
 
-  // ── PDF Upload Box with error styling ──
   const PdfUploadBox = ({ error }) => (
     <div
       className={`bg-white rounded-2xl border shadow-sm p-6 ${
@@ -1999,7 +2017,6 @@ const handleInputChange = (e) => {
     </div>
   );
 
-  // ── Toggle Switch Component ──
   const ToggleSwitch = ({ label, description, name, checked, onChange }) => (
     <div className="flex items-center justify-between py-2">
       <div>
@@ -2024,7 +2041,6 @@ const handleInputChange = (e) => {
     </div>
   );
 
-  // ── Section Header ──
   const SectionHeader = ({
     icon: Icon,
     label,
@@ -2039,13 +2055,11 @@ const handleInputChange = (e) => {
       >
         <Icon size={16} className={iconColor} />
       </div>
-
       <div>
         <p className="text-base font-bold text-gray-800">
           {label}
           {required && <span className="text-red-400 ml-1">*</span>}
         </p>
-
         {description && <p className="text-xs text-gray-400">{description}</p>}
       </div>
     </div>
@@ -2053,7 +2067,6 @@ const handleInputChange = (e) => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Toast */}
       {toast.show && (
         <Toasts
           message={toast.message}
@@ -2062,7 +2075,6 @@ const handleInputChange = (e) => {
         />
       )}
 
-      {/* Header */}
       <header className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -2100,9 +2112,7 @@ const handleInputChange = (e) => {
         </div>
       </header>
 
-      {/* Main */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 pb-28 sm:pb-12">
-        {/* Error Alert */}
         {error && (
           <div className="flex items-start gap-3 p-4 mb-6 bg-red-50 border border-red-200 rounded-2xl text-base text-red-700">
             <AlertCircle
@@ -2119,7 +2129,6 @@ const handleInputChange = (e) => {
           </div>
         )}
 
-        {/* Categories loading (using query's loading state) */}
         {loadingCategories && (
           <div className="flex items-center gap-3 p-4 mb-6 bg-indigo-50 border border-indigo-100 rounded-2xl text-base text-indigo-600">
             <div className="w-4 h-4 border-2 border-indigo-300 border-t-indigo-600 rounded-full animate-spin flex-shrink-0" />
@@ -2156,7 +2165,7 @@ const handleInputChange = (e) => {
                 fieldErrors.name ? "border-red-500" : "border-gray-200"
               }`}
               required
-               onKeyDown={blockPlusKey}
+              onKeyDown={blockPlusKey}
             />
             {fieldErrors.name && (
               <p className="text-xs text-red-500 mt-1">{fieldErrors.name}</p>
@@ -2243,8 +2252,6 @@ const handleInputChange = (e) => {
               >
                 Description <span className="text-red-500">*</span>
               </label>
-
-              {/* Tab Switcher */}
               <div className="flex gap-1 p-1 bg-gray-100 rounded-lg">
                 <button
                   type="button"
@@ -2271,7 +2278,6 @@ const handleInputChange = (e) => {
               </div>
             </div>
 
-            {/* Conditional Editor */}
             {editorMode === "tinymce" ? (
               <div
                 className={`border rounded-xl overflow-hidden ${
@@ -2336,7 +2342,7 @@ const handleInputChange = (e) => {
             )}
           </div>
 
-          {/* Short Description with auto‑generate button */}
+          {/* Short Description */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <div className="flex items-center justify-between mb-1">
               <label
@@ -2383,9 +2389,9 @@ const handleInputChange = (e) => {
             iconColor="text-violet-600"
           />
 
-          {/* Duration / Lectures / Students */}
+          {/* Duration / Lectures / Students / Course Sequence */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
               {[
                 {
                   icon: Clock,
@@ -2411,6 +2417,14 @@ const handleInputChange = (e) => {
                   bg: "bg-orange-50",
                   color: "text-orange-500",
                 },
+                {
+                  icon: ListOrdered,
+                  label: "Course Sequence",
+                  name: "course_sequence",
+                  placeholder: "e.g., 1, 2, 3...",
+                  bg: "bg-cyan-50",
+                  color: "text-cyan-500",
+                },
               ].map((field) => (
                 <div key={field.name}>
                   <div className="flex items-center gap-2 mb-2">
@@ -2421,12 +2435,16 @@ const handleInputChange = (e) => {
                     </div>
                     <label className="text-xs font-semibold text-gray-700">
                       {field.label}
+                      {field.name === "course_sequence" && (
+                        <span className="text-gray-400 text-xs font-normal ml-1">(Optional)</span>
+                      )}
                     </label>
                   </div>
 
                   <input
                     type="number"
                     min={0}
+                    step="1"
                     name={field.name}
                     value={formData[field.name]}
                     onChange={handleInputChange}
@@ -2543,7 +2561,7 @@ const handleInputChange = (e) => {
             </div>
           </div>
 
-          {/* Additional Options: Featured & Kids Course */}
+          {/* Additional Options */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-9 h-9 bg-amber-50 rounded-xl flex items-center justify-center">
@@ -2571,7 +2589,7 @@ const handleInputChange = (e) => {
             </div>
           </div>
 
-          {/* SECTION 3 — Media Files */}
+          {/* Media Files */}
           <SectionHeader
             icon={ImagePlus}
             label="Media Files"
@@ -2596,7 +2614,7 @@ const handleInputChange = (e) => {
               onRemove={() => removeFile("banner_img")}
               inputId="banner-upload"
               inputName="banner_img"
-              label="Banner Image "
+              label="Banner Image"
               iconBg="bg-indigo-50"
               iconColor="text-indigo-500"
               error={!!fieldErrors.banner_img}
@@ -2606,7 +2624,7 @@ const handleInputChange = (e) => {
               onRemove={() => removeFile("icon")}
               inputId="icon-upload"
               inputName="icon"
-              label="Course Icon "
+              label="Course Icon"
               iconBg="bg-violet-50"
               iconColor="text-violet-500"
               error={!!fieldErrors.icon}
@@ -2616,7 +2634,7 @@ const handleInputChange = (e) => {
               onRemove={() => removeFile("image2")}
               inputId="image2-upload"
               inputName="image2"
-              label="Additional Image "
+              label="Additional Image"
               iconBg="bg-orange-50"
               iconColor="text-orange-500"
               error={!!fieldErrors.image2}
@@ -2624,7 +2642,7 @@ const handleInputChange = (e) => {
             <PdfUploadBox error={fieldErrors.pdf_file} />
           </div>
 
-          {/* SECTION 4 — SEO & Metadata */}
+          {/* SEO & Metadata */}
           <SectionHeader
             icon={Search}
             label="SEO & Metadata"
@@ -2633,7 +2651,6 @@ const handleInputChange = (e) => {
           />
 
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-5">
-            {/* Meta Title */}
             <div>
               <label
                 htmlFor="meta_title"
@@ -2664,7 +2681,6 @@ const handleInputChange = (e) => {
 
             <div className="h-px bg-gray-100" />
 
-            {/* Meta Description */}
             <div>
               <label
                 htmlFor="meta_description"
@@ -2697,7 +2713,6 @@ const handleInputChange = (e) => {
 
             <div className="h-px bg-gray-100" />
 
-            {/* Keywords */}
             <div>
               <label
                 htmlFor="keywords"

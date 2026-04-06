@@ -756,9 +756,7 @@ export default function AddCategory() {
                 >
                   Category Name <span className="text-red-500">*</span>
                 </label>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  Special characters (%, -, ,, (, ), /) are allowed
-                </p>
+               
               </div>
             </div>
             <input
@@ -791,9 +789,7 @@ export default function AddCategory() {
                 >
                   Slug
                 </label>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  Auto-generated from name (special characters removed)
-                </p>
+               
               </div>
             </div>
             <div className="relative">

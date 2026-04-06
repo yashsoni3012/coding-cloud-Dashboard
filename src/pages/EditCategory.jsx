@@ -1039,9 +1039,7 @@ export default function EditCategory() {
                 >
                   Category Name <span className="text-red-500">*</span>
                 </label>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  Special characters (%, -, ,, (, ), /) are allowed
-                </p>
+               
               </div>
             </div>
             <input
@@ -1074,9 +1072,7 @@ export default function EditCategory() {
                 >
                   Slug
                 </label>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  Auto-generated from name (special characters removed)
-                </p>
+               
               </div>
             </div>
             <div className="relative">
@@ -1095,13 +1091,7 @@ export default function EditCategory() {
                 }`}
               />
             </div>
-            <p className="text-xs text-gray-400 mt-1">
-              {slugManuallyEdited ? (
-                <span className="text-amber-600">✏️ Manually edited — auto‑update disabled</span>
-              ) : (
-                <span className="text-emerald-600">✨ Auto‑generated from name</span>
-              )}
-            </p>
+            
             {fieldErrors.slug && (
               <p className="text-xs text-red-500 mt-1">{fieldErrors.slug}</p>
             )}

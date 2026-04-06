@@ -28,14 +28,8 @@
 
 // const getImageUrl = (path) => {
 //   if (!path) return "";
-
-//   // Already full URL
 //   if (path.startsWith("http")) return path;
-
-//   // If starts with /media or /
 //   if (path.startsWith("/")) return `${BASE_URL}${path}`;
-
-//   // fallback
 //   return `${BASE_URL}/${path}`;
 // };
 
@@ -134,6 +128,7 @@
 //   const [iconPreview, setIconPreview] = useState("");
 //   const [image2Preview, setImage2Preview] = useState("");
 //   const [pdfName, setPdfName] = useState("");
+//   const [errorMessage, setErrorMessage] = useState("");
 
 //   const [filesChanged, setFilesChanged] = useState({
 //     image: false,
@@ -232,30 +227,38 @@
 //   const mutation = useMutation({
 //     mutationFn: updateCourse,
 //     onSuccess: () => {
-//       // Invalidate both the list and this specific course
 //       queryClient.invalidateQueries({ queryKey: ["courses"] });
 //       queryClient.invalidateQueries({ queryKey: ["course", id] });
 //       showToast("Course updated successfully!", "success");
 //       setTimeout(() => navigate("/course"), 2000);
 //     },
-//     onError: (err) => {
-//       if (err.errors) {
-//         setFieldErrors(err.errors);
-//         showToast("Please correct the errors below", "error");
-//       } else {
-//         showToast(err.message || "Failed to update course.", "error");
-//       }
-//     },
-//     onSettled: () => {
-//       setSaving(false);
-//     },
+//    onError: (err) => {
+//   console.error("Mutation error:", err);
+
+//   if (err?.errors) {
+//     setFieldErrors(err.errors);
+//     setErrorMessage(err.message || "Validation failed");
+//     showToast("Please correct the errors below", "error");
+//   } else {
+//     setErrorMessage(err.message || "Failed to update course");
+//     showToast(err.message || "Failed to update course.", "error");
+//   }
+// },
 //   });
 
 //   // Clear error for a field when user types
 //   const handleInputChange = (e) => {
 //     const { name, value } = e.target;
-//     const newValue = name === "category" ? Number(value) : value;
-//     setFormData((prev) => ({ ...prev, [name]: newValue }));
+
+//     // For numeric fields, allow only numbers
+//     if (name === "students") {
+//       const numericValue = value.replace(/[^0-9]/g, "");
+//       setFormData((prev) => ({ ...prev, [name]: numericValue }));
+//     } else if (name === "category") {
+//       setFormData((prev) => ({ ...prev, [name]: Number(value) }));
+//     } else {
+//       setFormData((prev) => ({ ...prev, [name]: value }));
+//     }
 
 //     if (fieldErrors[name]) {
 //       setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
@@ -360,6 +363,18 @@
 //     if (!formData.text.trim()) errors.text = "Description is required";
 //     if (!formData.certificate) errors.certificate = "Certificate is required";
 
+//     // Validate numeric fields
+//     if (formData.duration && isNaN(parseFloat(formData.duration))) {
+//       errors.duration = "Duration must be a number";
+//     }
+//     if (formData.lecture && isNaN(parseFloat(formData.lecture))) {
+//       errors.lecture = "Lectures must be a number";
+//     }
+//     if (formData.students && !/^\d+$/.test(formData.students)) {
+//       errors.students = "Students must be a number";
+//     }
+
+//     // File validations
 //     if (!formData.existing_image && !formData.image) {
 //       errors.image = "Course image is required";
 //     }
@@ -381,55 +396,86 @@
 //   };
 
 //   // Handle form submission
-//   const handleSubmit = async (e) => {
-//     e.preventDefault();
+// const handleSubmit = async (e) => {
+//   e.preventDefault();
 
-//     const errors = validateForm();
-//     if (Object.keys(errors).length > 0) {
-//       showToast("Please fill required fields", "error");
-//       return;
-//     }
+//   setErrorMessage("");
 
-//     setSaving(true);
-//     try {
-//       const submitData = new FormData();
-//       submitData.append("name", formData.name);
-//       submitData.append("slug", formData.slug);
-//       submitData.append("category", formData.category);
-//       submitData.append("text", formData.text);
-//       if (formData.short_description)
-//         submitData.append("short_description", formData.short_description);
-//       if (formData.duration) submitData.append("duration", formData.duration);
-//       if (formData.lecture) submitData.append("lecture", formData.lecture);
-//       if (formData.students) submitData.append("students", formData.students);
-//       if (formData.level) submitData.append("level", formData.level);
-//       if (formData.language) submitData.append("language", formData.language);
+//   if (!validateForm()) {
+//     showToast("Please fill required fields correctly", "error");
+//     return;
+//   }
+
+//   setSaving(true);
+
+//   try {
+//     const submitData = new FormData();
+
+//     // Basic fields
+//     submitData.append("name", formData.name.trim());
+//     submitData.append("slug", formData.slug.trim());
+//     submitData.append("category", formData.category);
+//     submitData.append("text", formData.text);
+
+//     if (formData.short_description?.trim()) {
 //       submitData.append(
-//         "certificate",
-//         formData.certificate === "Yes" ? "Yes" : "No",
+//         "short_description",
+//         formData.short_description.trim()
 //       );
-//       submitData.append("featured", formData.featured.toString());
-//       submitData.append("kids_course", formData.kids_course.toString());
-//       if (formData.meta_title)
-//         submitData.append("meta_title", formData.meta_title);
-//       if (formData.meta_description)
-//         submitData.append("meta_description", formData.meta_description);
-//       if (formData.keywords) submitData.append("keywords", formData.keywords);
-
-//       if (formData.image) submitData.append("image", formData.image);
-//       if (formData.banner_img)
-//         submitData.append("banner_img", formData.banner_img);
-//       if (formData.pdf_file) submitData.append("pdf_file", formData.pdf_file);
-//       if (formData.icon) submitData.append("icon", formData.icon);
-//       if (formData.image2) submitData.append("image2", formData.image2);
-
-//       mutation.mutate({ id, formData: submitData });
-//     } catch (err) {
-//       // This should not happen because mutation handles errors, but keep for safety
-//       showToast("Network error. Please check your connection.", "error");
-//       setSaving(false);
 //     }
-//   };
+
+//     // Numeric fields
+//     if (formData.duration)
+//       submitData.append("duration", Number(formData.duration));
+
+//     if (formData.lecture)
+//       submitData.append("lecture", Number(formData.lecture));
+
+//     if (formData.students)
+//       submitData.append("students", Number(formData.students));
+
+//     // Optional fields
+//     if (formData.level) submitData.append("level", formData.level);
+//     if (formData.language) submitData.append("language", formData.language);
+
+//     // Boolean conversion (VERY IMPORTANT)
+//     submitData.append(
+//       "certificate",
+//       formData.certificate === "Yes"
+//     );
+
+//     submitData.append("featured", formData.featured);
+//     submitData.append("kids_course", formData.kids_course);
+
+//     // SEO
+//     if (formData.meta_title)
+//       submitData.append("meta_title", formData.meta_title);
+
+//     if (formData.meta_description)
+//       submitData.append("meta_description", formData.meta_description);
+
+//     if (formData.keywords)
+//       submitData.append("keywords", formData.keywords);
+
+//     // Files (only if changed)
+//     if (formData.image) submitData.append("image", formData.image);
+//     if (formData.banner_img)
+//       submitData.append("banner_img", formData.banner_img);
+//     if (formData.icon) submitData.append("icon", formData.icon);
+//     if (formData.image2) submitData.append("image2", formData.image2);
+//     if (formData.pdf_file)
+//       submitData.append("pdf_file", formData.pdf_file);
+
+//     // 🔥 Trigger mutation
+//     mutation.mutate({ id, formData: submitData });
+
+//   } catch (err) {
+//     console.error("Submit error:", err);
+//     setErrorMessage("Something went wrong. Please try again.");
+//     showToast("Network error. Please check your connection.", "error");
+//     setSaving(false);
+//   }
+// };
 
 //   // ── Toggle Switch Component ──
 //   const ToggleSwitch = ({ label, description, name, checked, onChange }) => (
@@ -893,7 +939,7 @@
 //                 }`}
 //               >
 //                 <Editor
-//                   apiKey="x5ikrjt2xexo2x73y0uzybqhbjq29owf8drai57qhtew5e0j"
+//                   apiKey="f45j826wq94pn0e0xseucsvqi8k7xug5idltalwrry8pevjm"
 //                   value={formData.text}
 //                   onEditorChange={(content) => {
 //                     setFormData((prev) => ({ ...prev, text: content }));
@@ -1006,7 +1052,7 @@
 //                   icon: Clock,
 //                   label: "Duration",
 //                   name: "duration",
-//                   placeholder: "e.g., 40 hours",
+//                   placeholder: "e.g., 40",
 //                   bg: "bg-blue-50",
 //                   color: "text-blue-500",
 //                 },
@@ -1014,7 +1060,7 @@
 //                   icon: BookOpen,
 //                   label: "Lectures",
 //                   name: "lecture",
-//                   placeholder: "e.g., 98 lectures",
+//                   placeholder: "e.g., 98",
 //                   bg: "bg-emerald-50",
 //                   color: "text-emerald-500",
 //                 },
@@ -1022,7 +1068,7 @@
 //                   icon: Users,
 //                   label: "Students",
 //                   name: "students",
-//                   placeholder: "e.g., 1,000+",
+//                   placeholder: "e.g., 1000",
 //                   bg: "bg-orange-50",
 //                   color: "text-orange-500",
 //                 },
@@ -1039,13 +1085,23 @@
 //                     </label>
 //                   </div>
 //                   <input
-//                     type="text"
+//                     type="number"
+//                     min={0}
 //                     name={field.name}
 //                     value={formData[field.name]}
 //                     onChange={handleInputChange}
 //                     placeholder={field.placeholder}
-//                     className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+//                     className={`w-full px-3 py-2.5 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
+//                       fieldErrors[field.name]
+//                         ? "border-red-500"
+//                         : "border-gray-200"
+//                     }`}
 //                   />
+//                   {fieldErrors[field.name] && (
+//                     <p className="text-xs text-red-500 mt-1">
+//                       {fieldErrors[field.name]}
+//                     </p>
+//                   )}
 //                 </div>
 //               ))}
 //             </div>
@@ -1372,6 +1428,7 @@ import {
   Search,
   Sparkles,
   AlertCircle,
+  ListOrdered,
 } from "lucide-react";
 import Toasts from "./Toasts";
 
@@ -1459,6 +1516,7 @@ export default function EditCourse() {
     certificate: "No",
     featured: false,
     kids_course: false,
+    course_sequence: "", // new field
     meta_title: "",
     meta_description: "",
     keywords: "",
@@ -1534,6 +1592,7 @@ export default function EditCourse() {
         certificate: courseData.certificate_display || "No",
         featured: courseData.featured || false,
         kids_course: courseData.kids_course || false,
+        course_sequence: courseData.course_sequence ?? "", // new field
         meta_title: courseData.meta_title || "",
         meta_description: courseData.meta_description || "",
         keywords: courseData.keywords || "",
@@ -1583,18 +1642,17 @@ export default function EditCourse() {
       showToast("Course updated successfully!", "success");
       setTimeout(() => navigate("/course"), 2000);
     },
-   onError: (err) => {
-  console.error("Mutation error:", err);
-
-  if (err?.errors) {
-    setFieldErrors(err.errors);
-    setErrorMessage(err.message || "Validation failed");
-    showToast("Please correct the errors below", "error");
-  } else {
-    setErrorMessage(err.message || "Failed to update course");
-    showToast(err.message || "Failed to update course.", "error");
-  }
-},
+    onError: (err) => {
+      console.error("Mutation error:", err);
+      if (err?.errors) {
+        setFieldErrors(err.errors);
+        setErrorMessage(err.message || "Validation failed");
+        showToast("Please correct the errors below", "error");
+      } else {
+        setErrorMessage(err.message || "Failed to update course");
+        showToast(err.message || "Failed to update course.", "error");
+      }
+    },
   });
 
   // Clear error for a field when user types
@@ -1603,6 +1661,9 @@ export default function EditCourse() {
 
     // For numeric fields, allow only numbers
     if (name === "students") {
+      const numericValue = value.replace(/[^0-9]/g, "");
+      setFormData((prev) => ({ ...prev, [name]: numericValue }));
+    } else if (name === "course_sequence") {
       const numericValue = value.replace(/[^0-9]/g, "");
       setFormData((prev) => ({ ...prev, [name]: numericValue }));
     } else if (name === "category") {
@@ -1724,6 +1785,9 @@ export default function EditCourse() {
     if (formData.students && !/^\d+$/.test(formData.students)) {
       errors.students = "Students must be a number";
     }
+    if (formData.course_sequence && !/^\d+$/.test(formData.course_sequence)) {
+      errors.course_sequence = "Course sequence must be a number";
+    }
 
     // File validations
     if (!formData.existing_image && !formData.image) {
@@ -1747,86 +1811,67 @@ export default function EditCourse() {
   };
 
   // Handle form submission
-const handleSubmit = async (e) => {
-  e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  setErrorMessage("");
+    setErrorMessage("");
 
-  if (!validateForm()) {
-    showToast("Please fill required fields correctly", "error");
-    return;
-  }
-
-  setSaving(true);
-
-  try {
-    const submitData = new FormData();
-
-    // Basic fields
-    submitData.append("name", formData.name.trim());
-    submitData.append("slug", formData.slug.trim());
-    submitData.append("category", formData.category);
-    submitData.append("text", formData.text);
-
-    if (formData.short_description?.trim()) {
-      submitData.append(
-        "short_description",
-        formData.short_description.trim()
-      );
+    if (!validateForm()) {
+      showToast("Please fill required fields correctly", "error");
+      return;
     }
 
-    // Numeric fields
-    if (formData.duration)
-      submitData.append("duration", Number(formData.duration));
+    setSaving(true);
 
-    if (formData.lecture)
-      submitData.append("lecture", Number(formData.lecture));
+    try {
+      const submitData = new FormData();
 
-    if (formData.students)
-      submitData.append("students", Number(formData.students));
+      // Basic fields
+      submitData.append("name", formData.name.trim());
+      submitData.append("slug", formData.slug.trim());
+      submitData.append("category", formData.category);
+      submitData.append("text", formData.text);
 
-    // Optional fields
-    if (formData.level) submitData.append("level", formData.level);
-    if (formData.language) submitData.append("language", formData.language);
+      if (formData.short_description?.trim()) {
+        submitData.append("short_description", formData.short_description.trim());
+      }
 
-    // Boolean conversion (VERY IMPORTANT)
-    submitData.append(
-      "certificate",
-      formData.certificate === "Yes"
-    );
+      // Numeric fields
+      if (formData.duration) submitData.append("duration", Number(formData.duration));
+      if (formData.lecture) submitData.append("lecture", Number(formData.lecture));
+      if (formData.students) submitData.append("students", Number(formData.students));
+      if (formData.course_sequence) submitData.append("course_sequence", Number(formData.course_sequence));
 
-    submitData.append("featured", formData.featured);
-    submitData.append("kids_course", formData.kids_course);
+      // Optional fields
+      if (formData.level) submitData.append("level", formData.level);
+      if (formData.language) submitData.append("language", formData.language);
 
-    // SEO
-    if (formData.meta_title)
-      submitData.append("meta_title", formData.meta_title);
+      // Boolean conversion
+      submitData.append("certificate", formData.certificate === "Yes");
+      submitData.append("featured", formData.featured);
+      submitData.append("kids_course", formData.kids_course);
 
-    if (formData.meta_description)
-      submitData.append("meta_description", formData.meta_description);
+      // SEO
+      if (formData.meta_title) submitData.append("meta_title", formData.meta_title);
+      if (formData.meta_description) submitData.append("meta_description", formData.meta_description);
+      if (formData.keywords) submitData.append("keywords", formData.keywords);
 
-    if (formData.keywords)
-      submitData.append("keywords", formData.keywords);
+      // Files (only if changed)
+      if (formData.image) submitData.append("image", formData.image);
+      if (formData.banner_img) submitData.append("banner_img", formData.banner_img);
+      if (formData.icon) submitData.append("icon", formData.icon);
+      if (formData.image2) submitData.append("image2", formData.image2);
+      if (formData.pdf_file) submitData.append("pdf_file", formData.pdf_file);
 
-    // Files (only if changed)
-    if (formData.image) submitData.append("image", formData.image);
-    if (formData.banner_img)
-      submitData.append("banner_img", formData.banner_img);
-    if (formData.icon) submitData.append("icon", formData.icon);
-    if (formData.image2) submitData.append("image2", formData.image2);
-    if (formData.pdf_file)
-      submitData.append("pdf_file", formData.pdf_file);
-
-    // 🔥 Trigger mutation
-    mutation.mutate({ id, formData: submitData });
-
-  } catch (err) {
-    console.error("Submit error:", err);
-    setErrorMessage("Something went wrong. Please try again.");
-    showToast("Network error. Please check your connection.", "error");
-    setSaving(false);
-  }
-};
+      // Trigger mutation
+      mutation.mutate({ id, formData: submitData });
+    } catch (err) {
+      console.error("Submit error:", err);
+      setErrorMessage("Something went wrong. Please try again.");
+      showToast("Network error. Please check your connection.", "error");
+      setSaving(false);
+    }
+  };
 
   // ── Toggle Switch Component ──
   const ToggleSwitch = ({ label, description, name, checked, onChange }) => (
@@ -2395,9 +2440,9 @@ const handleSubmit = async (e) => {
             iconColor="text-violet-600"
           />
 
-          {/* Duration / Lectures / Students */}
+          {/* Duration / Lectures / Students / Course Sequence */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
               {[
                 {
                   icon: Clock,
@@ -2423,6 +2468,14 @@ const handleSubmit = async (e) => {
                   bg: "bg-orange-50",
                   color: "text-orange-500",
                 },
+                {
+                  icon: ListOrdered,
+                  label: "Course Sequence",
+                  name: "course_sequence",
+                  placeholder: "e.g., 1, 2, 3...",
+                  bg: "bg-cyan-50",
+                  color: "text-cyan-500",
+                },
               ].map((field) => (
                 <div key={field.name}>
                   <div className="flex items-center gap-2 mb-2">
@@ -2433,11 +2486,15 @@ const handleSubmit = async (e) => {
                     </div>
                     <label className="text-xs font-semibold text-gray-700">
                       {field.label}
+                      {field.name === "course_sequence" && (
+                        <span className="text-gray-400 text-xs font-normal ml-1">(Optional)</span>
+                      )}
                     </label>
                   </div>
                   <input
                     type="number"
                     min={0}
+                    step="1"
                     name={field.name}
                     value={formData[field.name]}
                     onChange={handleInputChange}

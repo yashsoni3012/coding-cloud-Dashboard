@@ -487,13 +487,8 @@ export default function ContactList() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Contact Messages</h1>
           <div className="flex gap-3">
-            <button
-              onClick={fetchContacts}
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
-            >
-              <RefreshCw size={16} />
-              Refresh
-            </button>
+            
+              
             <button
               onClick={exportToExcel}
               className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition"
