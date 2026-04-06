@@ -1,6 +1,7 @@
 // import { useState, useEffect } from "react";
 // import { format, parseISO, isWithinInterval, startOfDay, endOfDay } from "date-fns";
-// import { Calendar, Search, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
+// import * as XLSX from "xlsx";
+// import { Calendar, RefreshCw, ChevronLeft, ChevronRight, Download } from "lucide-react";
 
 // const API_BASE = "https://codingcloudapi.codingcloud.co.in";
 
@@ -14,10 +15,14 @@
 //   }
 // };
 
-// // Helper: get only date part (YYYY-MM-DD) for comparison
-// const getDateOnly = (isoString) => {
-//   if (!isoString) return null;
-//   return parseISO(isoString).toISOString().split("T")[0];
+// // Helper: format date for Excel (YYYY-MM-DD HH:MM:SS)
+// const formatDateForExcel = (isoString) => {
+//   if (!isoString) return "";
+//   try {
+//     return format(parseISO(isoString), "yyyy-MM-dd HH:mm:ss");
+//   } catch {
+//     return isoString;
+//   }
 // };
 
 // export default function ContactList() {
@@ -30,7 +35,7 @@
 //   const [startDate, setStartDate] = useState("");
 //   const [endDate, setEndDate] = useState("");
 
-//   // Pagination (optional)
+//   // Pagination
 //   const [currentPage, setCurrentPage] = useState(1);
 //   const itemsPerPage = 10;
 
@@ -39,10 +44,9 @@
 //     setLoading(true);
 //     setError("");
 //     try {
-//       const response = await fetch(`${API_BASE}/contacts/`); // adjust endpoint as needed
+//       const response = await fetch(`${API_BASE}/contacts/`); // adjust endpoint
 //       if (!response.ok) throw new Error("Failed to fetch contacts");
 //       const data = await response.json();
-//       // Assuming API returns { success: true, data: [...] } or directly an array
 //       const contactsArray = Array.isArray(data) ? data : data.data || [];
 //       // Sort by created_at descending (newest first)
 //       const sorted = [...contactsArray].sort(
@@ -89,20 +93,60 @@
 //     }
 
 //     setFilteredContacts(filtered);
-//     setCurrentPage(1); // reset to first page when filter changes
+//     setCurrentPage(1);
 //   }, [contacts, startDate, endDate]);
 
-//   // Pagination logic
-//   const totalPages = Math.ceil(filteredContacts.length / itemsPerPage);
-//   const paginatedContacts = filteredContacts.slice(
-//     (currentPage - 1) * itemsPerPage,
-//     currentPage * itemsPerPage
-//   );
+//   // Export to Excel (exports current filtered data)
+//   const exportToExcel = () => {
+//     if (filteredContacts.length === 0) {
+//       alert("No data to export for the selected date range.");
+//       return;
+//     }
+
+//     // Prepare data for Excel
+//     const excelData = filteredContacts.map((contact) => ({
+//       "Full Name": contact.full_name || "",
+//       Email: contact.email || "",
+//       "Mobile No": contact.mobile_no || "",
+//       Subject: contact.subject || "",
+//       Message: contact.message || "",
+//       "Created At": formatDateForExcel(contact.created_at),
+//       "Updated At": formatDateForExcel(contact.updated_at),
+//     }));
+
+//     // Create worksheet and workbook
+//     const worksheet = XLSX.utils.json_to_sheet(excelData);
+//     const workbook = XLSX.utils.book_new();
+//     XLSX.utils.book_append_sheet(workbook, worksheet, "Contacts");
+
+//     // Generate filename with date range
+//     let fileName = "contacts";
+//     if (startDate && endDate) {
+//       fileName = `contacts_${startDate}_to_${endDate}`;
+//     } else if (startDate) {
+//       fileName = `contacts_from_${startDate}`;
+//     } else if (endDate) {
+//       fileName = `contacts_until_${endDate}`;
+//     } else {
+//       fileName = `contacts_all`;
+//     }
+//     fileName += ".xlsx";
+
+//     // Export
+//     XLSX.writeFile(workbook, fileName);
+//   };
 
 //   const handleClearFilters = () => {
 //     setStartDate("");
 //     setEndDate("");
 //   };
+
+//   // Pagination
+//   const totalPages = Math.ceil(filteredContacts.length / itemsPerPage);
+//   const paginatedContacts = filteredContacts.slice(
+//     (currentPage - 1) * itemsPerPage,
+//     currentPage * itemsPerPage
+//   );
 
 //   return (
 //     <div className="min-h-screen bg-gray-50 p-6">
@@ -110,13 +154,15 @@
 //         {/* Header */}
 //         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
 //           <h1 className="text-2xl font-bold text-gray-900">Contact Messages</h1>
-//           <button
-//             onClick={fetchContacts}
-//             className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
-//           >
-//             <RefreshCw size={16} />
-//             Refresh
-//           </button>
+//           <div className="flex gap-3">
+//             <button
+//               onClick={exportToExcel}
+//               className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition"
+//             >
+//               <Download size={16} />
+//               Export to Excel
+//             </button>
+//           </div>
 //         </div>
 
 //         {/* Date Filter Bar */}
@@ -168,6 +214,11 @@
 //               Showing messages from{" "}
 //               {startDate ? format(parseISO(startDate), "dd MMM yyyy") : "any date"}{" "}
 //               to {endDate ? format(parseISO(endDate), "dd MMM yyyy") : "any date"}
+//               {filteredContacts.length > 0 && (
+//                 <span className="ml-2 font-semibold">
+//                   ({filteredContacts.length} records)
+//                 </span>
+//               )}
 //             </div>
 //           )}
 //         </div>
@@ -204,11 +255,9 @@
 //                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
 //                         Subject
 //                       </th>
+                    
 //                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-//                         Message
-//                       </th>
-//                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-//                         Created At
+//                         Date
 //                       </th>
 //                     </tr>
 //                   </thead>
@@ -227,9 +276,7 @@
 //                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
 //                           {contact.subject}
 //                         </td>
-//                         <td className="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">
-//                           {contact.message}
-//                         </td>
+                      
 //                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
 //                           {formatDate(contact.created_at)}
 //                         </td>
@@ -272,7 +319,7 @@
 import { useState, useEffect } from "react";
 import { format, parseISO, isWithinInterval, startOfDay, endOfDay } from "date-fns";
 import * as XLSX from "xlsx";
-import { Calendar, RefreshCw, ChevronLeft, ChevronRight, Download } from "lucide-react";
+import { Calendar, RefreshCw, ChevronLeft, ChevronRight, Download, Eye, X } from "lucide-react";
 
 const API_BASE = "https://codingcloudapi.codingcloud.co.in";
 
@@ -309,6 +356,10 @@ export default function ContactList() {
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+
+  // Modal state
+  const [selectedContact, setSelectedContact] = useState(null);
+  const [showModal, setShowModal] = useState(false);
 
   // Fetch data from API
   const fetchContacts = async () => {
@@ -412,6 +463,16 @@ export default function ContactList() {
     setEndDate("");
   };
 
+  const openModal = (contact) => {
+    setSelectedContact(contact);
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setSelectedContact(null);
+  };
+
   // Pagination
   const totalPages = Math.ceil(filteredContacts.length / itemsPerPage);
   const paginatedContacts = filteredContacts.slice(
@@ -426,6 +487,13 @@ export default function ContactList() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Contact Messages</h1>
           <div className="flex gap-3">
+            <button
+              onClick={fetchContacts}
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+            >
+              <RefreshCw size={16} />
+              Refresh
+            </button>
             <button
               onClick={exportToExcel}
               className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition"
@@ -527,10 +595,10 @@ export default function ContactList() {
                         Subject
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Message
+                        Date
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Created At
+                        Actions
                       </th>
                     </tr>
                   </thead>
@@ -549,11 +617,17 @@ export default function ContactList() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                           {contact.subject}
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">
-                          {contact.message}
-                        </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {formatDate(contact.created_at)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <button
+                            onClick={() => openModal(contact)}
+                            className="p-2 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
+                            title="View Details"
+                          >
+                            <Eye size={18} />
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -587,6 +661,92 @@ export default function ContactList() {
           </>
         )}
       </div>
+
+      {/* Modal for viewing contact details */}
+      {showModal && selectedContact && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-gray-900">Contact Details</h2>
+              <button
+                onClick={closeModal}
+                className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                    Full Name
+                  </label>
+                  <p className="text-gray-900 font-medium">{selectedContact.full_name || "—"}</p>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                    Email
+                  </label>
+                  <a href={`mailto:${selectedContact.email}`} className="text-indigo-600 hover:underline">
+                    {selectedContact.email || "—"}
+                  </a>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                    Mobile No
+                  </label>
+                  <p className="text-gray-900">{selectedContact.mobile_no || "—"}</p>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                    Subject
+                  </label>
+                  <p className="text-gray-900 font-medium">{selectedContact.subject || "—"}</p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                  Message
+                </label>
+                <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                  <p className="text-gray-700 whitespace-pre-wrap break-words">
+                    {selectedContact.message || "—"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                    Created At
+                  </label>
+                  <p className="text-gray-900">{formatDate(selectedContact.created_at)}</p>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                    Updated At
+                  </label>
+                  <p className="text-gray-900">{formatDate(selectedContact.updated_at)}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-gray-200 flex justify-end">
+              <button
+                onClick={closeModal}
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition font-medium"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

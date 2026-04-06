@@ -596,7 +596,7 @@ export default function RegisterMessages() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans p-6 max-w-6xl mx-auto">
+    <div className="min-h-screen bg-gray-50 font-sans p-6 max-w-7xl mx-auto">
       {/* Header with Export Button */}
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <div>
