@@ -1,5 +1,8 @@
+
+
 // import { useState, useEffect, useRef } from "react";
 // import { useNavigate, useParams, useLocation } from "react-router-dom";
+// import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 // import {
 //   ArrowLeft,
 //   Save,
@@ -14,21 +17,115 @@
 // } from "lucide-react";
 // import Toasts from "../pages/Toasts";
 
+// // Fetch function for a single category (uses location state if available, otherwise fetches all)
+// const fetchCategory = async (id, locationState) => {
+//   if (locationState && locationState.category) {
+//     return locationState.category;
+//   }
+//   const response = await fetch(
+//     "https://codingcloudapi.codingcloud.co.in/category/",
+//   );
+//   if (!response.ok) throw new Error("Failed to load categories");
+//   const listData = await response.json();
+//   const category = listData.find((c) => c.id === parseInt(id));
+//   if (!category) throw new Error("Category not found");
+//   return category;
+// };
+
+// // Update mutation function
+// const updateCategory = async ({ id, formData }) => {
+//   const response = await fetch(
+//     `https://codingcloudapi.codingcloud.co.in/category/${id}/`,
+//     { method: "PATCH", body: formData },
+//   );
+//   if (!response.ok) {
+//     const data = await response.json().catch(() => ({}));
+//     // Handle structured field errors
+//     if (data.errors) {
+//       const backendErrors = {};
+//       Object.keys(data.errors).forEach((key) => {
+//         backendErrors[key] = data.errors[key].join(", ");
+//       });
+//       throw {
+//         message: "Please correct the errors below",
+//         errors: backendErrors,
+//       };
+//     }
+//     let message =
+//       data.message ||
+//       data.detail ||
+//       "Enter a valid slug consisting of letters, numbers, underscores or hyphens.";
+//     if (data.slug && data.slug.length > 0) message = data.slug[0];
+//     else if (data.name && data.name.length > 0) message = data.name[0];
+//     throw new Error(message);
+//   }
+//   return response.json();
+// };
+
+// const getImageUrl = (path) => {
+//   if (!path) return "";
+
+//   // If already full URL
+//   if (path.startsWith("http")) return path;
+
+//   return `https://codingcloudapi.codingcloud.co.in${path}`;
+// };
 // export default function EditCategory() {
 //   const navigate = useNavigate();
 //   const { id } = useParams();
 //   const location = useLocation();
 //   const locationState = location.state;
+//   const queryClient = useQueryClient();
 //   const fileInputRef = useRef(null);
 //   const timeoutRef = useRef(null);
 
+//   // --- TanStack Query: fetch category ---
+//   const {
+//     data: categoryData,
+//     isLoading,
+//     error: queryError,
+//   } = useQuery({
+//     queryKey: ["category", id],
+//     queryFn: () => fetchCategory(id, locationState),
+//     staleTime: 5 * 60 * 1000, // 5 minutes
+//   });
+
+//   // --- TanStack Mutation: update category ---
+//   const mutation = useMutation({
+//     mutationFn: updateCategory,
+//     onSuccess: () => {
+//       // Invalidate both the list and this specific category
+//       queryClient.invalidateQueries({ queryKey: ["categories"] });
+//       queryClient.invalidateQueries({ queryKey: ["category", id] });
+//       setToast({
+//         show: true,
+//         message: "Category updated successfully!",
+//         type: "success",
+//       });
+//       timeoutRef.current = setTimeout(() => {
+//         navigate("/category");
+//       }, 1500);
+//     },
+//     onError: (err) => {
+//       if (err.errors) {
+//         setFieldErrors(err.errors);
+//         setError("Please correct the errors below");
+//       } else {
+//         setError(err.message || "Update failed");
+//       }
+//     },
+//     onSettled: () => {
+//       setSaving(false);
+//     },
+//   });
+
+//   // Local state (unchanged)
 //   const [formData, setFormData] = useState({
 //     name: "",
 //     text: "",
 //     slug: "",
 //     image: null,
 //   });
-//   const [loading, setLoading] = useState(true);
 //   const [saving, setSaving] = useState(false);
 //   const [error, setError] = useState("");
 //   const [fieldErrors, setFieldErrors] = useState({});
@@ -41,65 +138,30 @@
 //   const [originalImage, setOriginalImage] = useState(null);
 //   const [dragOver, setDragOver] = useState(false);
 
-//   // Clear timeout if component unmounts while waiting
+//   // Update local form when data is fetched
+//   useEffect(() => {
+//     if (categoryData) {
+//       setFormData({
+//         name: categoryData.name || "",
+//         text: categoryData.text || "",
+//         slug: categoryData.slug || "",
+//         image: null,
+//       });
+//       if (categoryData.image) {
+//         const fullImageUrl = getImageUrl(categoryData.image);
+//         console.log("Image URL:", fullImageUrl); // 👈 add this
+//         setImagePreview(fullImageUrl);
+//         setOriginalImage(fullImageUrl);
+//       }
+//     }
+//   }, [categoryData]);
+
+//   // Cleanup timeout
 //   useEffect(() => {
 //     return () => {
 //       if (timeoutRef.current) clearTimeout(timeoutRef.current);
 //     };
 //   }, []);
-
-//   useEffect(() => {
-//     const fetchCategory = async () => {
-//       try {
-//         setLoading(true);
-//         let categoryData = null;
-
-//         if (locationState && locationState.category) {
-//           categoryData = locationState.category;
-//         } else {
-//           const response = await fetch(
-//             "https://codingcloudapi.codingcloud.co.in/category/",
-//           );
-//           if (response.ok) {
-//             const listData = await response.json();
-//             categoryData = listData.find((c) => c.id === parseInt(id));
-//           }
-//         }
-
-//         if (categoryData) {
-//           setFormData({
-//             name: categoryData.name || "",
-//             text: categoryData.text || "",
-//             slug: categoryData.slug || "",
-//             image: null,
-//           });
-//           if (categoryData.image) {
-//             const fullImageUrl = `https://codingcloudapi.codingcloud.co.in/${categoryData.image}`;
-//             setImagePreview(fullImageUrl);
-//             setOriginalImage(fullImageUrl);
-//           }
-//         } else {
-//           setError("Category not found.");
-//         }
-//       } catch (err) {
-//         setError("Failed to load category details.");
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
-
-//     fetchCategory();
-//   }, [id, locationState]);
-
-//   const handleInputChange = (e) => {
-//     const { name, value } = e.target;
-//     setFormData((prev) => ({ ...prev, [name]: value }));
-//     // Clear error for this field when user types
-//     if (fieldErrors[name]) {
-//       setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
-//     }
-//     setError("");
-//   };
 
 //   const generateSlug = (name) => {
 //     return name
@@ -110,17 +172,20 @@
 //       .replace(/--+/g, "-");
 //   };
 
+//   const handleInputChange = (e) => {
+//     const { name, value } = e.target;
+//     setFormData((prev) => ({ ...prev, [name]: value }));
+//     if (fieldErrors[name]) {
+//       setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
+//     }
+//     setError("");
+//   };
+
 //   const handleNameChange = (e) => {
 //     const value = e.target.value;
-
-//     // Allow only letters, spaces, comma, hyphen
-//     if (!/^[A-Za-z\s,-]*$/.test(value)) {
-//       return;
-//     }
+//     if (!/^[A-Za-z\s,-]*$/.test(value)) return;
 
 //     setFormData((prev) => {
-//       // Only auto‑generate slug if the slug hasn't been manually edited
-//       // or if it matches the previously generated slug from the old name
 //       const shouldAutoGenerate =
 //         !prev.slug || prev.slug === generateSlug(prev.name);
 //       return {
@@ -130,7 +195,6 @@
 //       };
 //     });
 
-//     // Clear name error if it exists
 //     if (fieldErrors.name) {
 //       setFieldErrors((prev) => ({ ...prev, name: undefined }));
 //     }
@@ -155,21 +219,17 @@
 //   };
 
 //   const handleImageChange = (e) => processFile(e.target.files[0]);
-
 //   const handleDrop = (e) => {
 //     e.preventDefault();
 //     setDragOver(false);
 //     processFile(e.dataTransfer.files[0]);
 //   };
-
 //   const triggerFileInput = () => fileInputRef.current?.click();
-
 //   const removeImage = () => {
 //     setFormData((prev) => ({ ...prev, image: null }));
 //     setImagePreview(null);
 //     if (fileInputRef.current) fileInputRef.current.value = "";
 //   };
-
 //   const restoreOriginalImage = () => {
 //     setFormData((prev) => ({ ...prev, image: null }));
 //     setImagePreview(originalImage);
@@ -178,23 +238,20 @@
 
 //   const validateForm = () => {
 //     const errors = {};
-
 //     if (!formData.name.trim()) {
 //       errors.name = "Category name is required";
 //     } else if (!/^[A-Za-z\s,-]+$/.test(formData.name.trim())) {
 //       errors.name =
 //         "Category name can contain letters, spaces, comma (,) and hyphen (-)";
 //     }
-
 //     if (!formData.text.trim()) {
 //       errors.text = "Description is required";
 //     }
-
 //     setFieldErrors(errors);
 //     return Object.keys(errors).length === 0;
 //   };
 
-//   const handleSubmit = async (e) => {
+//   const handleSubmit = (e) => {
 //     e.preventDefault();
 
 //     if (!validateForm()) {
@@ -208,65 +265,20 @@
 //     }
 
 //     if (timeoutRef.current) clearTimeout(timeoutRef.current);
-
 //     setSaving(true);
 //     setError("");
 //     setToast({ ...toast, show: false });
 
-//     try {
-//       const payload = new FormData();
-//       payload.append("name", formData.name.trim());
-//       payload.append("text", formData.text.trim()); // now required, always send
-//       payload.append("slug", formData.slug?.trim() || "");
-//       if (formData.image instanceof File) payload.append("image", formData.image);
+//     const payload = new FormData();
+//     payload.append("name", formData.name.trim());
+//     payload.append("text", formData.text.trim());
+//     payload.append("slug", formData.slug?.trim() || "");
+//     if (formData.image instanceof File) payload.append("image", formData.image);
 
-//       const response = await fetch(
-//         `https://codingcloudapi.codingcloud.co.in/category/${id}/`,
-//         { method: "PATCH", body: payload },
-//       );
-
-//       if (!response.ok) {
-//         const data = await response.json();
-
-//         // Handle structured field errors from backend
-//         if (data.errors) {
-//           const backendErrors = {};
-//           Object.keys(data.errors).forEach((key) => {
-//             backendErrors[key] = data.errors[key].join(", ");
-//           });
-//           setFieldErrors(backendErrors);
-//           throw new Error("Please correct the errors below");
-//         }
-
-//         // Fallback error message
-//         let message =
-//           data.message ||
-//           data.detail ||
-//           "Enter a valid slug consisting of letters, numbers, underscores or hyphens.";
-//         if (data.slug && data.slug.length > 0) {
-//           message = data.slug[0];
-//         } else if (data.name && data.name.length > 0) {
-//           message = data.name[0];
-//         }
-//         throw new Error(message);
-//       }
-
-//       setToast({
-//         show: true,
-//         message: "Category updated successfully!",
-//         type: "success",
-//       });
-
-//       timeoutRef.current = setTimeout(() => {
-//         navigate("/category");
-//       }, 1500);
-//     } catch (err) {
-//       setError(err.message || "Update failed");
-//       setSaving(false);
-//     }
+//     mutation.mutate({ id, formData: payload });
 //   };
 
-//   if (loading) {
+//   if (isLoading) {
 //     return (
 //       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
 //         <div className="text-center">
@@ -274,6 +286,26 @@
 //           <p className="text-base text-gray-500 font-medium">
 //             Loading category details…
 //           </p>
+//         </div>
+//       </div>
+//     );
+//   }
+
+//   if (queryError) {
+//     return (
+//       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+//         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 max-w-md w-full text-center">
+//           <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+//             <AlertCircle size={20} className="text-red-500" />
+//           </div>
+//           <h3 className="text-lg font-bold text-gray-900 mb-2">Error</h3>
+//           <p className="text-gray-500 mb-6">{queryError.message}</p>
+//           <button
+//             onClick={() => navigate("/category")}
+//             className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold"
+//           >
+//             Go Back
+//           </button>
 //         </div>
 //       </div>
 //     );
@@ -304,7 +336,6 @@
 //               <h1 className="text-base sm:text-lg font-bold text-gray-900 leading-tight">
 //                 Edit Category
 //               </h1>
-
 //             </div>
 //           </div>
 //           <button
@@ -352,7 +383,6 @@
 //                 >
 //                   Category Name <span className="text-red-500">*</span>
 //                 </label>
-
 //               </div>
 //             </div>
 //             <input
@@ -385,7 +415,6 @@
 //                 >
 //                   Slug
 //                 </label>
-
 //               </div>
 //             </div>
 //             <div className="relative">
@@ -407,7 +436,6 @@
 //             {fieldErrors.slug && (
 //               <p className="text-xs text-red-500 mt-1">{fieldErrors.slug}</p>
 //             )}
-
 //           </div>
 
 //           {/* Description Card */}
@@ -423,7 +451,6 @@
 //                 >
 //                   Description <span className="text-red-500">*</span>
 //                 </label>
-
 //               </div>
 //             </div>
 //             <textarea
@@ -455,7 +482,6 @@
 //                 <p className="text-base font-semibold text-gray-800">
 //                   Cover Image
 //                 </p>
-
 //               </div>
 //             </div>
 
@@ -674,12 +700,10 @@ const updateCategory = async ({ id, formData }) => {
 
 const getImageUrl = (path) => {
   if (!path) return "";
-
-  // If already full URL
   if (path.startsWith("http")) return path;
-
   return `https://codingcloudapi.codingcloud.co.in${path}`;
 };
+
 export default function EditCategory() {
   const navigate = useNavigate();
   const { id } = useParams();
@@ -704,7 +728,6 @@ export default function EditCategory() {
   const mutation = useMutation({
     mutationFn: updateCategory,
     onSuccess: () => {
-      // Invalidate both the list and this specific category
       queryClient.invalidateQueries({ queryKey: ["categories"] });
       queryClient.invalidateQueries({ queryKey: ["category", id] });
       setToast({
@@ -729,7 +752,7 @@ export default function EditCategory() {
     },
   });
 
-  // Local state (unchanged)
+  // Local state
   const [formData, setFormData] = useState({
     name: "",
     text: "",
@@ -747,6 +770,7 @@ export default function EditCategory() {
   const [imagePreview, setImagePreview] = useState(null);
   const [originalImage, setOriginalImage] = useState(null);
   const [dragOver, setDragOver] = useState(false);
+  const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
 
   // Update local form when data is fetched
   useEffect(() => {
@@ -759,12 +783,25 @@ export default function EditCategory() {
       });
       if (categoryData.image) {
         const fullImageUrl = getImageUrl(categoryData.image);
-        console.log("Image URL:", fullImageUrl); // 👈 add this
         setImagePreview(fullImageUrl);
         setOriginalImage(fullImageUrl);
       }
+      // Determine if slug was manually edited (compare with auto-generated from name)
+      const autoSlug = generateSlug(categoryData.name || "");
+      setSlugManuallyEdited(categoryData.slug !== autoSlug);
     }
   }, [categoryData]);
+
+  // Auto-generate slug from title when name changes and slug not manually edited
+  useEffect(() => {
+    if (!slugManuallyEdited && formData.name) {
+      const newSlug = generateSlug(formData.name);
+      setFormData((prev) => ({ ...prev, slug: newSlug }));
+      if (fieldErrors.slug) {
+        setFieldErrors((prev) => ({ ...prev, slug: undefined }));
+      }
+    }
+  }, [formData.name, slugManuallyEdited]);
 
   // Cleanup timeout
   useEffect(() => {
@@ -777,7 +814,7 @@ export default function EditCategory() {
     return name
       .toLowerCase()
       .trim()
-      .replace(/[^\w\s-]/g, "")
+      .replace(/[^\w\s-]/g, "") // remove special chars except spaces and hyphens
       .replace(/\s+/g, "-")
       .replace(/--+/g, "-");
   };
@@ -791,24 +828,35 @@ export default function EditCategory() {
     setError("");
   };
 
+  // Allow any characters in name (%, -, ,, (, ), /, etc.)
   const handleNameChange = (e) => {
-    const value = e.target.value;
-    if (!/^[A-Za-z\s,-]*$/.test(value)) return;
+    const value = e.target.value; // No filtering – all characters allowed
 
-    setFormData((prev) => {
-      const shouldAutoGenerate =
-        !prev.slug || prev.slug === generateSlug(prev.name);
-      return {
-        ...prev,
-        name: value,
-        slug: shouldAutoGenerate ? generateSlug(value) : prev.slug,
-      };
-    });
+    setFormData((prev) => ({
+      ...prev,
+      name: value,
+      // Only auto-update slug if not manually edited
+      slug: !slugManuallyEdited ? generateSlug(value) : prev.slug,
+    }));
 
     if (fieldErrors.name) {
       setFieldErrors((prev) => ({ ...prev, name: undefined }));
     }
     setError("");
+  };
+
+  const handleSlugChange = (e) => {
+    const rawValue = e.target.value;
+    const sanitized = rawValue
+      .toLowerCase()
+      .replace(/[^a-z0-9-]/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "");
+    setFormData((prev) => ({ ...prev, slug: sanitized }));
+    setSlugManuallyEdited(true);
+    if (fieldErrors.slug) {
+      setFieldErrors((prev) => ({ ...prev, slug: undefined }));
+    }
   };
 
   const processFile = (file) => {
@@ -848,11 +896,9 @@ export default function EditCategory() {
 
   const validateForm = () => {
     const errors = {};
+    // Only check for empty; any characters are allowed
     if (!formData.name.trim()) {
       errors.name = "Category name is required";
-    } else if (!/^[A-Za-z\s,-]+$/.test(formData.name.trim())) {
-      errors.name =
-        "Category name can contain letters, spaces, comma (,) and hyphen (-)";
     }
     if (!formData.text.trim()) {
       errors.text = "Description is required";
@@ -931,7 +977,7 @@ export default function EditCategory() {
         />
       )}
 
-      <header className=" top-0 z-10 bg-white border-b border-gray-200 shadow-sm sticky">
+      <header className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
@@ -993,6 +1039,9 @@ export default function EditCategory() {
                 >
                   Category Name <span className="text-red-500">*</span>
                 </label>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  Special characters (%, -, ,, (, ), /) are allowed
+                </p>
               </div>
             </div>
             <input
@@ -1001,7 +1050,7 @@ export default function EditCategory() {
               name="name"
               value={formData.name}
               onChange={handleNameChange}
-              placeholder="e.g., Web Development, Design, Marketing…"
+              placeholder="e.g., Cars & Trucks, 50% Off, (Premium) – Luxury"
               className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
                 fieldErrors.name ? "border-red-500" : "border-gray-200"
               }`}
@@ -1025,6 +1074,9 @@ export default function EditCategory() {
                 >
                   Slug
                 </label>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  Auto-generated from name (special characters removed)
+                </p>
               </div>
             </div>
             <div className="relative">
@@ -1036,13 +1088,20 @@ export default function EditCategory() {
                 type="text"
                 name="slug"
                 value={formData.slug}
-                onChange={handleInputChange}
+                onChange={handleSlugChange}
                 placeholder="web-development"
                 className={`w-full pl-8 pr-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
                   fieldErrors.slug ? "border-red-500" : "border-gray-200"
                 }`}
               />
             </div>
+            <p className="text-xs text-gray-400 mt-1">
+              {slugManuallyEdited ? (
+                <span className="text-amber-600">✏️ Manually edited — auto‑update disabled</span>
+              ) : (
+                <span className="text-emerald-600">✨ Auto‑generated from name</span>
+              )}
+            </p>
             {fieldErrors.slug && (
               <p className="text-xs text-red-500 mt-1">{fieldErrors.slug}</p>
             )}
