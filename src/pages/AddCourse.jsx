@@ -1521,10 +1521,49 @@ export default function AddCourse() {
   const [editorMode, setEditorMode] = useState("tinymce");
 
   // 🟥 RED BORDER LOGIC: Clear error for a field when user types
+// const handleInputChange = (e) => {
+//   const { name, value } = e.target;
+
+//   // 🚫 Remove + character (for both typing & paste)
+//   let sanitizedValue = value.replace(/\+/g, "");
+
+//   // ✅ Students → only numbers
+//   if (name === "students") {
+//     sanitizedValue = sanitizedValue.replace(/[^0-9]/g, "");
+//   }
+
+//   // ✅ Update state
+//   setFormData((prev) => ({
+//     ...prev,
+//     [name]: sanitizedValue,
+//   }));
+
+//   // ✅ Clear field error if exists
+//   if (fieldErrors[name]) {
+//     setFieldErrors((prev) => ({
+//       ...prev,
+//       [name]: undefined,
+//     }));
+//   }
+
+//   // ✅ Auto-generate slug (only if empty)
+//   if (name === "name" && !formData.slug) {
+//     const generatedSlug = sanitizedValue
+//       .toLowerCase()
+//       .replace(/[^a-z0-9]+/g, "-")
+//       .replace(/^-|-$/g, "");
+
+//     setFormData((prev) => ({
+//       ...prev,
+//       slug: generatedSlug,
+//     }));
+//   }
+// };
+
 const handleInputChange = (e) => {
   const { name, value } = e.target;
 
-  // 🚫 Remove + character (for both typing & paste)
+  // 🚫 Remove + character
   let sanitizedValue = value.replace(/\+/g, "");
 
   // ✅ Students → only numbers
@@ -1532,30 +1571,31 @@ const handleInputChange = (e) => {
     sanitizedValue = sanitizedValue.replace(/[^0-9]/g, "");
   }
 
-  // ✅ Update state
-  setFormData((prev) => ({
-    ...prev,
+  // ✅ Generate slug if name changes
+  let updatedData = {
     [name]: sanitizedValue,
-  }));
+  };
 
-  // ✅ Clear field error if exists
-  if (fieldErrors[name]) {
-    setFieldErrors((prev) => ({
-      ...prev,
-      [name]: undefined,
-    }));
-  }
-
-  // ✅ Auto-generate slug (only if empty)
-  if (name === "name" && !formData.slug) {
+  if (name === "name") {
     const generatedSlug = sanitizedValue
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "");
 
-    setFormData((prev) => ({
+    updatedData.slug = generatedSlug;
+  }
+
+  // ✅ Update state
+  setFormData((prev) => ({
+    ...prev,
+    ...updatedData,
+  }));
+
+  // ✅ Clear field error
+  if (fieldErrors[name]) {
+    setFieldErrors((prev) => ({
       ...prev,
-      slug: generatedSlug,
+      [name]: undefined,
     }));
   }
 };

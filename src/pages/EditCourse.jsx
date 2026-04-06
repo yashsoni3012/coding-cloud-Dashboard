@@ -1479,6 +1479,7 @@ export default function EditCourse() {
   const [iconPreview, setIconPreview] = useState("");
   const [image2Preview, setImage2Preview] = useState("");
   const [pdfName, setPdfName] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   const [filesChanged, setFilesChanged] = useState({
     image: false,
@@ -1582,17 +1583,18 @@ export default function EditCourse() {
       showToast("Course updated successfully!", "success");
       setTimeout(() => navigate("/course"), 2000);
     },
-    onError: (err) => {
-      if (err.errors) {
-        setFieldErrors(err.errors);
-        showToast("Please correct the errors below", "error");
-      } else {
-        showToast(err.message || "Failed to update course.", "error");
-      }
-    },
-    onSettled: () => {
-      setSaving(false);
-    },
+   onError: (err) => {
+  console.error("Mutation error:", err);
+
+  if (err?.errors) {
+    setFieldErrors(err.errors);
+    setErrorMessage(err.message || "Validation failed");
+    showToast("Please correct the errors below", "error");
+  } else {
+    setErrorMessage(err.message || "Failed to update course");
+    showToast(err.message || "Failed to update course.", "error");
+  }
+},
   });
 
   // Clear error for a field when user types
@@ -1745,56 +1747,86 @@ export default function EditCourse() {
   };
 
   // Handle form submission
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    if (!validateForm()) {
-      showToast("Please fill required fields", "error");
-      return;
+  setErrorMessage("");
+
+  if (!validateForm()) {
+    showToast("Please fill required fields correctly", "error");
+    return;
+  }
+
+  setSaving(true);
+
+  try {
+    const submitData = new FormData();
+
+    // Basic fields
+    submitData.append("name", formData.name.trim());
+    submitData.append("slug", formData.slug.trim());
+    submitData.append("category", formData.category);
+    submitData.append("text", formData.text);
+
+    if (formData.short_description?.trim()) {
+      submitData.append(
+        "short_description",
+        formData.short_description.trim()
+      );
     }
 
-    setSaving(true);
-    try {
-      const submitData = new FormData();
-      submitData.append("name", formData.name);
-      submitData.append("slug", formData.slug);
-      submitData.append("category", formData.category);
-      submitData.append("text", formData.text);
-      if (formData.short_description)
-        submitData.append("short_description", formData.short_description);
+    // Numeric fields
+    if (formData.duration)
+      submitData.append("duration", Number(formData.duration));
 
-      // ✅ Fixed: Send numeric fields only if they have a value
-      if (formData.duration) submitData.append("duration", formData.duration);
-      if (formData.lecture) submitData.append("lecture", formData.lecture);
-      if (formData.students) submitData.append("students", formData.students);
-      if (formData.level) submitData.append("level", formData.level);
-      if (formData.language) submitData.append("language", formData.language);
+    if (formData.lecture)
+      submitData.append("lecture", Number(formData.lecture));
 
-      // ✅ Fixed: Convert certificate to boolean (backend expects true/false)
-      const certificateBoolean = formData.certificate === "Yes";
-      submitData.append("certificate", certificateBoolean.toString());
+    if (formData.students)
+      submitData.append("students", Number(formData.students));
 
-      submitData.append("featured", formData.featured.toString());
-      submitData.append("kids_course", formData.kids_course.toString());
-      if (formData.meta_title)
-        submitData.append("meta_title", formData.meta_title);
-      if (formData.meta_description)
-        submitData.append("meta_description", formData.meta_description);
-      if (formData.keywords) submitData.append("keywords", formData.keywords);
+    // Optional fields
+    if (formData.level) submitData.append("level", formData.level);
+    if (formData.language) submitData.append("language", formData.language);
 
-      if (formData.image) submitData.append("image", formData.image);
-      if (formData.banner_img)
-        submitData.append("banner_img", formData.banner_img);
-      if (formData.pdf_file) submitData.append("pdf_file", formData.pdf_file);
-      if (formData.icon) submitData.append("icon", formData.icon);
-      if (formData.image2) submitData.append("image2", formData.image2);
+    // Boolean conversion (VERY IMPORTANT)
+    submitData.append(
+      "certificate",
+      formData.certificate === "Yes"
+    );
 
-      mutation.mutate({ id, formData: submitData });
-    } catch (err) {
-      showToast("Network error. Please check your connection.", "error");
-      setSaving(false);
-    }
-  };
+    submitData.append("featured", formData.featured);
+    submitData.append("kids_course", formData.kids_course);
+
+    // SEO
+    if (formData.meta_title)
+      submitData.append("meta_title", formData.meta_title);
+
+    if (formData.meta_description)
+      submitData.append("meta_description", formData.meta_description);
+
+    if (formData.keywords)
+      submitData.append("keywords", formData.keywords);
+
+    // Files (only if changed)
+    if (formData.image) submitData.append("image", formData.image);
+    if (formData.banner_img)
+      submitData.append("banner_img", formData.banner_img);
+    if (formData.icon) submitData.append("icon", formData.icon);
+    if (formData.image2) submitData.append("image2", formData.image2);
+    if (formData.pdf_file)
+      submitData.append("pdf_file", formData.pdf_file);
+
+    // 🔥 Trigger mutation
+    mutation.mutate({ id, formData: submitData });
+
+  } catch (err) {
+    console.error("Submit error:", err);
+    setErrorMessage("Something went wrong. Please try again.");
+    showToast("Network error. Please check your connection.", "error");
+    setSaving(false);
+  }
+};
 
   // ── Toggle Switch Component ──
   const ToggleSwitch = ({ label, description, name, checked, onChange }) => (
