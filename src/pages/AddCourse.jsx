@@ -1521,32 +1521,44 @@ export default function AddCourse() {
   const [editorMode, setEditorMode] = useState("tinymce");
 
   // 🟥 RED BORDER LOGIC: Clear error for a field when user types
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
+const handleInputChange = (e) => {
+  const { name, value } = e.target;
 
-    // Only allow numbers for students
-    if (name === "students") {
-      const numericValue = value.replace(/[^0-9]/g, "");
-      setFormData((prev) => ({ ...prev, students: numericValue }));
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
-    }
+  // 🚫 Remove + character (for both typing & paste)
+  let sanitizedValue = value.replace(/\+/g, "");
 
-    // Clear error
-    if (fieldErrors[name]) {
-      setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
-    }
+  // ✅ Students → only numbers
+  if (name === "students") {
+    sanitizedValue = sanitizedValue.replace(/[^0-9]/g, "");
+  }
 
-    // Slug logic
-    if (name === "name" && !formData.slug) {
-      const generatedSlug = value
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-|-$/g, "");
-      setFormData((prev) => ({ ...prev, slug: generatedSlug }));
-    }
-  };
+  // ✅ Update state
+  setFormData((prev) => ({
+    ...prev,
+    [name]: sanitizedValue,
+  }));
 
+  // ✅ Clear field error if exists
+  if (fieldErrors[name]) {
+    setFieldErrors((prev) => ({
+      ...prev,
+      [name]: undefined,
+    }));
+  }
+
+  // ✅ Auto-generate slug (only if empty)
+  if (name === "name" && !formData.slug) {
+    const generatedSlug = sanitizedValue
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+
+    setFormData((prev) => ({
+      ...prev,
+      slug: generatedSlug,
+    }));
+  }
+};
   // Handle toggle changes for boolean fields
   const handleToggleChange = (name, checked) => {
     setFormData((prev) => ({ ...prev, [name]: checked }));
@@ -1589,6 +1601,12 @@ export default function AddCourse() {
       setError("");
     }
   };
+
+  const blockPlusKey = (e) => {
+  if (e.key === "+") {
+    e.preventDefault();
+  }
+};
 
   // 🟥 Clear error when file is removed
   const removeFile = (field) => {
@@ -1724,7 +1742,7 @@ export default function AddCourse() {
 
     try {
       const submitData = new FormData();
-      
+
       // Basic Information
       submitData.append("name", formData.name);
       submitData.append("slug", formData.slug);
@@ -1739,22 +1757,22 @@ export default function AddCourse() {
       if (formData.students) submitData.append("students", formData.students);
       if (formData.level) submitData.append("level", formData.level);
       if (formData.language) submitData.append("language", formData.language);
-      
+
       // ✅ Fixed: Convert certificate to boolean (backend expects true/false)
       const certificateBoolean = formData.certificate === "Yes";
       submitData.append("certificate", certificateBoolean.toString());
-      
+
       // Toggle fields
       submitData.append("featured", formData.featured.toString());
       submitData.append("kids_course", formData.kids_course.toString());
-      
+
       // SEO & Metadata
       if (formData.meta_title)
         submitData.append("meta_title", formData.meta_title);
       if (formData.meta_description)
         submitData.append("meta_description", formData.meta_description);
       if (formData.keywords) submitData.append("keywords", formData.keywords);
-      
+
       // Media Files
       if (formData.image) submitData.append("image", formData.image);
       if (formData.banner_img)
@@ -2098,6 +2116,7 @@ export default function AddCourse() {
                 fieldErrors.name ? "border-red-500" : "border-gray-200"
               }`}
               required
+               onKeyDown={blockPlusKey}
             />
             {fieldErrors.name && (
               <p className="text-xs text-red-500 mt-1">{fieldErrors.name}</p>

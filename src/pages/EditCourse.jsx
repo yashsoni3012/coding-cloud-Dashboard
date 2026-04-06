@@ -1,5 +1,6 @@
 // import { useState, useEffect } from "react";
 // import { useNavigate, useParams } from "react-router-dom";
+// import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 // import { Editor } from "@tinymce/tinymce-react";
 // import {
 //   ArrowLeft,
@@ -23,14 +24,73 @@
 // } from "lucide-react";
 // import Toasts from "./Toasts";
 
+// const BASE_URL = "https://codingcloudapi.codingcloud.co.in";
+
+// const getImageUrl = (path) => {
+//   if (!path) return "";
+
+//   // Already full URL
+//   if (path.startsWith("http")) return path;
+
+//   // If starts with /media or /
+//   if (path.startsWith("/")) return `${BASE_URL}${path}`;
+
+//   // fallback
+//   return `${BASE_URL}/${path}`;
+// };
+
+// // Fetch categories
+// const fetchCategories = async () => {
+//   const response = await fetch(
+//     "https://codingcloudapi.codingcloud.co.in/category/",
+//   );
+//   const data = await response.json();
+//   if (!data.success) throw new Error("Failed to load categories");
+//   return data.data || [];
+// };
+
+// // Fetch single course
+// const fetchCourse = async (id) => {
+//   const response = await fetch(
+//     `https://codingcloudapi.codingcloud.co.in/course/${id}/`,
+//   );
+//   const data = await response.json();
+//   if (!data.success) throw new Error("Failed to fetch course details");
+//   return data.data;
+// };
+
+// // Update course mutation
+// const updateCourse = async ({ id, formData }) => {
+//   const response = await fetch(
+//     `https://codingcloudapi.codingcloud.co.in/course/${id}/`,
+//     {
+//       method: "PATCH",
+//       body: formData,
+//     },
+//   );
+//   const data = await response.json();
+//   if (!response.ok && response.status !== 200) {
+//     if (data.errors) {
+//       const backendErrors = {};
+//       Object.keys(data.errors).forEach((key) => {
+//         backendErrors[key] = data.errors[key].join(", ");
+//       });
+//       throw {
+//         message: "Please correct the errors below",
+//         errors: backendErrors,
+//       };
+//     }
+//     throw new Error(data.message || data.detail || "Failed to update course.");
+//   }
+//   return data;
+// };
+
 // export default function EditCourse() {
 //   const { id } = useParams();
 //   const navigate = useNavigate();
+//   const queryClient = useQueryClient();
 
-//   const [loading, setLoading] = useState(true);
 //   const [saving, setSaving] = useState(false);
-//   const [categories, setCategories] = useState([]);
-//   const [categoriesLoading, setCategoriesLoading] = useState(true);
 //   const [editorMode, setEditorMode] = useState("tinymce");
 //   const [toast, setToast] = useState({
 //     show: false,
@@ -83,6 +143,74 @@
 //     image2: false,
 //   });
 
+//   // --- TanStack Query: fetch categories ---
+//   const {
+//     data: categories = [],
+//     isLoading: categoriesLoading,
+//     error: categoriesError,
+//   } = useQuery({
+//     queryKey: ["categories"],
+//     queryFn: fetchCategories,
+//   });
+
+//   // --- TanStack Query: fetch course data ---
+//   const {
+//     data: courseData,
+//     isLoading: courseLoading,
+//     error: courseError,
+//   } = useQuery({
+//     queryKey: ["course", id],
+//     queryFn: () => fetchCourse(id),
+//     enabled: !!id,
+//   });
+
+//   useEffect(() => {
+//     if (courseData) {
+//       console.log("COURSE DATA FULL:", courseData);
+//     }
+//   }, [courseData]);
+
+//   // Populate form when course data arrives
+//   useEffect(() => {
+//     if (courseData) {
+//       setFormData({
+//         id: courseData.id,
+//         name: courseData.name || "",
+//         slug: courseData.slug || "",
+//         category: courseData.category || "",
+//         text: courseData.text || "",
+//         short_description: courseData.short_description || "",
+//         duration: courseData.duration ?? "",
+//         lecture: courseData.lecture || "",
+//         students: courseData.students || "",
+//         level: courseData.level || "",
+//         language: courseData.language || "",
+//         certificate: courseData.certificate_display || "No",
+//         featured: courseData.featured || false,
+//         kids_course: courseData.kids_course || false,
+//         meta_title: courseData.meta_title || "",
+//         meta_description: courseData.meta_description || "",
+//         keywords: courseData.keywords || "",
+//         image: null,
+//         banner_img: null,
+//         pdf_file: null,
+//         icon: null,
+//         image2: null,
+//         existing_image: courseData.image || "",
+//         existing_banner: courseData.banner_img || "",
+//         existing_icon: courseData.icon || "",
+//         existing_pdf: courseData.pdf_file || "",
+//         existing_image2: courseData.image2 || "",
+//       });
+//     }
+//   }, [courseData]);
+
+//   // Show error toasts if queries fail
+//   useEffect(() => {
+//     if (categoriesError) showToast("Failed to load categories", "error");
+//     if (courseError) showToast("Failed to load course details", "error");
+//   }, [categoriesError, courseError]);
+
 //   // Helper to show toast
 //   const showToast = (message, type = "success") => {
 //     setToast({ show: true, message, type });
@@ -100,85 +228,28 @@
 //     showToast("Short description generated from main description", "success");
 //   };
 
-//   // Fetch categories
-//   const fetchCategories = async () => {
-//     try {
-//       setCategoriesLoading(true);
-//       const response = await fetch(
-//         "https://codingcloudapi.codingcloud.co.in/category/",
-//       );
-//       const data = await response.json();
-//       if (data.success) {
-//         setCategories(data.data);
+//   // --- TanStack Mutation: update course ---
+//   const mutation = useMutation({
+//     mutationFn: updateCourse,
+//     onSuccess: () => {
+//       // Invalidate both the list and this specific course
+//       queryClient.invalidateQueries({ queryKey: ["courses"] });
+//       queryClient.invalidateQueries({ queryKey: ["course", id] });
+//       showToast("Course updated successfully!", "success");
+//       setTimeout(() => navigate("/course"), 2000);
+//     },
+//     onError: (err) => {
+//       if (err.errors) {
+//         setFieldErrors(err.errors);
+//         showToast("Please correct the errors below", "error");
 //       } else {
-//         showToast("Failed to load categories", "error");
+//         showToast(err.message || "Failed to update course.", "error");
 //       }
-//     } catch (error) {
-//       console.error("Error fetching categories:", error);
-//       showToast("Network error while loading categories", "error");
-//     } finally {
-//       setCategoriesLoading(false);
-//     }
-//   };
-
-//   useEffect(() => {
-//     fetchCategories();
-//   }, []);
-
-//   // Fetch course data
-//   useEffect(() => {
-//     const fetchCourseData = async () => {
-//       try {
-//         setLoading(true);
-//         const response = await fetch(
-//           `https://codingcloudapi.codingcloud.co.in/course/${id}/`,
-//         );
-//         const data = await response.json();
-
-//         if (data.success) {
-//           const course = data.data;
-//           setFormData({
-//             id: course.id,
-//             name: course.name || "",
-//             slug: course.slug || "",
-//             category: course.category || "",
-//             text: course.text || "",
-//             short_description: course.short_description || "",
-//             duration: course.duration || "",
-//             lecture: course.lecture || "",
-//             students: course.students || "",
-//             level: course.level || "",
-//             language: course.language || "",
-//             certificate: course.certificate_display || "No",
-//             featured: course.featured || false,
-//             kids_course: course.kids_course || false,
-//             meta_title: course.meta_title || "",
-//             meta_description: course.meta_description || "",
-//             keywords: course.keywords || "",
-//             image: null,
-//             banner_img: null,
-//             pdf_file: null,
-//             icon: null,
-//             image2: null,
-//             existing_image: course.image || "",
-//             existing_banner: course.banner_img || "",
-//             existing_icon: course.icon || "",
-//             existing_pdf: course.pdf_file || "",
-//             existing_image2: course.image2 || "",
-//           });
-//         } else {
-//           showToast("Failed to fetch course details", "error");
-//         }
-//       } catch (err) {
-//         console.error("Error fetching course:", err);
-//         showToast("Network error. Please try again.", "error");
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
-
-//     if (id) fetchCourseData();
-//   }, [id]);
+//     },
+//     onSettled: () => {
+//       setSaving(false);
+//     },
+//   });
 
 //   // Clear error for a field when user types
 //   const handleInputChange = (e) => {
@@ -186,12 +257,10 @@
 //     const newValue = name === "category" ? Number(value) : value;
 //     setFormData((prev) => ({ ...prev, [name]: newValue }));
 
-//     // Clear error for this field
 //     if (fieldErrors[name]) {
 //       setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
 //     }
 
-//     // Auto-generate slug from name if slug is empty
 //     if (name === "name" && !formData.slug) {
 //       const generatedSlug = value
 //         .toLowerCase()
@@ -203,7 +272,6 @@
 
 //   const handleToggleChange = (name, checked) => {
 //     setFormData((prev) => ({ ...prev, [name]: checked }));
-//     // Toggles are always valid – clear any previous error
 //     if (fieldErrors[name]) {
 //       setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
 //     }
@@ -233,7 +301,6 @@
 //       setFormData((prev) => ({ ...prev, [name]: file }));
 //       setFilesChanged((prev) => ({ ...prev, [name]: true }));
 
-//       // Clear error for this file field
 //       if (fieldErrors[name]) {
 //         setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
 //       }
@@ -273,14 +340,12 @@
 //       }
 //     }
 
-//     // After removal, check if the field is now empty and set error accordingly
-//     const hasExisting = formData[`existing_${field}`] && !isExisting; // if we are removing existing, we already set it to ""
-//     const hasNew = formData[field] && !isExisting;
+//     const hasExisting = formData[`existing_${field}`];
+//     const hasNew = formData[field];
 //     const empty = !hasExisting && !hasNew;
 //     if (empty) {
 //       setFieldErrors((prev) => ({ ...prev, [field]: `${field} is required` }));
 //     } else {
-//       // Clear error if field becomes non-empty (e.g., there is still existing file)
 //       setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
 //     }
 //   };
@@ -289,16 +354,12 @@
 //   const validateForm = () => {
 //     const errors = {};
 
-//     // Basic required fields
 //     if (!formData.name.trim()) errors.name = "Course name is required";
 //     if (!formData.slug.trim()) errors.slug = "Course slug is required";
 //     if (!formData.category) errors.category = "Category is required";
 //     if (!formData.text.trim()) errors.text = "Description is required";
-
-//     // Certificate – ensure it's one of the two values (it always is, but we can enforce)
 //     if (!formData.certificate) errors.certificate = "Certificate is required";
 
-//     // File fields – valid if existing OR new file is present
 //     if (!formData.existing_image && !formData.image) {
 //       errors.image = "Course image is required";
 //     }
@@ -322,12 +383,12 @@
 //   // Handle form submission
 //   const handleSubmit = async (e) => {
 //     e.preventDefault();
-//    const errors = validateForm();
 
-// if (Object.keys(errors).length > 0) {
-//   showToast("Please fill required fields", "error");
-//   return;
-// }
+//     const errors = validateForm();
+//     if (Object.keys(errors).length > 0) {
+//       showToast("Please fill required fields", "error");
+//       return;
+//     }
 
 //     setSaving(true);
 //     try {
@@ -355,43 +416,17 @@
 //         submitData.append("meta_description", formData.meta_description);
 //       if (formData.keywords) submitData.append("keywords", formData.keywords);
 
-//       // Only append files if they have been changed (new file selected)
 //       if (formData.image) submitData.append("image", formData.image);
-//       if (formData.banner_img) submitData.append("banner_img", formData.banner_img);
+//       if (formData.banner_img)
+//         submitData.append("banner_img", formData.banner_img);
 //       if (formData.pdf_file) submitData.append("pdf_file", formData.pdf_file);
 //       if (formData.icon) submitData.append("icon", formData.icon);
 //       if (formData.image2) submitData.append("image2", formData.image2);
 
-//       const response = await fetch(
-//         `https://codingcloudapi.codingcloud.co.in/course/${id}/`,
-//         {
-//           method: "PATCH",
-//           body: submitData,
-//         },
-//       );
-//       const data = await response.json();
-//       if (response.ok || response.status === 200) {
-//         showToast("Course updated successfully!", "success");
-//         setTimeout(() => navigate("/course"), 2000);
-//       } else {
-//         // Backend validation errors – map to fields if possible
-//         if (data.errors) {
-//           const backendErrors = {};
-//           Object.keys(data.errors).forEach((key) => {
-//             backendErrors[key] = data.errors[key].join(", ");
-//           });
-//           setFieldErrors(backendErrors);
-//           showToast("Please fill required fields", "error");
-//         } else {
-//           showToast(
-//             data.message || data.detail || "Failed to update course.",
-//             "error",
-//           );
-//         }
-//       }
+//       mutation.mutate({ id, formData: submitData });
 //     } catch (err) {
+//       // This should not happen because mutation handles errors, but keep for safety
 //       showToast("Network error. Please check your connection.", "error");
-//     } finally {
 //       setSaving(false);
 //     }
 //   };
@@ -432,14 +467,10 @@
 //     hint,
 //     iconBg,
 //     iconColor,
-//     error, // new prop
+//     error,
 //   }) => {
 //     const hasPreview = preview || existingUrl;
-//     const previewSrc =
-//       preview ||
-//       (existingUrl
-//         ? `https://codingcloudapi.codingcloud.co.in/${existingUrl}`
-//         : "");
+//     const previewSrc = preview || getImageUrl(existingUrl);
 //     const isNew = !!preview;
 
 //     return (
@@ -490,7 +521,6 @@
 //             />
 //             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all pointer-events-none" />
 
-//             {/* Status badge */}
 //             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent px-4 py-3 pointer-events-none">
 //               {isNew ? (
 //                 <p className="text-xs text-emerald-300 font-semibold">
@@ -503,7 +533,6 @@
 //               )}
 //             </div>
 
-//             {/* Change button */}
 //             <button
 //               type="button"
 //               onClick={() => document.getElementById(inputId)?.click()}
@@ -512,7 +541,6 @@
 //               Change
 //             </button>
 
-//             {/* Remove button */}
 //             <button
 //               type="button"
 //               onClick={onRemove}
@@ -599,7 +627,6 @@
 //                 <p className="text-base font-semibold text-gray-800 truncate">
 //                   {pdfDisplayName}
 //                 </p>
-
 //                 <p
 //                   className={`text-xs mt-0.5 ${
 //                     isNew ? "text-emerald-500" : "text-indigo-400"
@@ -620,7 +647,6 @@
 //               </button>
 //             </div>
 
-//             {/* Replace PDF */}
 //             <button
 //               type="button"
 //               onClick={() => document.getElementById("pdf-upload")?.click()}
@@ -644,36 +670,32 @@
 //   };
 
 //   // ── Section Header ──
-// const SectionHeader = ({
-//   icon: Icon,
-//   label,
-//   iconBg,
-//   iconColor,
-//   description,
-//   required,
-// }) => (
-//   <div className="flex items-center gap-3 pt-2">
-//     <div
-//       className={`w-9 h-9 ${iconBg} rounded-xl flex items-center justify-center flex-shrink-0`}
-//     >
-//       <Icon size={16} className={iconColor} />
+//   const SectionHeader = ({
+//     icon: Icon,
+//     label,
+//     iconBg,
+//     iconColor,
+//     description,
+//     required,
+//   }) => (
+//     <div className="flex items-center gap-3 pt-2">
+//       <div
+//         className={`w-9 h-9 ${iconBg} rounded-xl flex items-center justify-center flex-shrink-0`}
+//       >
+//         <Icon size={16} className={iconColor} />
+//       </div>
+//       <div>
+//         <p className="text-base font-bold text-gray-800 flex items-center">
+//           {label}
+//           {required && <span className="text-red-500 ml-1">*</span>}
+//         </p>
+//         {description && <p className="text-xs text-gray-400">{description}</p>}
+//       </div>
 //     </div>
-
-//     <div>
-//       <p className="text-base font-bold text-gray-800 flex items-center">
-//         {label}
-//         {required && <span className="text-red-500 ml-1">*</span>}
-//       </p>
-
-//       {description && (
-//         <p className="text-xs text-gray-400">{description}</p>
-//       )}
-//     </div>
-//   </div>
-// );
+//   );
 
 //   // ── Loading State ──
-//   if (loading || categoriesLoading) {
+//   if (courseLoading || categoriesLoading) {
 //     return (
 //       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
 //         <div className="text-center">
@@ -1114,7 +1136,10 @@
 //                             certificate: e.target.value,
 //                           }));
 //                           if (fieldErrors.certificate) {
-//                             setFieldErrors((prev) => ({ ...prev, certificate: undefined }));
+//                             setFieldErrors((prev) => ({
+//                               ...prev,
+//                               certificate: undefined,
+//                             }));
 //                           }
 //                         }}
 //                         className="hidden"
@@ -1163,7 +1188,6 @@
 //             iconBg="bg-pink-50"
 //             iconColor="text-pink-500"
 //             required={true}
-
 //           />
 
 //           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -1229,8 +1253,7 @@
 //                 htmlFor="meta_title"
 //                 className="block text-base font-semibold text-gray-800 mb-1"
 //               >
-//                 Meta Title
-//                 <span className="text-red-500 ml-1 font-semibold">*</span>
+//                 Meta Title <span className="text-red-500">*</span>
 //               </label>
 //               <input
 //                 id="meta_title"
@@ -1256,8 +1279,7 @@
 //                 htmlFor="meta_description"
 //                 className="block text-base font-semibold text-gray-800 mb-1"
 //               >
-//                 Meta Description
-//                 <span className="text-red-500 ml-1 font-semibold">*</span>
+//                 Meta Description <span className="text-red-500">*</span>
 //               </label>
 //               <textarea
 //                 id="meta_description"
@@ -1285,8 +1307,7 @@
 //                 htmlFor="keywords"
 //                 className="block text-base font-semibold text-gray-800 mb-1"
 //               >
-//                 Keywords
-//                 <span className="text-red-500 ml-1 font-semibold">*</span>
+//                 Keywords <span className="text-red-500">*</span>
 //               </label>
 //               <input
 //                 id="keywords"
@@ -1358,14 +1379,8 @@ const BASE_URL = "https://codingcloudapi.codingcloud.co.in";
 
 const getImageUrl = (path) => {
   if (!path) return "";
-
-  // Already full URL
   if (path.startsWith("http")) return path;
-
-  // If starts with /media or /
   if (path.startsWith("/")) return `${BASE_URL}${path}`;
-
-  // fallback
   return `${BASE_URL}/${path}`;
 };
 
@@ -1562,7 +1577,6 @@ export default function EditCourse() {
   const mutation = useMutation({
     mutationFn: updateCourse,
     onSuccess: () => {
-      // Invalidate both the list and this specific course
       queryClient.invalidateQueries({ queryKey: ["courses"] });
       queryClient.invalidateQueries({ queryKey: ["course", id] });
       showToast("Course updated successfully!", "success");
@@ -1584,8 +1598,16 @@ export default function EditCourse() {
   // Clear error for a field when user types
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    const newValue = name === "category" ? Number(value) : value;
-    setFormData((prev) => ({ ...prev, [name]: newValue }));
+
+    // For numeric fields, allow only numbers
+    if (name === "students") {
+      const numericValue = value.replace(/[^0-9]/g, "");
+      setFormData((prev) => ({ ...prev, [name]: numericValue }));
+    } else if (name === "category") {
+      setFormData((prev) => ({ ...prev, [name]: Number(value) }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
 
     if (fieldErrors[name]) {
       setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
@@ -1690,6 +1712,18 @@ export default function EditCourse() {
     if (!formData.text.trim()) errors.text = "Description is required";
     if (!formData.certificate) errors.certificate = "Certificate is required";
 
+    // Validate numeric fields
+    if (formData.duration && isNaN(parseFloat(formData.duration))) {
+      errors.duration = "Duration must be a number";
+    }
+    if (formData.lecture && isNaN(parseFloat(formData.lecture))) {
+      errors.lecture = "Lectures must be a number";
+    }
+    if (formData.students && !/^\d+$/.test(formData.students)) {
+      errors.students = "Students must be a number";
+    }
+
+    // File validations
     if (!formData.existing_image && !formData.image) {
       errors.image = "Course image is required";
     }
@@ -1714,8 +1748,7 @@ export default function EditCourse() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const errors = validateForm();
-    if (Object.keys(errors).length > 0) {
+    if (!validateForm()) {
       showToast("Please fill required fields", "error");
       return;
     }
@@ -1729,15 +1762,18 @@ export default function EditCourse() {
       submitData.append("text", formData.text);
       if (formData.short_description)
         submitData.append("short_description", formData.short_description);
+
+      // ✅ Fixed: Send numeric fields only if they have a value
       if (formData.duration) submitData.append("duration", formData.duration);
       if (formData.lecture) submitData.append("lecture", formData.lecture);
       if (formData.students) submitData.append("students", formData.students);
       if (formData.level) submitData.append("level", formData.level);
       if (formData.language) submitData.append("language", formData.language);
-      submitData.append(
-        "certificate",
-        formData.certificate === "Yes" ? "Yes" : "No",
-      );
+
+      // ✅ Fixed: Convert certificate to boolean (backend expects true/false)
+      const certificateBoolean = formData.certificate === "Yes";
+      submitData.append("certificate", certificateBoolean.toString());
+
       submitData.append("featured", formData.featured.toString());
       submitData.append("kids_course", formData.kids_course.toString());
       if (formData.meta_title)
@@ -1755,7 +1791,6 @@ export default function EditCourse() {
 
       mutation.mutate({ id, formData: submitData });
     } catch (err) {
-      // This should not happen because mutation handles errors, but keep for safety
       showToast("Network error. Please check your connection.", "error");
       setSaving(false);
     }
@@ -2336,7 +2371,7 @@ export default function EditCourse() {
                   icon: Clock,
                   label: "Duration",
                   name: "duration",
-                  placeholder: "e.g., 40 hours",
+                  placeholder: "e.g., 40",
                   bg: "bg-blue-50",
                   color: "text-blue-500",
                 },
@@ -2344,7 +2379,7 @@ export default function EditCourse() {
                   icon: BookOpen,
                   label: "Lectures",
                   name: "lecture",
-                  placeholder: "e.g., 98 lectures",
+                  placeholder: "e.g., 98",
                   bg: "bg-emerald-50",
                   color: "text-emerald-500",
                 },
@@ -2352,7 +2387,7 @@ export default function EditCourse() {
                   icon: Users,
                   label: "Students",
                   name: "students",
-                  placeholder: "e.g., 1,000+",
+                  placeholder: "e.g., 1000",
                   bg: "bg-orange-50",
                   color: "text-orange-500",
                 },
@@ -2369,13 +2404,23 @@ export default function EditCourse() {
                     </label>
                   </div>
                   <input
-                    type="text"
+                    type="number"
+                    min={0}
                     name={field.name}
                     value={formData[field.name]}
                     onChange={handleInputChange}
                     placeholder={field.placeholder}
-                    className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                    className={`w-full px-3 py-2.5 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
+                      fieldErrors[field.name]
+                        ? "border-red-500"
+                        : "border-gray-200"
+                    }`}
                   />
+                  {fieldErrors[field.name] && (
+                    <p className="text-xs text-red-500 mt-1">
+                      {fieldErrors[field.name]}
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
