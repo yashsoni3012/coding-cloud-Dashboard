@@ -1290,16 +1290,7 @@ export default function Testimonials() {
               {testimonials.length}
             </span>
           </div>
-          <p
-            style={{
-              fontSize: 14,
-              color: "#94a3b8",
-              margin: 0,
-              paddingLeft: 48,
-            }}
-          >
-            Manage your customer testimonials and reviews
-          </p>
+         
         </div>
 
         {/* Toolbar */}
@@ -1395,13 +1386,13 @@ export default function Testimonials() {
             </button>
 
             {/* Add Testimonial */}
-            <button
+            {/* <button
               className="test-add-btn"
               onClick={() => navigate("/add-testimonial")}
             >
               <Plus size={16} />
               Add Testimonial
-            </button>
+            </button> */}
           </div>
 
           {/* Expandable filter panel */}
@@ -1870,7 +1861,7 @@ export default function Testimonials() {
                             >
                               <Eye size={15} />
                             </button>
-                            <button
+                            {/* <button
                               className="test-action-btn"
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -1882,7 +1873,7 @@ export default function Testimonials() {
                               title="Edit"
                             >
                               <Edit size={15} />
-                            </button>
+                            </button> */}
                             <button
                               className="test-action-btn"
                               onClick={(e) => handleDeleteClick(e, testimonial)}

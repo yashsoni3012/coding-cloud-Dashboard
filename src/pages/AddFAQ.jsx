@@ -946,7 +946,7 @@ export default function AddFAQ() {
                 }`}
               >
                 <Editor
-                  apiKey="x5ikrjt2xexo2x73y0uzybqhbjq29owf8drai57qhtew5e0j"
+                  apiKey="f45j826wq94pn0e0xseucsvqi8k7xug5idltalwrry8pevjm"
                   onInit={(evt, editor) => (editorRef.current = editor)}
                   value={formData.answer}
                   onEditorChange={handleAnswerChange}
