@@ -1,3 +1,5 @@
+
+
 // import { useState, useRef, useEffect } from "react";
 // import { useNavigate } from "react-router-dom";
 // import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -99,24 +101,25 @@
 //     setError("");
 //   };
 
-// const handleNameChange = (e) => {
-//   let value = e.target.value;
+//   const handleNameChange = (e) => {
+//     let value = e.target.value;
 
-//   setFormData((prev) => ({
-//     ...prev,
-//     name: value,
-//     slug:
-//       prev.slug === generateSlug(prev.name) || !prev.slug
-//         ? generateSlug(value)
-//         : prev.slug,
-//   }));
+//     setFormData((prev) => ({
+//       ...prev,
+//       name: value,
+//       slug:
+//         prev.slug === generateSlug(prev.name) || !prev.slug
+//           ? generateSlug(value)
+//           : prev.slug,
+//     }));
 
-//   if (fieldErrors.name) {
-//     setFieldErrors((prev) => ({ ...prev, name: undefined }));
-//   }
+//     if (fieldErrors.name) {
+//       setFieldErrors((prev) => ({ ...prev, name: undefined }));
+//     }
 
-//   setError("");
-// };
+//     setError("");
+//   };
+
 //   const processFile = (file) => {
 //     if (!file) return;
 //     if (!file.type.startsWith("image/")) {
@@ -153,11 +156,9 @@
 //   const validateForm = () => {
 //     const errors = {};
 
+//     // ✅ Allow any characters, just ensure not empty
 //     if (!formData.name.trim()) {
 //       errors.name = "Category name is required";
-//     } else if (!/^[A-Za-z\s,-]+$/.test(formData.name.trim())) {
-//       errors.name =
-//         "Category name can contain letters, spaces, comma (,) and hyphen (-)";
 //     }
 
 //     if (!formData.text.trim()) {
@@ -475,6 +476,7 @@
 //   );
 // }
 
+
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -541,7 +543,6 @@ export default function AddCategory() {
   const mutation = useMutation({
     mutationFn: createCategory,
     onSuccess: () => {
-      // Invalidate and refetch categories list
       queryClient.invalidateQueries({ queryKey: ["categories"] });
       setToast({
         show: true,
@@ -557,11 +558,12 @@ export default function AddCategory() {
     },
   });
 
+  // Generate URL-friendly slug from name (removes special characters)
   const generateSlug = (name) => {
     return name
       .toLowerCase()
       .trim()
-      .replace(/[^\w\s-]/g, "")
+      .replace(/[^\w\s-]/g, "") // remove special chars except spaces and hyphens
       .replace(/\s+/g, "-")
       .replace(/--+/g, "-");
   };
@@ -569,15 +571,15 @@ export default function AddCategory() {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear error for this field when user types
     if (fieldErrors[name]) {
       setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
     }
     setError("");
   };
 
+  // Allow any characters in name, but auto-update slug if not manually edited
   const handleNameChange = (e) => {
-    let value = e.target.value;
+    let value = e.target.value; // No filtering – special characters like &, -, /, () are preserved
 
     setFormData((prev) => ({
       ...prev,
@@ -591,7 +593,6 @@ export default function AddCategory() {
     if (fieldErrors.name) {
       setFieldErrors((prev) => ({ ...prev, name: undefined }));
     }
-
     setError("");
   };
 
@@ -631,7 +632,7 @@ export default function AddCategory() {
   const validateForm = () => {
     const errors = {};
 
-    // ✅ Allow any characters, just ensure not empty
+    // Only check for empty; any characters (including &, -, /, ()) are allowed
     if (!formData.name.trim()) {
       errors.name = "Category name is required";
     }
@@ -656,18 +657,16 @@ export default function AddCategory() {
       return;
     }
 
-    // Clear any pending navigation
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
-
     setError("");
 
     const payload = new FormData();
+    // Send the name exactly as typed (special characters preserved)
     payload.append("name", formData.name.trim());
     payload.append("text", formData.text.trim());
     if (formData.image) payload.append("image", formData.image);
     payload.append("slug", formData.slug.trim() || generateSlug(formData.name));
 
-    // Use mutation instead of manual fetch
     mutation.mutate(payload);
   };
 
@@ -682,7 +681,7 @@ export default function AddCategory() {
       )}
 
       {/* Header */}
-      <header className=" top-0 z-10 bg-white border-b border-gray-200 shadow-sm sticky">
+      <header className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
@@ -747,6 +746,9 @@ export default function AddCategory() {
                 >
                   Category Name <span className="text-red-500">*</span>
                 </label>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  Special characters (&, -, /, ()) are allowed
+                </p>
               </div>
             </div>
             <input
@@ -755,7 +757,7 @@ export default function AddCategory() {
               name="name"
               value={formData.name}
               onChange={handleNameChange}
-              placeholder="e.g., Web Development, Design, Marketing…"
+              placeholder="e.g., Cars & Trucks, SUVs / Crossovers, (Premium) – Luxury"
               className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
                 fieldErrors.name ? "border-red-500" : "border-gray-200"
               }`}
@@ -779,6 +781,9 @@ export default function AddCategory() {
                 >
                   Slug
                 </label>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  Auto-generated from name (special characters removed)
+                </p>
               </div>
             </div>
             <div className="relative">
@@ -791,7 +796,7 @@ export default function AddCategory() {
                 name="slug"
                 value={formData.slug}
                 onChange={handleInputChange}
-                placeholder="web-development"
+                placeholder="cars-and-trucks"
                 className="w-full pl-8 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
               />
             </div>

@@ -22,8 +22,8 @@ import Blogs from "./pages/Blogs";
 import AddBlog from "./pages/AddBlog";
 import EditBlog from "./pages/EditBlog";
 import Testimonials from "./pages/Testimonials";
-// import AddTestimonial from "./pages/AddTestimonial";
-// import EditTestimonial from "./pages/EditTestimonial";
+import AddTestimonial from "./pages/AddTestimonial";
+import EditTestimonial from "./pages/EditTestimonial";
 import Category from "./pages/Categories";
 import AddCategory from "./pages/AddCategory";
 import EditCategory from "./pages/EditCategory";
@@ -88,8 +88,8 @@ export default function App() {
 
           {/* Testimonials */}
           <Route path="/testimonials" element={<Testimonials />} />
-          {/* <Route path="/add-testimonial" element={<AddTestimonial />} /> */}
-          {/* <Route path="/edit-testimonial/:id" element={<EditTestimonial />} /> */}
+          <Route path="/add-testimonial" element={<AddTestimonial />} />
+          <Route path="/edit-testimonial/:id" element={<EditTestimonial />} />
 
           <Route path="/category" element={<Category />} />
           <Route path="/add-category" element={<AddCategory />} />
