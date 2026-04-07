@@ -21,6 +21,8 @@
 //   Search,
 //   Sparkles,
 //   AlertCircle,
+//   ListOrdered,
+//   Check,
 // } from "lucide-react";
 // import Toasts from "./Toasts";
 
@@ -97,7 +99,7 @@
 //     id: "",
 //     name: "",
 //     slug: "",
-//     category: "",
+//     categories: [], // <-- changed from 'category' to array
 //     text: "",
 //     short_description: "",
 //     duration: "",
@@ -108,6 +110,7 @@
 //     certificate: "No",
 //     featured: false,
 //     kids_course: false,
+//     course_sequence: "",
 //     meta_title: "",
 //     meta_description: "",
 //     keywords: "",
@@ -159,20 +162,25 @@
 //     enabled: !!id,
 //   });
 
-//   useEffect(() => {
-//     if (courseData) {
-//       console.log("COURSE DATA FULL:", courseData);
-//     }
-//   }, [courseData]);
-
 //   // Populate form when course data arrives
 //   useEffect(() => {
 //     if (courseData) {
+//       // Extract category IDs from the course's categories array (if present)
+//       // Fallback to single 'category' field if needed
+//       let selectedCategories = [];
+//       if (courseData.categories && Array.isArray(courseData.categories)) {
+//         selectedCategories = courseData.categories.map((cat) =>
+//           typeof cat === "object" ? cat.id : cat
+//         );
+//       } else if (courseData.category) {
+//         selectedCategories = [courseData.category];
+//       }
+
 //       setFormData({
 //         id: courseData.id,
 //         name: courseData.name || "",
 //         slug: courseData.slug || "",
-//         category: courseData.category || "",
+//         categories: selectedCategories,
 //         text: courseData.text || "",
 //         short_description: courseData.short_description || "",
 //         duration: courseData.duration ?? "",
@@ -183,6 +191,7 @@
 //         certificate: courseData.certificate_display || "No",
 //         featured: courseData.featured || false,
 //         kids_course: courseData.kids_course || false,
+//         course_sequence: courseData.course_sequence ?? "",
 //         meta_title: courseData.meta_title || "",
 //         meta_description: courseData.meta_description || "",
 //         keywords: courseData.keywords || "",
@@ -232,21 +241,20 @@
 //       showToast("Course updated successfully!", "success");
 //       setTimeout(() => navigate("/course"), 2000);
 //     },
-//    onError: (err) => {
-//   console.error("Mutation error:", err);
-
-//   if (err?.errors) {
-//     setFieldErrors(err.errors);
-//     setErrorMessage(err.message || "Validation failed");
-//     showToast("Please correct the errors below", "error");
-//   } else {
-//     setErrorMessage(err.message || "Failed to update course");
-//     showToast(err.message || "Failed to update course.", "error");
-//   }
-// },
+//     onError: (err) => {
+//       console.error("Mutation error:", err);
+//       if (err?.errors) {
+//         setFieldErrors(err.errors);
+//         setErrorMessage(err.message || "Validation failed");
+//         showToast("Please correct the errors below", "error");
+//       } else {
+//         setErrorMessage(err.message || "Failed to update course");
+//         showToast(err.message || "Failed to update course.", "error");
+//       }
+//     },
 //   });
 
-//   // Clear error for a field when user types
+//   // Handle text / number inputs
 //   const handleInputChange = (e) => {
 //     const { name, value } = e.target;
 
@@ -254,8 +262,9 @@
 //     if (name === "students") {
 //       const numericValue = value.replace(/[^0-9]/g, "");
 //       setFormData((prev) => ({ ...prev, [name]: numericValue }));
-//     } else if (name === "category") {
-//       setFormData((prev) => ({ ...prev, [name]: Number(value) }));
+//     } else if (name === "course_sequence") {
+//       const numericValue = value.replace(/[^0-9]/g, "");
+//       setFormData((prev) => ({ ...prev, [name]: numericValue }));
 //     } else {
 //       setFormData((prev) => ({ ...prev, [name]: value }));
 //     }
@@ -270,6 +279,21 @@
 //         .replace(/[^a-z0-9]+/g, "-")
 //         .replace(/^-|-$/g, "");
 //       setFormData((prev) => ({ ...prev, slug: generatedSlug }));
+//     }
+//   };
+
+//   // Handle category checkbox toggle
+//   const handleCategoryToggle = (categoryId) => {
+//     setFormData((prev) => {
+//       const isSelected = prev.categories.includes(categoryId);
+//       const newCategories = isSelected
+//         ? prev.categories.filter((id) => id !== categoryId)
+//         : [...prev.categories, categoryId];
+//       return { ...prev, categories: newCategories };
+//     });
+//     // Clear error for categories if any
+//     if (fieldErrors.categories) {
+//       setFieldErrors((prev) => ({ ...prev, categories: undefined }));
 //     }
 //   };
 
@@ -359,7 +383,7 @@
 
 //     if (!formData.name.trim()) errors.name = "Course name is required";
 //     if (!formData.slug.trim()) errors.slug = "Course slug is required";
-//     if (!formData.category) errors.category = "Category is required";
+//     if (formData.categories.length === 0) errors.categories = "Please select at least one category";
 //     if (!formData.text.trim()) errors.text = "Description is required";
 //     if (!formData.certificate) errors.certificate = "Certificate is required";
 
@@ -372,6 +396,9 @@
 //     }
 //     if (formData.students && !/^\d+$/.test(formData.students)) {
 //       errors.students = "Students must be a number";
+//     }
+//     if (formData.course_sequence && !/^\d+$/.test(formData.course_sequence)) {
+//       errors.course_sequence = "Course sequence must be a number";
 //     }
 
 //     // File validations
@@ -396,86 +423,70 @@
 //   };
 
 //   // Handle form submission
-// const handleSubmit = async (e) => {
-//   e.preventDefault();
+//   const handleSubmit = async (e) => {
+//     e.preventDefault();
 
-//   setErrorMessage("");
+//     setErrorMessage("");
 
-//   if (!validateForm()) {
-//     showToast("Please fill required fields correctly", "error");
-//     return;
-//   }
-
-//   setSaving(true);
-
-//   try {
-//     const submitData = new FormData();
-
-//     // Basic fields
-//     submitData.append("name", formData.name.trim());
-//     submitData.append("slug", formData.slug.trim());
-//     submitData.append("category", formData.category);
-//     submitData.append("text", formData.text);
-
-//     if (formData.short_description?.trim()) {
-//       submitData.append(
-//         "short_description",
-//         formData.short_description.trim()
-//       );
+//     if (!validateForm()) {
+//       showToast("Please fill required fields correctly", "error");
+//       return;
 //     }
 
-//     // Numeric fields
-//     if (formData.duration)
-//       submitData.append("duration", Number(formData.duration));
+//     setSaving(true);
 
-//     if (formData.lecture)
-//       submitData.append("lecture", Number(formData.lecture));
+//     try {
+//       const submitData = new FormData();
 
-//     if (formData.students)
-//       submitData.append("students", Number(formData.students));
+//       // Basic fields
+//       submitData.append("name", formData.name.trim());
+//       submitData.append("slug", formData.slug.trim());
+//       // Append each selected category ID
+//       formData.categories.forEach((catId) => {
+//         submitData.append("categories", catId);
+//       });
+//       submitData.append("text", formData.text);
 
-//     // Optional fields
-//     if (formData.level) submitData.append("level", formData.level);
-//     if (formData.language) submitData.append("language", formData.language);
+//       if (formData.short_description?.trim()) {
+//         submitData.append("short_description", formData.short_description.trim());
+//       }
 
-//     // Boolean conversion (VERY IMPORTANT)
-//     submitData.append(
-//       "certificate",
-//       formData.certificate === "Yes"
-//     );
+//       // Numeric fields
+//       if (formData.duration) submitData.append("duration", Number(formData.duration));
+//       if (formData.lecture) submitData.append("lecture", Number(formData.lecture));
+//       if (formData.students) submitData.append("students", Number(formData.students));
+//       if (formData.course_sequence) submitData.append("course_sequence", Number(formData.course_sequence));
 
-//     submitData.append("featured", formData.featured);
-//     submitData.append("kids_course", formData.kids_course);
+//       // Optional fields
+//       if (formData.level) submitData.append("level", formData.level);
+//       if (formData.language) submitData.append("language", formData.language);
 
-//     // SEO
-//     if (formData.meta_title)
-//       submitData.append("meta_title", formData.meta_title);
+//       // Boolean conversion
+//       submitData.append("certificate", formData.certificate === "Yes");
+//       submitData.append("featured", formData.featured);
+//       submitData.append("kids_course", formData.kids_course);
 
-//     if (formData.meta_description)
-//       submitData.append("meta_description", formData.meta_description);
+//       // SEO
+//       if (formData.meta_title) submitData.append("meta_title", formData.meta_title);
+//       if (formData.meta_description) submitData.append("meta_description", formData.meta_description);
+//       if (formData.keywords) submitData.append("keywords", formData.keywords);
 
-//     if (formData.keywords)
-//       submitData.append("keywords", formData.keywords);
+//       // Files (only if changed)
+//       if (formData.image) submitData.append("image", formData.image);
+//       if (formData.banner_img) submitData.append("banner_img", formData.banner_img);
+//       if (formData.icon) submitData.append("icon", formData.icon);
+//       if (formData.image2) submitData.append("image2", formData.image2);
+//       if (formData.pdf_file) submitData.append("pdf_file", formData.pdf_file);
 
-//     // Files (only if changed)
-//     if (formData.image) submitData.append("image", formData.image);
-//     if (formData.banner_img)
-//       submitData.append("banner_img", formData.banner_img);
-//     if (formData.icon) submitData.append("icon", formData.icon);
-//     if (formData.image2) submitData.append("image2", formData.image2);
-//     if (formData.pdf_file)
-//       submitData.append("pdf_file", formData.pdf_file);
-
-//     // 🔥 Trigger mutation
-//     mutation.mutate({ id, formData: submitData });
-
-//   } catch (err) {
-//     console.error("Submit error:", err);
-//     setErrorMessage("Something went wrong. Please try again.");
-//     showToast("Network error. Please check your connection.", "error");
-//     setSaving(false);
-//   }
-// };
+//       // Trigger mutation
+//       mutation.mutate({ id, formData: submitData });
+//     } catch (err) {
+//       console.error("Submit error:", err);
+//       setErrorMessage("Something went wrong. Please try again.");
+//       showToast("Network error. Please check your connection.", "error");
+//       setSaving(false);
+//     }
+//   };
 
 //   // ── Toggle Switch Component ──
 //   const ToggleSwitch = ({ label, description, name, checked, onChange }) => (
@@ -863,37 +874,53 @@
 //             </div>
 //           </div>
 
-//           {/* Category */}
+//           {/* Categories - Multi-select checkboxes (replaces dropdown) */}
 //           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-//             <label
-//               htmlFor="category"
-//               className="block text-base font-semibold text-gray-800 mb-1"
-//             >
-//               Category <span className="text-red-500">*</span>
+//             <label className="block text-base font-semibold text-gray-800 mb-3">
+//               Categories <span className="text-red-500">*</span>
 //             </label>
-//             <div className="relative">
-//               <select
-//                 id="category"
-//                 name="category"
-//                 value={formData.category}
-//                 onChange={handleInputChange}
-//                 className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none ${
-//                   fieldErrors.category ? "border-red-500" : "border-gray-200"
+//             {categoriesLoading ? (
+//               <div className="text-sm text-gray-500">Loading categories...</div>
+//             ) : categories.length === 0 ? (
+//               <div className="text-sm text-red-500">No categories found</div>
+//             ) : (
+//               <div
+//                 className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 ${
+//                   fieldErrors.categories ? "border-red-500 rounded-lg p-3 bg-red-50" : ""
 //                 }`}
-//                 required
 //               >
-//                 <option value="">Select a category</option>
 //                 {categories.map((cat) => (
-//                   <option key={cat.id} value={cat.id}>
-//                     {cat.name}
-//                   </option>
+//                   <label
+//                     key={cat.id}
+//                     className="flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all hover:bg-gray-50"
+//                     style={{
+//                       borderColor: formData.categories.includes(cat.id)
+//                         ? "#6366f1"
+//                         : "#e5e7eb",
+//                       backgroundColor: formData.categories.includes(cat.id)
+//                         ? "#eef2ff"
+//                         : "white",
+//                     }}
+//                   >
+//                     <input
+//                       type="checkbox"
+//                       checked={formData.categories.includes(cat.id)}
+//                       onChange={() => handleCategoryToggle(cat.id)}
+//                       className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+//                     />
+//                     <span className="text-sm font-medium text-gray-700">
+//                       {cat.name}
+//                     </span>
+//                   </label>
 //                 ))}
-//               </select>
-//               <ChevronDown
-//                 size={16}
-//                 className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-//               />
-//             </div>
+//               </div>
+//             )}
+//             {fieldErrors.categories && (
+//               <p className="text-xs text-red-500 mt-2">{fieldErrors.categories}</p>
+//             )}
+//             <p className="text-xs text-gray-400 mt-3">
+//               Select one or more categories that best describe this course.
+//             </p>
 //           </div>
 
 //           {/* Description with tabs */}
@@ -1044,9 +1071,9 @@
 //             iconColor="text-violet-600"
 //           />
 
-//           {/* Duration / Lectures / Students */}
+//           {/* Duration / Lectures / Students / Course Sequence */}
 //           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-//             <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+//             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
 //               {[
 //                 {
 //                   icon: Clock,
@@ -1072,6 +1099,14 @@
 //                   bg: "bg-orange-50",
 //                   color: "text-orange-500",
 //                 },
+//                 {
+//                   icon: ListOrdered,
+//                   label: "Course Sequence",
+//                   name: "course_sequence",
+//                   placeholder: "e.g., 1, 2, 3...",
+//                   bg: "bg-cyan-50",
+//                   color: "text-cyan-500",
+//                 },
 //               ].map((field) => (
 //                 <div key={field.name}>
 //                   <div className="flex items-center gap-2 mb-2">
@@ -1082,11 +1117,15 @@
 //                     </div>
 //                     <label className="text-xs font-semibold text-gray-700">
 //                       {field.label}
+//                       {field.name === "course_sequence" && (
+//                         <span className="text-gray-400 text-xs font-normal ml-1">(Optional)</span>
+//                       )}
 //                     </label>
 //                   </div>
 //                   <input
 //                     type="number"
 //                     min={0}
+//                     step="1"
 //                     name={field.name}
 //                     value={formData[field.name]}
 //                     onChange={handleInputChange}
@@ -1429,6 +1468,7 @@ import {
   Sparkles,
   AlertCircle,
   ListOrdered,
+  Check,
 } from "lucide-react";
 import Toasts from "./Toasts";
 
@@ -1505,7 +1545,7 @@ export default function EditCourse() {
     id: "",
     name: "",
     slug: "",
-    category: "",
+    categories: [],
     text: "",
     short_description: "",
     duration: "",
@@ -1516,7 +1556,7 @@ export default function EditCourse() {
     certificate: "No",
     featured: false,
     kids_course: false,
-    course_sequence: "", // new field
+    course_sequence: "",
     meta_title: "",
     meta_description: "",
     keywords: "",
@@ -1568,20 +1608,23 @@ export default function EditCourse() {
     enabled: !!id,
   });
 
-  useEffect(() => {
-    if (courseData) {
-      console.log("COURSE DATA FULL:", courseData);
-    }
-  }, [courseData]);
-
   // Populate form when course data arrives
   useEffect(() => {
     if (courseData) {
+      let selectedCategories = [];
+      if (courseData.categories && Array.isArray(courseData.categories)) {
+        selectedCategories = courseData.categories.map((cat) =>
+          typeof cat === "object" ? cat.id : cat
+        );
+      } else if (courseData.category) {
+        selectedCategories = [courseData.category];
+      }
+
       setFormData({
         id: courseData.id,
         name: courseData.name || "",
         slug: courseData.slug || "",
-        category: courseData.category || "",
+        categories: selectedCategories,
         text: courseData.text || "",
         short_description: courseData.short_description || "",
         duration: courseData.duration ?? "",
@@ -1592,7 +1635,7 @@ export default function EditCourse() {
         certificate: courseData.certificate_display || "No",
         featured: courseData.featured || false,
         kids_course: courseData.kids_course || false,
-        course_sequence: courseData.course_sequence ?? "", // new field
+        course_sequence: courseData.course_sequence ?? "",
         meta_title: courseData.meta_title || "",
         meta_description: courseData.meta_description || "",
         keywords: courseData.keywords || "",
@@ -1655,19 +1698,16 @@ export default function EditCourse() {
     },
   });
 
-  // Clear error for a field when user types
+  // Handle text / number inputs
   const handleInputChange = (e) => {
     const { name, value } = e.target;
 
-    // For numeric fields, allow only numbers
     if (name === "students") {
       const numericValue = value.replace(/[^0-9]/g, "");
       setFormData((prev) => ({ ...prev, [name]: numericValue }));
     } else if (name === "course_sequence") {
       const numericValue = value.replace(/[^0-9]/g, "");
       setFormData((prev) => ({ ...prev, [name]: numericValue }));
-    } else if (name === "category") {
-      setFormData((prev) => ({ ...prev, [name]: Number(value) }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
@@ -1682,6 +1722,20 @@ export default function EditCourse() {
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-|-$/g, "");
       setFormData((prev) => ({ ...prev, slug: generatedSlug }));
+    }
+  };
+
+  // Handle category checkbox toggle
+  const handleCategoryToggle = (categoryId) => {
+    setFormData((prev) => {
+      const isSelected = prev.categories.includes(categoryId);
+      const newCategories = isSelected
+        ? prev.categories.filter((id) => id !== categoryId)
+        : [...prev.categories, categoryId];
+      return { ...prev, categories: newCategories };
+    });
+    if (fieldErrors.categories) {
+      setFieldErrors((prev) => ({ ...prev, categories: undefined }));
     }
   };
 
@@ -1729,7 +1783,7 @@ export default function EditCourse() {
     }
   };
 
-  // Remove file – if no existing file remains, mark field as error
+  // Remove file – for required fields (image, banner, image2) we set error if both existing and new are empty; for optional fields we just clear.
   const removeFile = (field, isExisting = false) => {
     if (isExisting) {
       setFormData((prev) => ({ ...prev, [`existing_${field}`]: "" }));
@@ -1755,55 +1809,39 @@ export default function EditCourse() {
       }
     }
 
-    const hasExisting = formData[`existing_${field}`];
-    const hasNew = formData[field];
-    const empty = !hasExisting && !hasNew;
-    if (empty) {
-      setFieldErrors((prev) => ({ ...prev, [field]: `${field} is required` }));
+    // Only set errors for required fields (image, banner_img, image2)
+    const requiredFields = ["image", "banner_img", "image2"];
+    if (requiredFields.includes(field)) {
+      const hasExisting = formData[`existing_${field}`];
+      const hasNew = formData[field];
+      const empty = !hasExisting && !hasNew;
+      if (empty) {
+        setFieldErrors((prev) => ({ ...prev, [field]: `${field} is required` }));
+      } else {
+        setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
+      }
     } else {
+      // Optional fields – clear error if any
       setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
     }
   };
 
-  // Validate the entire form before submission
+  // Validate the entire form – only required: name, certificate, image, banner_img, image2
   const validateForm = () => {
     const errors = {};
 
     if (!formData.name.trim()) errors.name = "Course name is required";
-    if (!formData.slug.trim()) errors.slug = "Course slug is required";
-    if (!formData.category) errors.category = "Category is required";
-    if (!formData.text.trim()) errors.text = "Description is required";
     if (!formData.certificate) errors.certificate = "Certificate is required";
 
-    // Validate numeric fields
-    if (formData.duration && isNaN(parseFloat(formData.duration))) {
-      errors.duration = "Duration must be a number";
-    }
-    if (formData.lecture && isNaN(parseFloat(formData.lecture))) {
-      errors.lecture = "Lectures must be a number";
-    }
-    if (formData.students && !/^\d+$/.test(formData.students)) {
-      errors.students = "Students must be a number";
-    }
-    if (formData.course_sequence && !/^\d+$/.test(formData.course_sequence)) {
-      errors.course_sequence = "Course sequence must be a number";
-    }
-
-    // File validations
+    // File validations (only required ones)
     if (!formData.existing_image && !formData.image) {
       errors.image = "Course image is required";
     }
     if (!formData.existing_banner && !formData.banner_img) {
       errors.banner_img = "Banner image is required";
     }
-    if (!formData.existing_icon && !formData.icon) {
-      errors.icon = "Course icon is required";
-    }
     if (!formData.existing_image2 && !formData.image2) {
       errors.image2 = "Additional image is required";
-    }
-    if (!formData.existing_pdf && !formData.pdf_file) {
-      errors.pdf_file = "Syllabus PDF is required";
     }
 
     setFieldErrors(errors);
@@ -1817,7 +1855,7 @@ export default function EditCourse() {
     setErrorMessage("");
 
     if (!validateForm()) {
-      showToast("Please fill required fields correctly", "error");
+      showToast("Please fill all required fields", "error");
       return;
     }
 
@@ -1829,14 +1867,16 @@ export default function EditCourse() {
       // Basic fields
       submitData.append("name", formData.name.trim());
       submitData.append("slug", formData.slug.trim());
-      submitData.append("category", formData.category);
-      submitData.append("text", formData.text);
-
+      // Append each selected category ID (optional)
+      formData.categories.forEach((catId) => {
+        submitData.append("categories", catId);
+      });
+      if (formData.text) submitData.append("text", formData.text);
       if (formData.short_description?.trim()) {
         submitData.append("short_description", formData.short_description.trim());
       }
 
-      // Numeric fields
+      // Numeric fields (optional)
       if (formData.duration) submitData.append("duration", Number(formData.duration));
       if (formData.lecture) submitData.append("lecture", Number(formData.lecture));
       if (formData.students) submitData.append("students", Number(formData.students));
@@ -1851,7 +1891,7 @@ export default function EditCourse() {
       submitData.append("featured", formData.featured);
       submitData.append("kids_course", formData.kids_course);
 
-      // SEO
+      // SEO (optional)
       if (formData.meta_title) submitData.append("meta_title", formData.meta_title);
       if (formData.meta_description) submitData.append("meta_description", formData.meta_description);
       if (formData.keywords) submitData.append("keywords", formData.keywords);
@@ -1910,6 +1950,7 @@ export default function EditCourse() {
     iconBg,
     iconColor,
     error,
+    required = false,
   }) => {
     const hasPreview = preview || existingUrl;
     const previewSrc = preview || getImageUrl(existingUrl);
@@ -1928,7 +1969,9 @@ export default function EditCourse() {
             <ImagePlus size={16} className={iconColor} />
           </div>
           <div>
-            <p className="text-base font-semibold text-gray-800">{label}</p>
+            <p className="text-base font-semibold text-gray-800">
+              {label} {required && <span className="text-red-500">*</span>}
+            </p>
             <p className="text-xs text-gray-400 mt-0.5">{hint}</p>
           </div>
         </div>
@@ -2004,7 +2047,7 @@ export default function EditCourse() {
     );
   };
 
-  // ── PDF Upload Box with error styling ──
+  // ── PDF Upload Box (optional) ──
   const PdfUploadBox = ({ error }) => {
     const hasPdf = pdfName || formData.existing_pdf;
     const pdfDisplayName =
@@ -2024,7 +2067,7 @@ export default function EditCourse() {
           </div>
           <div>
             <p className="text-base font-semibold text-gray-800">
-              Syllabus PDF <span className="text-red-500">*</span>
+              Syllabus PDF <span className="text-gray-400 text-sm font-normal">(Optional)</span>
             </p>
           </div>
         </div>
@@ -2118,7 +2161,7 @@ export default function EditCourse() {
     iconBg,
     iconColor,
     description,
-    required,
+    required = false,
   }) => (
     <div className="flex items-center gap-3 pt-2">
       <div
@@ -2127,9 +2170,9 @@ export default function EditCourse() {
         <Icon size={16} className={iconColor} />
       </div>
       <div>
-        <p className="text-base font-bold text-gray-800 flex items-center">
+        <p className="text-base font-bold text-gray-800">
           {label}
-          {required && <span className="text-red-500 ml-1">*</span>}
+          {required && <span className="text-red-400 ml-1">*</span>}
         </p>
         {description && <p className="text-xs text-gray-400">{description}</p>}
       </div>
@@ -2210,7 +2253,7 @@ export default function EditCourse() {
             iconColor="text-indigo-600"
           />
 
-          {/* Course Name */}
+          {/* Course Name (Required) */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <label
               htmlFor="name"
@@ -2228,17 +2271,19 @@ export default function EditCourse() {
               className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
                 fieldErrors.name ? "border-red-500" : "border-gray-200"
               }`}
-              required
             />
+            {fieldErrors.name && (
+              <p className="text-xs text-red-500 mt-1">{fieldErrors.name}</p>
+            )}
           </div>
 
-          {/* Slug */}
+          {/* Slug (Optional) */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <label
               htmlFor="slug"
               className="block text-base font-semibold text-gray-800 mb-1"
             >
-              Course Slug <span className="text-red-500">*</span>
+              Course Slug <span className="text-gray-400 text-sm font-normal">(Auto-generated)</span>
             </label>
             <div className="flex rounded-xl overflow-hidden border border-gray-200 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-transparent transition-all">
               <span className="inline-flex items-center px-4 py-3 bg-gray-100 text-xs text-gray-500 font-medium border-r border-gray-200 whitespace-nowrap">
@@ -2251,55 +2296,61 @@ export default function EditCourse() {
                 value={formData.slug}
                 onChange={handleInputChange}
                 placeholder="advanced-react-development"
-                className={`flex-1 px-4 py-3 bg-gray-50 text-gray-900 text-base placeholder-gray-400 outline-none focus:bg-white transition-all ${
-                  fieldErrors.slug ? "border-red-500" : ""
-                }`}
-                required
+                className="flex-1 px-4 py-3 bg-gray-50 text-gray-900 text-base placeholder-gray-400 outline-none focus:bg-white transition-all"
               />
             </div>
           </div>
 
-          {/* Category */}
+          {/* Categories (Optional) */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-            <label
-              htmlFor="category"
-              className="block text-base font-semibold text-gray-800 mb-1"
-            >
-              Category <span className="text-red-500">*</span>
+            <label className="block text-base font-semibold text-gray-800 mb-3">
+              Categories <span className="text-gray-400 text-sm font-normal">(Optional)</span>
             </label>
-            <div className="relative">
-              <select
-                id="category"
-                name="category"
-                value={formData.category}
-                onChange={handleInputChange}
-                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none ${
-                  fieldErrors.category ? "border-red-500" : "border-gray-200"
-                }`}
-                required
-              >
-                <option value="">Select a category</option>
+            {categoriesLoading ? (
+              <div className="text-sm text-gray-500">Loading categories...</div>
+            ) : categories.length === 0 ? (
+              <div className="text-sm text-red-500">No categories found</div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
+                  <label
+                    key={cat.id}
+                    className="flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all hover:bg-gray-50"
+                    style={{
+                      borderColor: formData.categories.includes(cat.id)
+                        ? "#6366f1"
+                        : "#e5e7eb",
+                      backgroundColor: formData.categories.includes(cat.id)
+                        ? "#eef2ff"
+                        : "white",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={formData.categories.includes(cat.id)}
+                      onChange={() => handleCategoryToggle(cat.id)}
+                      className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                    />
+                    <span className="text-sm font-medium text-gray-700">
+                      {cat.name}
+                    </span>
+                  </label>
                 ))}
-              </select>
-              <ChevronDown
-                size={16}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-              />
-            </div>
+              </div>
+            )}
+            <p className="text-xs text-gray-400 mt-3">
+              Select one or more categories that best describe this course (optional).
+            </p>
           </div>
 
-          {/* Description with tabs */}
+          {/* Description with tabs (Optional) */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <div className="flex items-center justify-between mb-4">
               <label
                 htmlFor="text"
                 className="block text-base font-semibold text-gray-800"
               >
-                Description <span className="text-red-500">*</span>
+                Description <span className="text-gray-400 text-sm font-normal">(Optional)</span>
               </label>
               <div className="flex gap-1 p-1 bg-gray-100 rounded-lg">
                 <button
@@ -2327,13 +2378,8 @@ export default function EditCourse() {
               </div>
             </div>
 
-            {/* Conditional Editor */}
             {editorMode === "tinymce" ? (
-              <div
-                className={`border rounded-xl overflow-hidden ${
-                  fieldErrors.text ? "border-red-500" : "border-gray-200"
-                }`}
-              >
+              <div className="border rounded-xl overflow-hidden border-gray-200">
                 <Editor
                   apiKey="f45j826wq94pn0e0xseucsvqi8k7xug5idltalwrry8pevjm"
                   value={formData.text}
@@ -2385,9 +2431,7 @@ export default function EditCourse() {
                     setFieldErrors((prev) => ({ ...prev, text: undefined }));
                   }
                 }}
-                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base font-mono placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
-                  fieldErrors.text ? "border-red-500" : "border-gray-200"
-                }`}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base font-mono placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
                 rows={12}
                 placeholder="<!-- Write HTML here -->"
               />
@@ -2398,14 +2442,14 @@ export default function EditCourse() {
             </p>
           </div>
 
-          {/* Short Description with auto‑generate button */}
+          {/* Short Description with auto‑generate button (Optional) */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <div className="flex items-center justify-between mb-1">
               <label
                 htmlFor="short_description"
                 className="block text-base font-semibold text-gray-800"
               >
-                Short Description
+                Short Description <span className="text-gray-400 text-sm font-normal">(Optional)</span>
               </label>
               <button
                 type="button"
@@ -2424,15 +2468,11 @@ export default function EditCourse() {
               value={formData.short_description}
               onChange={handleInputChange}
               placeholder="e.g., Learn React from scratch in 40 hours"
-              className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
-                fieldErrors.short_description
-                  ? "border-red-500"
-                  : "border-gray-200"
-              }`}
+              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
             />
           </div>
 
-          {/* SECTION 2 — Course Details */}
+          {/* SECTION 2 — Course Details (All Optional) */}
           <SectionHeader
             icon={BookMarked}
             label="Course Details"
@@ -2440,7 +2480,6 @@ export default function EditCourse() {
             iconColor="text-violet-600"
           />
 
-          {/* Duration / Lectures / Students / Course Sequence */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
               {[
@@ -2486,9 +2525,6 @@ export default function EditCourse() {
                     </div>
                     <label className="text-xs font-semibold text-gray-700">
                       {field.label}
-                      {field.name === "course_sequence" && (
-                        <span className="text-gray-400 text-xs font-normal ml-1">(Optional)</span>
-                      )}
                     </label>
                   </div>
                   <input
@@ -2499,26 +2535,17 @@ export default function EditCourse() {
                     value={formData[field.name]}
                     onChange={handleInputChange}
                     placeholder={field.placeholder}
-                    className={`w-full px-3 py-2.5 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
-                      fieldErrors[field.name]
-                        ? "border-red-500"
-                        : "border-gray-200"
-                    }`}
+                    className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
                   />
-                  {fieldErrors[field.name] && (
-                    <p className="text-xs text-red-500 mt-1">
-                      {fieldErrors[field.name]}
-                    </p>
-                  )}
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Level / Language / Certificate */}
+          {/* Level / Language / Certificate (Certificate is Required) */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-              {/* Level */}
+              {/* Level (Optional) */}
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-6 h-6 bg-purple-50 rounded-md flex items-center justify-center">
@@ -2549,7 +2576,7 @@ export default function EditCourse() {
                 </div>
               </div>
 
-              {/* Language */}
+              {/* Language (Optional) */}
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-6 h-6 bg-teal-50 rounded-md flex items-center justify-center">
@@ -2569,7 +2596,7 @@ export default function EditCourse() {
                 />
               </div>
 
-              {/* Certificate */}
+              {/* Certificate (Required) */}
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-6 h-6 bg-yellow-50 rounded-md flex items-center justify-center">
@@ -2613,11 +2640,14 @@ export default function EditCourse() {
                     </label>
                   ))}
                 </div>
+                {fieldErrors.certificate && (
+                  <p className="text-xs text-red-500 mt-1">{fieldErrors.certificate}</p>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Additional Options: Featured & Kids Course */}
+          {/* Additional Options (Optional) */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-9 h-9 bg-amber-50 rounded-xl flex items-center justify-center">
@@ -2645,7 +2675,7 @@ export default function EditCourse() {
             </div>
           </div>
 
-          {/* SECTION 3 — Media Files */}
+          {/* SECTION 3 — Media Files (image, banner_img, image2 required; icon and pdf optional) */}
           <SectionHeader
             icon={ImagePlus}
             label="Media Files"
@@ -2661,10 +2691,12 @@ export default function EditCourse() {
               onRemove={() => removeFile("image", !imagePreview)}
               inputId="image-upload"
               inputName="image"
-              label="Course Image "
+              label="Course Image"
+              hint="Required"
               iconBg="bg-pink-50"
               iconColor="text-pink-500"
               error={!!fieldErrors.image}
+              required={true}
             />
             <ImageUploadBox
               preview={bannerPreview}
@@ -2672,10 +2704,12 @@ export default function EditCourse() {
               onRemove={() => removeFile("banner_img", !bannerPreview)}
               inputId="banner-upload"
               inputName="banner_img"
-              label="Banner Image "
+              label="Banner Image"
+              hint="Required"
               iconBg="bg-indigo-50"
               iconColor="text-indigo-500"
               error={!!fieldErrors.banner_img}
+              required={true}
             />
             <ImageUploadBox
               preview={iconPreview}
@@ -2683,10 +2717,12 @@ export default function EditCourse() {
               onRemove={() => removeFile("icon", !iconPreview)}
               inputId="icon-upload"
               inputName="icon"
-              label="Course Icon "
+              label="Course Icon"
+              hint="Optional"
               iconBg="bg-violet-50"
               iconColor="text-violet-500"
               error={!!fieldErrors.icon}
+              required={false}
             />
             <ImageUploadBox
               preview={image2Preview}
@@ -2694,15 +2730,17 @@ export default function EditCourse() {
               onRemove={() => removeFile("image2", !image2Preview)}
               inputId="image2-upload"
               inputName="image2"
-              label="Additional Image "
+              label="Additional Image"
+              hint="Required"
               iconBg="bg-orange-50"
               iconColor="text-orange-500"
               error={!!fieldErrors.image2}
+              required={true}
             />
             <PdfUploadBox error={!!fieldErrors.pdf_file} />
           </div>
 
-          {/* SECTION 4 — SEO & Metadata */}
+          {/* SECTION 4 — SEO & Metadata (All Optional) */}
           <SectionHeader
             icon={Search}
             label="SEO & Metadata"
@@ -2711,13 +2749,12 @@ export default function EditCourse() {
           />
 
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-5">
-            {/* Meta Title */}
             <div>
               <label
                 htmlFor="meta_title"
                 className="block text-base font-semibold text-gray-800 mb-1"
               >
-                Meta Title <span className="text-red-500">*</span>
+                Meta Title <span className="text-gray-400 text-sm font-normal">(Optional)</span>
               </label>
               <input
                 id="meta_title"
@@ -2726,9 +2763,7 @@ export default function EditCourse() {
                 value={formData.meta_title}
                 onChange={handleInputChange}
                 placeholder="SEO optimized title for your course"
-                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
-                  fieldErrors.meta_title ? "border-red-500" : "border-gray-200"
-                }`}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
               />
               <p className="text-xs text-gray-400 text-right mt-1">
                 {formData.meta_title.length} / 60
@@ -2737,13 +2772,12 @@ export default function EditCourse() {
 
             <div className="h-px bg-gray-100" />
 
-            {/* Meta Description */}
             <div>
               <label
                 htmlFor="meta_description"
                 className="block text-base font-semibold text-gray-800 mb-1"
               >
-                Meta Description <span className="text-red-500">*</span>
+                Meta Description <span className="text-gray-400 text-sm font-normal">(Optional)</span>
               </label>
               <textarea
                 id="meta_description"
@@ -2752,11 +2786,7 @@ export default function EditCourse() {
                 onChange={handleInputChange}
                 rows={3}
                 placeholder="Brief description for search engines…"
-                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-none ${
-                  fieldErrors.meta_description
-                    ? "border-red-500"
-                    : "border-gray-200"
-                }`}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-none"
               />
               <p className="text-xs text-gray-400 text-right mt-1">
                 {formData.meta_description.length} / 160
@@ -2765,13 +2795,12 @@ export default function EditCourse() {
 
             <div className="h-px bg-gray-100" />
 
-            {/* Keywords */}
             <div>
               <label
                 htmlFor="keywords"
                 className="block text-base font-semibold text-gray-800 mb-1"
               >
-                Keywords <span className="text-red-500">*</span>
+                Keywords <span className="text-gray-400 text-sm font-normal">(Optional)</span>
               </label>
               <input
                 id="keywords"
@@ -2780,9 +2809,7 @@ export default function EditCourse() {
                 value={formData.keywords}
                 onChange={handleInputChange}
                 placeholder="react, javascript, web development, frontend"
-                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
-                  fieldErrors.keywords ? "border-red-500" : "border-gray-200"
-                }`}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
               />
             </div>
           </div>

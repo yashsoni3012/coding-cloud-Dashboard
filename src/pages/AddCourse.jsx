@@ -1,5 +1,3 @@
-
-
 // import { useState, useEffect, useRef } from "react";
 // import { useNavigate } from "react-router-dom";
 // import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -23,6 +21,8 @@
 //   BookMarked,
 //   Search,
 //   Sparkles,
+//   ListOrdered,
+//   Check,
 // } from "lucide-react";
 // import Toasts from "../pages/Toasts";
 
@@ -55,7 +55,6 @@
 //   }
 
 //   if (!response.ok && response.status !== 201) {
-//     // Handle structured field errors
 //     if (data.errors) {
 //       const backendErrors = {};
 //       Object.keys(data.errors).forEach((key) => {
@@ -82,7 +81,6 @@
 //   const queryClient = useQueryClient();
 //   const timeoutRef = useRef(null);
 
-//   // ⚙️ Adjust this constant based on your backend limit (if known)
 //   const MAX_DESCRIPTION_LENGTH = 10000;
 
 //   const [error, setError] = useState("");
@@ -92,7 +90,7 @@
 //     type: "success",
 //   });
 
-//   // --- TanStack Query: fetch categories with caching ---
+//   // --- TanStack Query: fetch categories ---
 //   const {
 //     data: categories = [],
 //     isLoading: loadingCategories,
@@ -102,18 +100,16 @@
 //     queryFn: fetchCategories,
 //   });
 
-//   // Show categories loading error if needed (matches original behavior)
 //   useEffect(() => {
 //     if (categoriesError) {
 //       setError("Failed to load categories");
 //     }
 //   }, [categoriesError]);
 
-//   // --- TanStack Mutation: create course ---
+//   // --- TanStack Mutation ---
 //   const mutation = useMutation({
 //     mutationFn: createCourse,
 //     onSuccess: () => {
-//       // Invalidate courses list so it refreshes
 //       queryClient.invalidateQueries({ queryKey: ["courses"] });
 //       setToast({
 //         show: true,
@@ -141,7 +137,6 @@
 //     },
 //   });
 
-//   // Clear timeout on unmount
 //   useEffect(() => {
 //     return () => {
 //       if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -151,7 +146,7 @@
 //   const [formData, setFormData] = useState({
 //     name: "",
 //     slug: "",
-//     category: "",
+//     categories: [], // changed from single 'category' to array
 //     text: "",
 //     short_description: "",
 //     duration: "",
@@ -162,6 +157,7 @@
 //     certificate: "No",
 //     featured: false,
 //     kids_course: false,
+//     course_sequence: "",
 //     meta_title: "",
 //     meta_description: "",
 //     keywords: "",
@@ -178,89 +174,61 @@
 //   const [image2Preview, setImage2Preview] = useState("");
 //   const [pdfName, setPdfName] = useState("");
 //   const [fieldErrors, setFieldErrors] = useState({});
-//   const [loading, setLoading] = useState(false); // for button state
+//   const [loading, setLoading] = useState(false);
 //   const [editorMode, setEditorMode] = useState("tinymce");
 
-//   // 🟥 RED BORDER LOGIC: Clear error for a field when user types
-// // const handleInputChange = (e) => {
-// //   const { name, value } = e.target;
+//   const handleInputChange = (e) => {
+//     const { name, value } = e.target;
 
-// //   // 🚫 Remove + character (for both typing & paste)
-// //   let sanitizedValue = value.replace(/\+/g, "");
+//     let sanitizedValue = value.replace(/\+/g, "");
 
-// //   // ✅ Students → only numbers
-// //   if (name === "students") {
-// //     sanitizedValue = sanitizedValue.replace(/[^0-9]/g, "");
-// //   }
+//     if (name === "students") {
+//       sanitizedValue = sanitizedValue.replace(/[^0-9]/g, "");
+//     }
+//     if (name === "course_sequence") {
+//       sanitizedValue = sanitizedValue.replace(/[^0-9]/g, "");
+//     }
 
-// //   // ✅ Update state
-// //   setFormData((prev) => ({
-// //     ...prev,
-// //     [name]: sanitizedValue,
-// //   }));
+//     let updatedData = {
+//       [name]: sanitizedValue,
+//     };
 
-// //   // ✅ Clear field error if exists
-// //   if (fieldErrors[name]) {
-// //     setFieldErrors((prev) => ({
-// //       ...prev,
-// //       [name]: undefined,
-// //     }));
-// //   }
+//     if (name === "name") {
+//       const generatedSlug = sanitizedValue
+//         .toLowerCase()
+//         .replace(/[^a-z0-9]+/g, "-")
+//         .replace(/^-|-$/g, "");
+//       updatedData.slug = generatedSlug;
+//     }
 
-// //   // ✅ Auto-generate slug (only if empty)
-// //   if (name === "name" && !formData.slug) {
-// //     const generatedSlug = sanitizedValue
-// //       .toLowerCase()
-// //       .replace(/[^a-z0-9]+/g, "-")
-// //       .replace(/^-|-$/g, "");
+//     setFormData((prev) => ({
+//       ...prev,
+//       ...updatedData,
+//     }));
 
-// //     setFormData((prev) => ({
-// //       ...prev,
-// //       slug: generatedSlug,
-// //     }));
-// //   }
-// // };
-
-// const handleInputChange = (e) => {
-//   const { name, value } = e.target;
-
-//   // 🚫 Remove + character
-//   let sanitizedValue = value.replace(/\+/g, "");
-
-//   // ✅ Students → only numbers
-//   if (name === "students") {
-//     sanitizedValue = sanitizedValue.replace(/[^0-9]/g, "");
-//   }
-
-//   // ✅ Generate slug if name changes
-//   let updatedData = {
-//     [name]: sanitizedValue,
+//     if (fieldErrors[name]) {
+//       setFieldErrors((prev) => ({
+//         ...prev,
+//         [name]: undefined,
+//       }));
+//     }
 //   };
 
-//   if (name === "name") {
-//     const generatedSlug = sanitizedValue
-//       .toLowerCase()
-//       .replace(/[^a-z0-9]+/g, "-")
-//       .replace(/^-|-$/g, "");
+//   // Handle category checkbox toggle
+//   const handleCategoryToggle = (categoryId) => {
+//     setFormData((prev) => {
+//       const isSelected = prev.categories.includes(categoryId);
+//       const newCategories = isSelected
+//         ? prev.categories.filter((id) => id !== categoryId)
+//         : [...prev.categories, categoryId];
+//       return { ...prev, categories: newCategories };
+//     });
+//     // Clear error for categories if any
+//     if (fieldErrors.categories) {
+//       setFieldErrors((prev) => ({ ...prev, categories: undefined }));
+//     }
+//   };
 
-//     updatedData.slug = generatedSlug;
-//   }
-
-//   // ✅ Update state
-//   setFormData((prev) => ({
-//     ...prev,
-//     ...updatedData,
-//   }));
-
-//   // ✅ Clear field error
-//   if (fieldErrors[name]) {
-//     setFieldErrors((prev) => ({
-//       ...prev,
-//       [name]: undefined,
-//     }));
-//   }
-// };
-//   // Handle toggle changes for boolean fields
 //   const handleToggleChange = (name, checked) => {
 //     setFormData((prev) => ({ ...prev, [name]: checked }));
 //     if (fieldErrors[name]) {
@@ -268,7 +236,6 @@
 //     }
 //   };
 
-//   // 🟥 Clear file field error when a file is selected
 //   const handleFileChange = (e) => {
 //     const { name, files } = e.target;
 //     const file = files[0];
@@ -294,7 +261,6 @@
 //       else if (name === "image2") setImage2Preview(URL.createObjectURL(file));
 //       else if (name === "pdf_file") setPdfName(file.name);
 
-//       // Clear error for this file field
 //       if (fieldErrors[name]) {
 //         setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
 //       }
@@ -304,12 +270,11 @@
 //   };
 
 //   const blockPlusKey = (e) => {
-//   if (e.key === "+") {
-//     e.preventDefault();
-//   }
-// };
+//     if (e.key === "+") {
+//       e.preventDefault();
+//     }
+//   };
 
-//   // 🟥 Clear error when file is removed
 //   const removeFile = (field) => {
 //     setFormData((prev) => ({ ...prev, [field]: null }));
 //     if (field === "image") {
@@ -334,7 +299,6 @@
 //     }
 //   };
 
-//   // 🟥 Validate all required fields
 //   const validateForm = () => {
 //     const errors = {};
 
@@ -346,8 +310,8 @@
 //       errors.slug = "Course slug is required";
 //     }
 
-//     if (!formData.category) {
-//       errors.category = "Category is required";
+//     if (!formData.categories.length) {
+//       errors.categories = "Please select at least one category";
 //     }
 
 //     if (!formData.text.trim()) {
@@ -374,7 +338,6 @@
 //       errors.keywords = "Keywords are required";
 //     }
 
-//     // ✅ Duration validation
 //     if (formData.duration) {
 //       const durationNumber = parseFloat(formData.duration);
 //       if (isNaN(durationNumber)) {
@@ -384,12 +347,14 @@
 //       }
 //     }
 
-//     // ✅ Students validation (must be a number if provided)
 //     if (formData.students && !/^\d+$/.test(formData.students)) {
 //       errors.students = "Students must be a number";
 //     }
 
-//     // File fields
+//     if (formData.course_sequence && !/^\d+$/.test(formData.course_sequence)) {
+//       errors.course_sequence = "Course sequence must be a number";
+//     }
+
 //     if (!formData.image) errors.image = "Course image is required";
 //     if (!formData.banner_img) errors.banner_img = "Banner image is required";
 //     if (!formData.pdf_file) errors.pdf_file = "Syllabus PDF is required";
@@ -400,33 +365,10 @@
 //     return Object.keys(errors).length === 0;
 //   };
 
-//   // Helper to build a user‑friendly list of empty fields
-//   const getEmptyFieldsList = (errors) => {
-//     const fieldLabels = {
-//       name: "Course name",
-//       slug: "Course slug",
-//       category: "Category",
-//       text: "Description",
-//       short_description: "Short description",
-//       meta_title: "Meta title",
-//       meta_description: "Meta description",
-//       keywords: "Keywords",
-//       image: "Course image",
-//       banner_img: "Banner image",
-//       pdf_file: "Syllabus PDF",
-//       icon: "Course icon",
-//       image2: "Additional image",
-//     };
-//     return Object.keys(errors)
-//       .map((key) => fieldLabels[key] || key)
-//       .join(", ");
-//   };
-
 //   const handleSubmit = async (e) => {
 //     e.preventDefault();
 
 //     if (!validateForm()) {
-//       const missingFields = getEmptyFieldsList(fieldErrors);
 //       setToast({
 //         show: true,
 //         message: `Please fill required fields`,
@@ -447,23 +389,25 @@
 //       // Basic Information
 //       submitData.append("name", formData.name);
 //       submitData.append("slug", formData.slug);
-//       submitData.append("category", formData.category);
+//       // Append each selected category ID
+//       formData.categories.forEach((catId) => {
+//         submitData.append("categories", catId);
+//       });
 //       submitData.append("text", formData.text);
 //       if (formData.short_description)
 //         submitData.append("short_description", formData.short_description);
 
-//       // ✅ Course Details - Fixed: Added all fields properly
+//       // Course Details
 //       if (formData.duration) submitData.append("duration", formData.duration);
 //       if (formData.lecture) submitData.append("lecture", formData.lecture);
 //       if (formData.students) submitData.append("students", formData.students);
 //       if (formData.level) submitData.append("level", formData.level);
 //       if (formData.language) submitData.append("language", formData.language);
+//       if (formData.course_sequence) submitData.append("course_sequence", formData.course_sequence);
 
-//       // ✅ Fixed: Convert certificate to boolean (backend expects true/false)
 //       const certificateBoolean = formData.certificate === "Yes";
 //       submitData.append("certificate", certificateBoolean.toString());
 
-//       // Toggle fields
 //       submitData.append("featured", formData.featured.toString());
 //       submitData.append("kids_course", formData.kids_course.toString());
 
@@ -482,7 +426,6 @@
 //       if (formData.icon) submitData.append("icon", formData.icon);
 //       if (formData.image2) submitData.append("image2", formData.image2);
 
-//       // Use mutation instead of manual fetch
 //       mutation.mutate(submitData);
 //     } catch (err) {
 //       console.error("Unexpected error:", err);
@@ -491,7 +434,6 @@
 //     }
 //   };
 
-//   // Generate short description from main description (plain text)
 //   const generateShortDescription = () => {
 //     const plainText = formData.text.replace(/<[^>]*>/g, "");
 //     const truncated = plainText.slice(0, 200);
@@ -506,7 +448,6 @@
 //     });
 //   };
 
-//   // 🟥 Clear text error when editor content changes
 //   const handleEditorChange = (content) => {
 //     setFormData((prev) => ({ ...prev, text: content }));
 //     if (fieldErrors.text) {
@@ -514,7 +455,7 @@
 //     }
 //   };
 
-//   // ── Reusable Image Upload Box with error styling ──
+//   // Reusable components
 //   const ImageUploadBox = ({
 //     preview,
 //     onRemove,
@@ -593,7 +534,6 @@
 //     </div>
 //   );
 
-//   // ── PDF Upload Box with error styling ──
 //   const PdfUploadBox = ({ error }) => (
 //     <div
 //       className={`bg-white rounded-2xl border shadow-sm p-6 ${
@@ -660,7 +600,6 @@
 //     </div>
 //   );
 
-//   // ── Toggle Switch Component ──
 //   const ToggleSwitch = ({ label, description, name, checked, onChange }) => (
 //     <div className="flex items-center justify-between py-2">
 //       <div>
@@ -685,7 +624,6 @@
 //     </div>
 //   );
 
-//   // ── Section Header ──
 //   const SectionHeader = ({
 //     icon: Icon,
 //     label,
@@ -700,13 +638,11 @@
 //       >
 //         <Icon size={16} className={iconColor} />
 //       </div>
-
 //       <div>
 //         <p className="text-base font-bold text-gray-800">
 //           {label}
 //           {required && <span className="text-red-400 ml-1">*</span>}
 //         </p>
-
 //         {description && <p className="text-xs text-gray-400">{description}</p>}
 //       </div>
 //     </div>
@@ -714,7 +650,6 @@
 
 //   return (
 //     <div className="min-h-screen bg-gray-50">
-//       {/* Toast */}
 //       {toast.show && (
 //         <Toasts
 //           message={toast.message}
@@ -723,7 +658,6 @@
 //         />
 //       )}
 
-//       {/* Header */}
 //       <header className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
 //         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
 //           <div className="flex items-center gap-3">
@@ -761,9 +695,7 @@
 //         </div>
 //       </header>
 
-//       {/* Main */}
 //       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 pb-28 sm:pb-12">
-//         {/* Error Alert */}
 //         {error && (
 //           <div className="flex items-start gap-3 p-4 mb-6 bg-red-50 border border-red-200 rounded-2xl text-base text-red-700">
 //             <AlertCircle
@@ -780,7 +712,6 @@
 //           </div>
 //         )}
 
-//         {/* Categories loading (using query's loading state) */}
 //         {loadingCategories && (
 //           <div className="flex items-center gap-3 p-4 mb-6 bg-indigo-50 border border-indigo-100 rounded-2xl text-base text-indigo-600">
 //             <div className="w-4 h-4 border-2 border-indigo-300 border-t-indigo-600 rounded-full animate-spin flex-shrink-0" />
@@ -817,7 +748,7 @@
 //                 fieldErrors.name ? "border-red-500" : "border-gray-200"
 //               }`}
 //               required
-//                onKeyDown={blockPlusKey}
+//               onKeyDown={blockPlusKey}
 //             />
 //             {fieldErrors.name && (
 //               <p className="text-xs text-red-500 mt-1">{fieldErrors.name}</p>
@@ -855,44 +786,51 @@
 //             )}
 //           </div>
 
-//           {/* Category */}
+//           {/* Categories - Multi-select checkboxes */}
 //           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-//             <label
-//               htmlFor="category"
-//               className="block text-base font-semibold text-gray-800 mb-1"
-//               required
-//             >
-//               Category <span className="text-red-500">*</span>
+//             <label className="block text-base font-semibold text-gray-800 mb-3">
+//               Categories <span className="text-red-500">*</span>
 //             </label>
-//             <div className="relative">
-//               <select
-//                 id="category"
-//                 name="category"
-//                 value={formData.category}
-//                 onChange={handleInputChange}
-//                 className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none ${
-//                   fieldErrors.category ? "border-red-500" : "border-gray-200"
+//             {loadingCategories ? (
+//               <div className="text-sm text-gray-500">Loading categories...</div>
+//             ) : categories.length === 0 ? (
+//               <div className="text-sm text-red-500">No categories found</div>
+//             ) : (
+//               <div
+//                 className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 ${
+//                   fieldErrors.categories ? "border-red-500 rounded-lg p-3 bg-red-50" : ""
 //                 }`}
-//                 required
 //               >
-//                 <option value="">Select a category</option>
-//                 {Array.isArray(categories) &&
-//                   categories.map((cat) => (
-//                     <option key={cat.id} value={cat.id}>
+//                 {categories.map((cat) => (
+//                   <label
+//                     key={cat.id}
+//                     className="flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all hover:bg-gray-50"
+//                     style={{
+//                       borderColor: formData.categories.includes(cat.id)
+//                         ? "#6366f1"
+//                         : "#e5e7eb",
+//                       backgroundColor: formData.categories.includes(cat.id)
+//                         ? "#eef2ff"
+//                         : "white",
+//                     }}
+//                   >
+//                     <input
+//                       type="checkbox"
+//                       checked={formData.categories.includes(cat.id)}
+//                       onChange={() => handleCategoryToggle(cat.id)}
+//                       className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+//                     />
+//                     <span className="text-sm font-medium text-gray-700">
 //                       {cat.name}
-//                     </option>
-//                   ))}
-//               </select>
-//               <ChevronDown
-//                 size={16}
-//                 className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-//               />
-//             </div>
-//             {fieldErrors.category && (
-//               <p className="text-xs text-red-500 mt-1">
-//                 {fieldErrors.category}
-//               </p>
+//                     </span>
+//                   </label>
+//                 ))}
+//               </div>
 //             )}
+//             {fieldErrors.categories && (
+//               <p className="text-xs text-red-500 mt-2">{fieldErrors.categories}</p>
+//             )}
+           
 //           </div>
 
 //           {/* Description with tabs */}
@@ -904,8 +842,6 @@
 //               >
 //                 Description <span className="text-red-500">*</span>
 //               </label>
-
-//               {/* Tab Switcher */}
 //               <div className="flex gap-1 p-1 bg-gray-100 rounded-lg">
 //                 <button
 //                   type="button"
@@ -932,7 +868,6 @@
 //               </div>
 //             </div>
 
-//             {/* Conditional Editor */}
 //             {editorMode === "tinymce" ? (
 //               <div
 //                 className={`border rounded-xl overflow-hidden ${
@@ -997,7 +932,7 @@
 //             )}
 //           </div>
 
-//           {/* Short Description with auto‑generate button */}
+//           {/* Short Description */}
 //           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
 //             <div className="flex items-center justify-between mb-1">
 //               <label
@@ -1044,9 +979,9 @@
 //             iconColor="text-violet-600"
 //           />
 
-//           {/* Duration / Lectures / Students */}
+//           {/* Duration / Lectures / Students / Course Sequence */}
 //           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-//             <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+//             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
 //               {[
 //                 {
 //                   icon: Clock,
@@ -1072,6 +1007,14 @@
 //                   bg: "bg-orange-50",
 //                   color: "text-orange-500",
 //                 },
+//                 {
+//                   icon: ListOrdered,
+//                   label: "Course Sequence",
+//                   name: "course_sequence",
+//                   placeholder: "e.g., 1, 2, 3...",
+//                   bg: "bg-cyan-50",
+//                   color: "text-cyan-500",
+//                 },
 //               ].map((field) => (
 //                 <div key={field.name}>
 //                   <div className="flex items-center gap-2 mb-2">
@@ -1082,12 +1025,16 @@
 //                     </div>
 //                     <label className="text-xs font-semibold text-gray-700">
 //                       {field.label}
+//                       {field.name === "course_sequence" && (
+//                         <span className="text-gray-400 text-xs font-normal ml-1">(Optional)</span>
+//                       )}
 //                     </label>
 //                   </div>
 
 //                   <input
 //                     type="number"
 //                     min={0}
+//                     step="1"
 //                     name={field.name}
 //                     value={formData[field.name]}
 //                     onChange={handleInputChange}
@@ -1204,7 +1151,7 @@
 //             </div>
 //           </div>
 
-//           {/* Additional Options: Featured & Kids Course */}
+//           {/* Additional Options */}
 //           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
 //             <div className="flex items-center gap-3 mb-4">
 //               <div className="w-9 h-9 bg-amber-50 rounded-xl flex items-center justify-center">
@@ -1232,7 +1179,7 @@
 //             </div>
 //           </div>
 
-//           {/* SECTION 3 — Media Files */}
+//           {/* Media Files */}
 //           <SectionHeader
 //             icon={ImagePlus}
 //             label="Media Files"
@@ -1257,7 +1204,7 @@
 //               onRemove={() => removeFile("banner_img")}
 //               inputId="banner-upload"
 //               inputName="banner_img"
-//               label="Banner Image "
+//               label="Banner Image"
 //               iconBg="bg-indigo-50"
 //               iconColor="text-indigo-500"
 //               error={!!fieldErrors.banner_img}
@@ -1267,7 +1214,7 @@
 //               onRemove={() => removeFile("icon")}
 //               inputId="icon-upload"
 //               inputName="icon"
-//               label="Course Icon "
+//               label="Course Icon"
 //               iconBg="bg-violet-50"
 //               iconColor="text-violet-500"
 //               error={!!fieldErrors.icon}
@@ -1277,7 +1224,7 @@
 //               onRemove={() => removeFile("image2")}
 //               inputId="image2-upload"
 //               inputName="image2"
-//               label="Additional Image "
+//               label="Additional Image"
 //               iconBg="bg-orange-50"
 //               iconColor="text-orange-500"
 //               error={!!fieldErrors.image2}
@@ -1285,7 +1232,7 @@
 //             <PdfUploadBox error={fieldErrors.pdf_file} />
 //           </div>
 
-//           {/* SECTION 4 — SEO & Metadata */}
+//           {/* SEO & Metadata */}
 //           <SectionHeader
 //             icon={Search}
 //             label="SEO & Metadata"
@@ -1294,7 +1241,6 @@
 //           />
 
 //           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-5">
-//             {/* Meta Title */}
 //             <div>
 //               <label
 //                 htmlFor="meta_title"
@@ -1325,7 +1271,6 @@
 
 //             <div className="h-px bg-gray-100" />
 
-//             {/* Meta Description */}
 //             <div>
 //               <label
 //                 htmlFor="meta_description"
@@ -1358,7 +1303,6 @@
 
 //             <div className="h-px bg-gray-100" />
 
-//             {/* Keywords */}
 //             <div>
 //               <label
 //                 htmlFor="keywords"
@@ -1435,6 +1379,7 @@ import {
   Search,
   Sparkles,
   ListOrdered,
+  Check,
 } from "lucide-react";
 import Toasts from "../pages/Toasts";
 
@@ -1558,7 +1503,7 @@ export default function AddCourse() {
   const [formData, setFormData] = useState({
     name: "",
     slug: "",
-    category: "",
+    categories: [],
     text: "",
     short_description: "",
     duration: "",
@@ -1569,7 +1514,7 @@ export default function AddCourse() {
     certificate: "No",
     featured: false,
     kids_course: false,
-    course_sequence: "", // new field (optional)
+    course_sequence: "",
     meta_title: "",
     meta_description: "",
     keywords: "",
@@ -1623,6 +1568,19 @@ export default function AddCourse() {
         ...prev,
         [name]: undefined,
       }));
+    }
+  };
+
+  const handleCategoryToggle = (categoryId) => {
+    setFormData((prev) => {
+      const isSelected = prev.categories.includes(categoryId);
+      const newCategories = isSelected
+        ? prev.categories.filter((id) => id !== categoryId)
+        : [...prev.categories, categoryId];
+      return { ...prev, categories: newCategories };
+    });
+    if (fieldErrors.categories) {
+      setFieldErrors((prev) => ({ ...prev, categories: undefined }));
     }
   };
 
@@ -1699,90 +1657,29 @@ export default function AddCourse() {
   const validateForm = () => {
     const errors = {};
 
+    // Only these fields are required
     if (!formData.name.trim()) {
       errors.name = "Course name is required";
     }
 
-    if (!formData.slug.trim()) {
-      errors.slug = "Course slug is required";
+    if (!formData.image) {
+      errors.image = "Course image is required";
     }
 
-    if (!formData.category) {
-      errors.category = "Category is required";
+    if (!formData.image2) {
+      errors.image2 = "Additional image is required";
     }
 
-    if (!formData.text.trim()) {
-      errors.text = "Description is required";
+    if (!formData.banner_img) {
+      errors.banner_img = "Banner image is required";
     }
 
-    if (formData.text.length > MAX_DESCRIPTION_LENGTH) {
-      errors.text = `Description must be under ${MAX_DESCRIPTION_LENGTH} characters`;
+    if (!formData.certificate) {
+      errors.certificate = "Certificate option is required";
     }
-
-    if (!formData.short_description.trim()) {
-      errors.short_description = "Short description is required";
-    }
-
-    if (!formData.meta_title.trim()) {
-      errors.meta_title = "Meta title is required";
-    }
-
-    if (!formData.meta_description.trim()) {
-      errors.meta_description = "Meta description is required";
-    }
-
-    if (!formData.keywords.trim()) {
-      errors.keywords = "Keywords are required";
-    }
-
-    if (formData.duration) {
-      const durationNumber = parseFloat(formData.duration);
-      if (isNaN(durationNumber)) {
-        errors.duration = "Duration must be a number";
-      } else if (durationNumber < 0) {
-        errors.duration = "Duration cannot be negative";
-      }
-    }
-
-    if (formData.students && !/^\d+$/.test(formData.students)) {
-      errors.students = "Students must be a number";
-    }
-
-    // course_sequence validation (optional, but if present must be numeric)
-    if (formData.course_sequence && !/^\d+$/.test(formData.course_sequence)) {
-      errors.course_sequence = "Course sequence must be a number";
-    }
-
-    // File fields
-    if (!formData.image) errors.image = "Course image is required";
-    if (!formData.banner_img) errors.banner_img = "Banner image is required";
-    if (!formData.pdf_file) errors.pdf_file = "Syllabus PDF is required";
-    if (!formData.icon) errors.icon = "Course icon is required";
-    if (!formData.image2) errors.image2 = "Additional image is required";
 
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
-  };
-
-  const getEmptyFieldsList = (errors) => {
-    const fieldLabels = {
-      name: "Course name",
-      slug: "Course slug",
-      category: "Category",
-      text: "Description",
-      short_description: "Short description",
-      meta_title: "Meta title",
-      meta_description: "Meta description",
-      keywords: "Keywords",
-      image: "Course image",
-      banner_img: "Banner image",
-      pdf_file: "Syllabus PDF",
-      icon: "Course icon",
-      image2: "Additional image",
-    };
-    return Object.keys(errors)
-      .map((key) => fieldLabels[key] || key)
-      .join(", ");
   };
 
   const handleSubmit = async (e) => {
@@ -1791,7 +1688,7 @@ export default function AddCourse() {
     if (!validateForm()) {
       setToast({
         show: true,
-        message: `Please fill required fields`,
+        message: "Please fill all required fields",
         type: "error",
       });
       return;
@@ -1809,12 +1706,14 @@ export default function AddCourse() {
       // Basic Information
       submitData.append("name", formData.name);
       submitData.append("slug", formData.slug);
-      submitData.append("category", formData.category);
-      submitData.append("text", formData.text);
+      formData.categories.forEach((catId) => {
+        submitData.append("categories", catId);
+      });
+      if (formData.text) submitData.append("text", formData.text);
       if (formData.short_description)
         submitData.append("short_description", formData.short_description);
 
-      // Course Details
+      // Course Details (all optional)
       if (formData.duration) submitData.append("duration", formData.duration);
       if (formData.lecture) submitData.append("lecture", formData.lecture);
       if (formData.students) submitData.append("students", formData.students);
@@ -1828,20 +1727,20 @@ export default function AddCourse() {
       submitData.append("featured", formData.featured.toString());
       submitData.append("kids_course", formData.kids_course.toString());
 
-      // SEO & Metadata
+      // SEO & Metadata (all optional)
       if (formData.meta_title)
         submitData.append("meta_title", formData.meta_title);
       if (formData.meta_description)
         submitData.append("meta_description", formData.meta_description);
       if (formData.keywords) submitData.append("keywords", formData.keywords);
 
-      // Media Files
+      // Media Files (image, image2, banner_img are required; others optional)
       if (formData.image) submitData.append("image", formData.image);
       if (formData.banner_img)
         submitData.append("banner_img", formData.banner_img);
+      if (formData.image2) submitData.append("image2", formData.image2);
       if (formData.pdf_file) submitData.append("pdf_file", formData.pdf_file);
       if (formData.icon) submitData.append("icon", formData.icon);
-      if (formData.image2) submitData.append("image2", formData.image2);
 
       mutation.mutate(submitData);
     } catch (err) {
@@ -1872,7 +1771,7 @@ export default function AddCourse() {
     }
   };
 
-  // Reusable components (ImageUploadBox, PdfUploadBox, ToggleSwitch, SectionHeader)
+  // Reusable components
   const ImageUploadBox = ({
     preview,
     onRemove,
@@ -1883,6 +1782,7 @@ export default function AddCourse() {
     iconBg,
     iconColor,
     error,
+    required = false,
   }) => (
     <div
       className={`bg-white rounded-2xl border shadow-sm p-6 ${
@@ -1896,7 +1796,9 @@ export default function AddCourse() {
           <ImagePlus size={16} className={iconColor} />
         </div>
         <div>
-          <p className="text-base font-semibold text-gray-800">{label}</p>
+          <p className="text-base font-semibold text-gray-800">
+            {label} {required && <span className="text-red-500">*</span>}
+          </p>
           <p className="text-xs text-gray-400 mt-0.5">{hint}</p>
         </div>
       </div>
@@ -1948,6 +1850,7 @@ export default function AddCourse() {
         className="hidden"
         id={inputId}
       />
+      {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
     </div>
   );
 
@@ -1963,7 +1866,7 @@ export default function AddCourse() {
         </div>
         <div>
           <p className="text-base font-semibold text-gray-800">
-            Syllabus PDF <span className="text-red-500">*</span>
+            Syllabus PDF <span className="text-gray-400 text-sm font-normal">(Optional)</span>
           </p>
         </div>
       </div>
@@ -2145,12 +2048,11 @@ export default function AddCourse() {
             iconColor="text-indigo-600"
           />
 
-          {/* Course Name */}
+          {/* Course Name (Required) */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <label
               htmlFor="name"
               className="block text-base font-semibold text-gray-800 mb-1"
-              required
             >
               Course Name <span className="text-red-500">*</span>
             </label>
@@ -2164,7 +2066,6 @@ export default function AddCourse() {
               className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
                 fieldErrors.name ? "border-red-500" : "border-gray-200"
               }`}
-              required
               onKeyDown={blockPlusKey}
             />
             {fieldErrors.name && (
@@ -2172,14 +2073,13 @@ export default function AddCourse() {
             )}
           </div>
 
-          {/* Slug */}
+          {/* Slug (Optional) */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <label
               htmlFor="slug"
               className="block text-base font-semibold text-gray-800 mb-1"
-              required
             >
-              Course Slug <span className="text-red-500">*</span>
+              Course Slug <span className="text-gray-400 text-sm font-normal">(Auto-generated)</span>
             </label>
             <div className="flex rounded-xl overflow-hidden border border-gray-200 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-transparent transition-all">
               <span className="inline-flex items-center px-4 py-3 bg-gray-100 text-xs text-gray-500 font-medium border-r border-gray-200 whitespace-nowrap">
@@ -2192,65 +2092,58 @@ export default function AddCourse() {
                 value={formData.slug}
                 onChange={handleInputChange}
                 placeholder="advanced-react-development-2024"
-                className={`flex-1 px-4 py-3 bg-gray-50 text-gray-900 text-base placeholder-gray-400 outline-none focus:bg-white transition-all ${
-                  fieldErrors.slug ? "border-red-500" : ""
-                }`}
-                required
+                className="flex-1 px-4 py-3 bg-gray-50 text-gray-900 text-base placeholder-gray-400 outline-none focus:bg-white transition-all"
               />
             </div>
-            {fieldErrors.slug && (
-              <p className="text-xs text-red-500 mt-1">{fieldErrors.slug}</p>
-            )}
           </div>
 
-          {/* Category */}
+          {/* Categories (Optional) */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-            <label
-              htmlFor="category"
-              className="block text-base font-semibold text-gray-800 mb-1"
-              required
-            >
-              Category <span className="text-red-500">*</span>
+            <label className="block text-base font-semibold text-gray-800 mb-3">
+              Categories <span className="text-gray-400 text-sm font-normal">(Optional)</span>
             </label>
-            <div className="relative">
-              <select
-                id="category"
-                name="category"
-                value={formData.category}
-                onChange={handleInputChange}
-                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none ${
-                  fieldErrors.category ? "border-red-500" : "border-gray-200"
-                }`}
-                required
-              >
-                <option value="">Select a category</option>
-                {Array.isArray(categories) &&
-                  categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
+            {loadingCategories ? (
+              <div className="text-sm text-gray-500">Loading categories...</div>
+            ) : categories.length === 0 ? (
+              <div className="text-sm text-red-500">No categories found</div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {categories.map((cat) => (
+                  <label
+                    key={cat.id}
+                    className="flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all hover:bg-gray-50"
+                    style={{
+                      borderColor: formData.categories.includes(cat.id)
+                        ? "#6366f1"
+                        : "#e5e7eb",
+                      backgroundColor: formData.categories.includes(cat.id)
+                        ? "#eef2ff"
+                        : "white",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={formData.categories.includes(cat.id)}
+                      onChange={() => handleCategoryToggle(cat.id)}
+                      className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                    />
+                    <span className="text-sm font-medium text-gray-700">
                       {cat.name}
-                    </option>
-                  ))}
-              </select>
-              <ChevronDown
-                size={16}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-              />
-            </div>
-            {fieldErrors.category && (
-              <p className="text-xs text-red-500 mt-1">
-                {fieldErrors.category}
-              </p>
+                    </span>
+                  </label>
+                ))}
+              </div>
             )}
           </div>
 
-          {/* Description with tabs */}
+          {/* Description (Optional) */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <div className="flex items-center justify-between mb-4">
               <label
                 htmlFor="text"
                 className="block text-base font-semibold text-gray-800"
               >
-                Description <span className="text-red-500">*</span>
+                Description <span className="text-gray-400 text-sm font-normal">(Optional)</span>
               </label>
               <div className="flex gap-1 p-1 bg-gray-100 rounded-lg">
                 <button
@@ -2279,11 +2172,7 @@ export default function AddCourse() {
             </div>
 
             {editorMode === "tinymce" ? (
-              <div
-                className={`border rounded-xl overflow-hidden ${
-                  fieldErrors.text ? "border-red-500" : "border-gray-200"
-                }`}
-              >
+              <div className="border rounded-xl overflow-hidden border-gray-200">
                 <Editor
                   apiKey="f45j826wq94pn0e0xseucsvqi8k7xug5idltalwrry8pevjm"
                   value={formData.text}
@@ -2330,26 +2219,21 @@ export default function AddCourse() {
                     setFieldErrors((prev) => ({ ...prev, text: undefined }));
                   }
                 }}
-                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base font-mono placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
-                  fieldErrors.text ? "border-red-500" : "border-gray-200"
-                }`}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base font-mono placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
                 rows={12}
                 placeholder="<!-- Write HTML here -->"
               />
             )}
-            {fieldErrors.text && (
-              <p className="text-xs text-red-500 mt-1">{fieldErrors.text}</p>
-            )}
           </div>
 
-          {/* Short Description */}
+          {/* Short Description (Optional) */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <div className="flex items-center justify-between mb-1">
               <label
                 htmlFor="short_description"
                 className="block text-base font-semibold text-gray-800"
               >
-                Short Description <span className="text-red-500">*</span>
+                Short Description <span className="text-gray-400 text-sm font-normal">(Optional)</span>
               </label>
               <button
                 type="button"
@@ -2368,20 +2252,11 @@ export default function AddCourse() {
               value={formData.short_description}
               onChange={handleInputChange}
               placeholder="e.g., Learn React from scratch in 40 hours"
-              className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
-                fieldErrors.short_description
-                  ? "border-red-500"
-                  : "border-gray-200"
-              }`}
+              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
             />
-            {fieldErrors.short_description && (
-              <p className="text-xs text-red-500 mt-1">
-                {fieldErrors.short_description}
-              </p>
-            )}
           </div>
 
-          {/* SECTION 2 — Course Details */}
+          {/* SECTION 2 — Course Details (All Optional) */}
           <SectionHeader
             icon={BookMarked}
             label="Course Details"
@@ -2389,7 +2264,6 @@ export default function AddCourse() {
             iconColor="text-violet-600"
           />
 
-          {/* Duration / Lectures / Students / Course Sequence */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
               {[
@@ -2435,9 +2309,6 @@ export default function AddCourse() {
                     </div>
                     <label className="text-xs font-semibold text-gray-700">
                       {field.label}
-                      {field.name === "course_sequence" && (
-                        <span className="text-gray-400 text-xs font-normal ml-1">(Optional)</span>
-                      )}
                     </label>
                   </div>
 
@@ -2449,27 +2320,17 @@ export default function AddCourse() {
                     value={formData[field.name]}
                     onChange={handleInputChange}
                     placeholder={field.placeholder}
-                    className={`w-full px-3 py-2.5 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
-                      fieldErrors[field.name]
-                        ? "border-red-500"
-                        : "border-gray-200"
-                    }`}
+                    className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
                   />
-
-                  {fieldErrors[field.name] && (
-                    <p className="text-xs text-red-500 mt-1">
-                      {fieldErrors[field.name]}
-                    </p>
-                  )}
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Level / Language / Certificate */}
+          {/* Level / Language / Certificate (Certificate is Required) */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-              {/* Level */}
+              {/* Level (Optional) */}
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-6 h-6 bg-purple-50 rounded-md flex items-center justify-center">
@@ -2499,7 +2360,7 @@ export default function AddCourse() {
                 </div>
               </div>
 
-              {/* Language */}
+              {/* Language (Optional) */}
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-6 h-6 bg-teal-50 rounded-md flex items-center justify-center">
@@ -2519,7 +2380,7 @@ export default function AddCourse() {
                 />
               </div>
 
-              {/* Certificate */}
+              {/* Certificate (Required) */}
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-6 h-6 bg-yellow-50 rounded-md flex items-center justify-center">
@@ -2561,7 +2422,7 @@ export default function AddCourse() {
             </div>
           </div>
 
-          {/* Additional Options */}
+          {/* Additional Options (Optional) */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-9 h-9 bg-amber-50 rounded-xl flex items-center justify-center">
@@ -2589,7 +2450,7 @@ export default function AddCourse() {
             </div>
           </div>
 
-          {/* Media Files */}
+          {/* Media Files — image, banner_img, image2 are required; icon and pdf are optional */}
           <SectionHeader
             icon={ImagePlus}
             label="Media Files"
@@ -2605,9 +2466,11 @@ export default function AddCourse() {
               inputId="image-upload"
               inputName="image"
               label="Course Image"
+              hint="Required"
               iconBg="bg-pink-50"
               iconColor="text-pink-500"
-              error={!!fieldErrors.image}
+              error={fieldErrors.image}
+              required={true}
             />
             <ImageUploadBox
               preview={bannerPreview}
@@ -2615,9 +2478,11 @@ export default function AddCourse() {
               inputId="banner-upload"
               inputName="banner_img"
               label="Banner Image"
+              hint="Required"
               iconBg="bg-indigo-50"
               iconColor="text-indigo-500"
-              error={!!fieldErrors.banner_img}
+              error={fieldErrors.banner_img}
+              required={true}
             />
             <ImageUploadBox
               preview={iconPreview}
@@ -2625,9 +2490,11 @@ export default function AddCourse() {
               inputId="icon-upload"
               inputName="icon"
               label="Course Icon"
+              hint="Optional"
               iconBg="bg-violet-50"
               iconColor="text-violet-500"
-              error={!!fieldErrors.icon}
+              error={fieldErrors.icon}
+              required={false}
             />
             <ImageUploadBox
               preview={image2Preview}
@@ -2635,14 +2502,16 @@ export default function AddCourse() {
               inputId="image2-upload"
               inputName="image2"
               label="Additional Image"
+              hint="Required"
               iconBg="bg-orange-50"
               iconColor="text-orange-500"
-              error={!!fieldErrors.image2}
+              error={fieldErrors.image2}
+              required={true}
             />
             <PdfUploadBox error={fieldErrors.pdf_file} />
           </div>
 
-          {/* SEO & Metadata */}
+          {/* SEO & Metadata (All Optional) */}
           <SectionHeader
             icon={Search}
             label="SEO & Metadata"
@@ -2656,7 +2525,7 @@ export default function AddCourse() {
                 htmlFor="meta_title"
                 className="block text-base font-semibold text-gray-800 mb-1"
               >
-                Meta Title <span className="text-red-500">*</span>
+                Meta Title <span className="text-gray-400 text-sm font-normal">(Optional)</span>
               </label>
               <input
                 id="meta_title"
@@ -2665,15 +2534,8 @@ export default function AddCourse() {
                 value={formData.meta_title}
                 onChange={handleInputChange}
                 placeholder="SEO optimized title for your course"
-                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
-                  fieldErrors.meta_title ? "border-red-500" : "border-gray-200"
-                }`}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
               />
-              {fieldErrors.meta_title && (
-                <p className="text-xs text-red-500 mt-1">
-                  {fieldErrors.meta_title}
-                </p>
-              )}
               <p className="text-xs text-gray-400 text-right mt-1">
                 {formData.meta_title.length} / 60
               </p>
@@ -2686,7 +2548,7 @@ export default function AddCourse() {
                 htmlFor="meta_description"
                 className="block text-base font-semibold text-gray-800 mb-1"
               >
-                Meta Description <span className="text-red-500">*</span>
+                Meta Description <span className="text-gray-400 text-sm font-normal">(Optional)</span>
               </label>
               <textarea
                 id="meta_description"
@@ -2695,17 +2557,8 @@ export default function AddCourse() {
                 onChange={handleInputChange}
                 rows={3}
                 placeholder="Brief description for search engines…"
-                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-none ${
-                  fieldErrors.meta_description
-                    ? "border-red-500"
-                    : "border-gray-200"
-                }`}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-none"
               />
-              {fieldErrors.meta_description && (
-                <p className="text-xs text-red-500 mt-1">
-                  {fieldErrors.meta_description}
-                </p>
-              )}
               <p className="text-xs text-gray-400 text-right mt-1">
                 {formData.meta_description.length} / 160
               </p>
@@ -2718,7 +2571,7 @@ export default function AddCourse() {
                 htmlFor="keywords"
                 className="block text-base font-semibold text-gray-800 mb-1"
               >
-                Keywords <span className="text-red-500">*</span>
+                Keywords <span className="text-gray-400 text-sm font-normal">(Optional)</span>
               </label>
               <input
                 id="keywords"
@@ -2727,15 +2580,8 @@ export default function AddCourse() {
                 value={formData.keywords}
                 onChange={handleInputChange}
                 placeholder="react, javascript, web development, frontend"
-                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
-                  fieldErrors.keywords ? "border-red-500" : "border-gray-200"
-                }`}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
               />
-              {fieldErrors.keywords && (
-                <p className="text-xs text-red-500 mt-1">
-                  {fieldErrors.keywords}
-                </p>
-              )}
             </div>
           </div>
 
