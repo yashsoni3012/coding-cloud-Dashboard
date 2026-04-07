@@ -1,1449 +1,3 @@
-// import { useState, useEffect } from "react";
-// import { useNavigate, useParams } from "react-router-dom";
-// import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-// import { Editor } from "@tinymce/tinymce-react";
-// import {
-//   ArrowLeft,
-//   Save,
-//   X,
-//   Upload,
-//   FileText,
-//   Clock,
-//   BookOpen,
-//   Users,
-//   Signal,
-//   Globe,
-//   Award,
-//   ChevronDown,
-//   ImagePlus,
-//   Tag,
-//   BookMarked,
-//   Search,
-//   Sparkles,
-//   AlertCircle,
-//   ListOrdered,
-//   Check,
-// } from "lucide-react";
-// import Toasts from "./Toasts";
-
-// const BASE_URL = "https://codingcloudapi.codingcloud.co.in";
-
-// const getImageUrl = (path) => {
-//   if (!path) return "";
-//   if (path.startsWith("http")) return path;
-//   if (path.startsWith("/")) return `${BASE_URL}${path}`;
-//   return `${BASE_URL}/${path}`;
-// };
-
-// // Fetch categories
-// const fetchCategories = async () => {
-//   const response = await fetch(
-//     "https://codingcloudapi.codingcloud.co.in/category/",
-//   );
-//   const data = await response.json();
-//   if (!data.success) throw new Error("Failed to load categories");
-//   return data.data || [];
-// };
-
-// // Fetch single course
-// const fetchCourse = async (id) => {
-//   const response = await fetch(
-//     `https://codingcloudapi.codingcloud.co.in/course/${id}/`,
-//   );
-//   const data = await response.json();
-//   if (!data.success) throw new Error("Failed to fetch course details");
-//   return data.data;
-// };
-
-// // Update course mutation
-// const updateCourse = async ({ id, formData }) => {
-//   const response = await fetch(
-//     `https://codingcloudapi.codingcloud.co.in/course/${id}/`,
-//     {
-//       method: "PATCH",
-//       body: formData,
-//     },
-//   );
-//   const data = await response.json();
-//   if (!response.ok && response.status !== 200) {
-//     if (data.errors) {
-//       const backendErrors = {};
-//       Object.keys(data.errors).forEach((key) => {
-//         backendErrors[key] = data.errors[key].join(", ");
-//       });
-//       throw {
-//         message: "Please correct the errors below",
-//         errors: backendErrors,
-//       };
-//     }
-//     throw new Error(data.message || data.detail || "Failed to update course.");
-//   }
-//   return data;
-// };
-
-// export default function EditCourse() {
-//   const { id } = useParams();
-//   const navigate = useNavigate();
-//   const queryClient = useQueryClient();
-
-//   const [saving, setSaving] = useState(false);
-//   const [editorMode, setEditorMode] = useState("tinymce");
-//   const [toast, setToast] = useState({
-//     show: false,
-//     message: "",
-//     type: "success",
-//   });
-//   const [fieldErrors, setFieldErrors] = useState({});
-
-//   const [formData, setFormData] = useState({
-//     id: "",
-//     name: "",
-//     slug: "",
-//     categories: [], // <-- changed from 'category' to array
-//     text: "",
-//     short_description: "",
-//     duration: "",
-//     lecture: "",
-//     students: "",
-//     level: "",
-//     language: "",
-//     certificate: "No",
-//     featured: false,
-//     kids_course: false,
-//     course_sequence: "",
-//     meta_title: "",
-//     meta_description: "",
-//     keywords: "",
-//     image: null,
-//     banner_img: null,
-//     pdf_file: null,
-//     icon: null,
-//     image2: null,
-//     existing_image: "",
-//     existing_banner: "",
-//     existing_icon: "",
-//     existing_pdf: "",
-//     existing_image2: "",
-//   });
-
-//   const [imagePreview, setImagePreview] = useState("");
-//   const [bannerPreview, setBannerPreview] = useState("");
-//   const [iconPreview, setIconPreview] = useState("");
-//   const [image2Preview, setImage2Preview] = useState("");
-//   const [pdfName, setPdfName] = useState("");
-//   const [errorMessage, setErrorMessage] = useState("");
-
-//   const [filesChanged, setFilesChanged] = useState({
-//     image: false,
-//     banner_img: false,
-//     icon: false,
-//     pdf_file: false,
-//     image2: false,
-//   });
-
-//   // --- TanStack Query: fetch categories ---
-//   const {
-//     data: categories = [],
-//     isLoading: categoriesLoading,
-//     error: categoriesError,
-//   } = useQuery({
-//     queryKey: ["categories"],
-//     queryFn: fetchCategories,
-//   });
-
-//   // --- TanStack Query: fetch course data ---
-//   const {
-//     data: courseData,
-//     isLoading: courseLoading,
-//     error: courseError,
-//   } = useQuery({
-//     queryKey: ["course", id],
-//     queryFn: () => fetchCourse(id),
-//     enabled: !!id,
-//   });
-
-//   // Populate form when course data arrives
-//   useEffect(() => {
-//     if (courseData) {
-//       // Extract category IDs from the course's categories array (if present)
-//       // Fallback to single 'category' field if needed
-//       let selectedCategories = [];
-//       if (courseData.categories && Array.isArray(courseData.categories)) {
-//         selectedCategories = courseData.categories.map((cat) =>
-//           typeof cat === "object" ? cat.id : cat
-//         );
-//       } else if (courseData.category) {
-//         selectedCategories = [courseData.category];
-//       }
-
-//       setFormData({
-//         id: courseData.id,
-//         name: courseData.name || "",
-//         slug: courseData.slug || "",
-//         categories: selectedCategories,
-//         text: courseData.text || "",
-//         short_description: courseData.short_description || "",
-//         duration: courseData.duration ?? "",
-//         lecture: courseData.lecture || "",
-//         students: courseData.students || "",
-//         level: courseData.level || "",
-//         language: courseData.language || "",
-//         certificate: courseData.certificate_display || "No",
-//         featured: courseData.featured || false,
-//         kids_course: courseData.kids_course || false,
-//         course_sequence: courseData.course_sequence ?? "",
-//         meta_title: courseData.meta_title || "",
-//         meta_description: courseData.meta_description || "",
-//         keywords: courseData.keywords || "",
-//         image: null,
-//         banner_img: null,
-//         pdf_file: null,
-//         icon: null,
-//         image2: null,
-//         existing_image: courseData.image || "",
-//         existing_banner: courseData.banner_img || "",
-//         existing_icon: courseData.icon || "",
-//         existing_pdf: courseData.pdf_file || "",
-//         existing_image2: courseData.image2 || "",
-//       });
-//     }
-//   }, [courseData]);
-
-//   // Show error toasts if queries fail
-//   useEffect(() => {
-//     if (categoriesError) showToast("Failed to load categories", "error");
-//     if (courseError) showToast("Failed to load course details", "error");
-//   }, [categoriesError, courseError]);
-
-//   // Helper to show toast
-//   const showToast = (message, type = "success") => {
-//     setToast({ show: true, message, type });
-//   };
-
-//   const closeToast = () => {
-//     setToast((prev) => ({ ...prev, show: false }));
-//   };
-
-//   // Generate short description from main description (plain text)
-//   const generateShortDescription = () => {
-//     const plainText = formData.text.replace(/<[^>]*>/g, "");
-//     const truncated = plainText.slice(0, 200);
-//     setFormData((prev) => ({ ...prev, short_description: truncated }));
-//     showToast("Short description generated from main description", "success");
-//   };
-
-//   // --- TanStack Mutation: update course ---
-//   const mutation = useMutation({
-//     mutationFn: updateCourse,
-//     onSuccess: () => {
-//       queryClient.invalidateQueries({ queryKey: ["courses"] });
-//       queryClient.invalidateQueries({ queryKey: ["course", id] });
-//       showToast("Course updated successfully!", "success");
-//       setTimeout(() => navigate("/course"), 2000);
-//     },
-//     onError: (err) => {
-//       console.error("Mutation error:", err);
-//       if (err?.errors) {
-//         setFieldErrors(err.errors);
-//         setErrorMessage(err.message || "Validation failed");
-//         showToast("Please correct the errors below", "error");
-//       } else {
-//         setErrorMessage(err.message || "Failed to update course");
-//         showToast(err.message || "Failed to update course.", "error");
-//       }
-//     },
-//   });
-
-//   // Handle text / number inputs
-//   const handleInputChange = (e) => {
-//     const { name, value } = e.target;
-
-//     // For numeric fields, allow only numbers
-//     if (name === "students") {
-//       const numericValue = value.replace(/[^0-9]/g, "");
-//       setFormData((prev) => ({ ...prev, [name]: numericValue }));
-//     } else if (name === "course_sequence") {
-//       const numericValue = value.replace(/[^0-9]/g, "");
-//       setFormData((prev) => ({ ...prev, [name]: numericValue }));
-//     } else {
-//       setFormData((prev) => ({ ...prev, [name]: value }));
-//     }
-
-//     if (fieldErrors[name]) {
-//       setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
-//     }
-
-//     if (name === "name" && !formData.slug) {
-//       const generatedSlug = value
-//         .toLowerCase()
-//         .replace(/[^a-z0-9]+/g, "-")
-//         .replace(/^-|-$/g, "");
-//       setFormData((prev) => ({ ...prev, slug: generatedSlug }));
-//     }
-//   };
-
-//   // Handle category checkbox toggle
-//   const handleCategoryToggle = (categoryId) => {
-//     setFormData((prev) => {
-//       const isSelected = prev.categories.includes(categoryId);
-//       const newCategories = isSelected
-//         ? prev.categories.filter((id) => id !== categoryId)
-//         : [...prev.categories, categoryId];
-//       return { ...prev, categories: newCategories };
-//     });
-//     // Clear error for categories if any
-//     if (fieldErrors.categories) {
-//       setFieldErrors((prev) => ({ ...prev, categories: undefined }));
-//     }
-//   };
-
-//   const handleToggleChange = (name, checked) => {
-//     setFormData((prev) => ({ ...prev, [name]: checked }));
-//     if (fieldErrors[name]) {
-//       setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
-//     }
-//   };
-
-//   // Handle file selection – clear error for that field
-//   const handleFileChange = (e) => {
-//     const { name, files } = e.target;
-//     const file = files[0];
-//     if (file) {
-//       const maxSize = name === "pdf_file" ? 10 * 1024 * 1024 : 5 * 1024 * 1024;
-//       if (file.size > maxSize) {
-//         showToast(
-//           `File size must be less than ${maxSize / (1024 * 1024)}MB`,
-//           "error",
-//         );
-//         return;
-//       }
-//       if (name === "pdf_file" && file.type !== "application/pdf") {
-//         showToast("Please upload a valid PDF file", "error");
-//         return;
-//       }
-//       if (name !== "pdf_file" && !file.type.startsWith("image/")) {
-//         showToast("Please upload a valid image file", "error");
-//         return;
-//       }
-//       setFormData((prev) => ({ ...prev, [name]: file }));
-//       setFilesChanged((prev) => ({ ...prev, [name]: true }));
-
-//       if (fieldErrors[name]) {
-//         setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
-//       }
-
-//       if (name === "image") setImagePreview(URL.createObjectURL(file));
-//       else if (name === "banner_img")
-//         setBannerPreview(URL.createObjectURL(file));
-//       else if (name === "icon") setIconPreview(URL.createObjectURL(file));
-//       else if (name === "image2") setImage2Preview(URL.createObjectURL(file));
-//       else if (name === "pdf_file") setPdfName(file.name);
-//     }
-//   };
-
-//   // Remove file – if no existing file remains, mark field as error
-//   const removeFile = (field, isExisting = false) => {
-//     if (isExisting) {
-//       setFormData((prev) => ({ ...prev, [`existing_${field}`]: "" }));
-//       setFilesChanged((prev) => ({ ...prev, [field]: true }));
-//     } else {
-//       setFormData((prev) => ({ ...prev, [field]: null }));
-//       setFilesChanged((prev) => ({ ...prev, [field]: true }));
-//       if (field === "image") {
-//         setImagePreview("");
-//         document.getElementById("image-upload").value = "";
-//       } else if (field === "banner_img") {
-//         setBannerPreview("");
-//         document.getElementById("banner-upload").value = "";
-//       } else if (field === "icon") {
-//         setIconPreview("");
-//         document.getElementById("icon-upload").value = "";
-//       } else if (field === "image2") {
-//         setImage2Preview("");
-//         document.getElementById("image2-upload").value = "";
-//       } else if (field === "pdf_file") {
-//         setPdfName("");
-//         document.getElementById("pdf-upload").value = "";
-//       }
-//     }
-
-//     const hasExisting = formData[`existing_${field}`];
-//     const hasNew = formData[field];
-//     const empty = !hasExisting && !hasNew;
-//     if (empty) {
-//       setFieldErrors((prev) => ({ ...prev, [field]: `${field} is required` }));
-//     } else {
-//       setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
-//     }
-//   };
-
-//   // Validate the entire form before submission
-//   const validateForm = () => {
-//     const errors = {};
-
-//     if (!formData.name.trim()) errors.name = "Course name is required";
-//     if (!formData.slug.trim()) errors.slug = "Course slug is required";
-//     if (formData.categories.length === 0) errors.categories = "Please select at least one category";
-//     if (!formData.text.trim()) errors.text = "Description is required";
-//     if (!formData.certificate) errors.certificate = "Certificate is required";
-
-//     // Validate numeric fields
-//     if (formData.duration && isNaN(parseFloat(formData.duration))) {
-//       errors.duration = "Duration must be a number";
-//     }
-//     if (formData.lecture && isNaN(parseFloat(formData.lecture))) {
-//       errors.lecture = "Lectures must be a number";
-//     }
-//     if (formData.students && !/^\d+$/.test(formData.students)) {
-//       errors.students = "Students must be a number";
-//     }
-//     if (formData.course_sequence && !/^\d+$/.test(formData.course_sequence)) {
-//       errors.course_sequence = "Course sequence must be a number";
-//     }
-
-//     // File validations
-//     if (!formData.existing_image && !formData.image) {
-//       errors.image = "Course image is required";
-//     }
-//     if (!formData.existing_banner && !formData.banner_img) {
-//       errors.banner_img = "Banner image is required";
-//     }
-//     if (!formData.existing_icon && !formData.icon) {
-//       errors.icon = "Course icon is required";
-//     }
-//     if (!formData.existing_image2 && !formData.image2) {
-//       errors.image2 = "Additional image is required";
-//     }
-//     if (!formData.existing_pdf && !formData.pdf_file) {
-//       errors.pdf_file = "Syllabus PDF is required";
-//     }
-
-//     setFieldErrors(errors);
-//     return Object.keys(errors).length === 0;
-//   };
-
-//   // Handle form submission
-//   const handleSubmit = async (e) => {
-//     e.preventDefault();
-
-//     setErrorMessage("");
-
-//     if (!validateForm()) {
-//       showToast("Please fill required fields correctly", "error");
-//       return;
-//     }
-
-//     setSaving(true);
-
-//     try {
-//       const submitData = new FormData();
-
-//       // Basic fields
-//       submitData.append("name", formData.name.trim());
-//       submitData.append("slug", formData.slug.trim());
-//       // Append each selected category ID
-//       formData.categories.forEach((catId) => {
-//         submitData.append("categories", catId);
-//       });
-//       submitData.append("text", formData.text);
-
-//       if (formData.short_description?.trim()) {
-//         submitData.append("short_description", formData.short_description.trim());
-//       }
-
-//       // Numeric fields
-//       if (formData.duration) submitData.append("duration", Number(formData.duration));
-//       if (formData.lecture) submitData.append("lecture", Number(formData.lecture));
-//       if (formData.students) submitData.append("students", Number(formData.students));
-//       if (formData.course_sequence) submitData.append("course_sequence", Number(formData.course_sequence));
-
-//       // Optional fields
-//       if (formData.level) submitData.append("level", formData.level);
-//       if (formData.language) submitData.append("language", formData.language);
-
-//       // Boolean conversion
-//       submitData.append("certificate", formData.certificate === "Yes");
-//       submitData.append("featured", formData.featured);
-//       submitData.append("kids_course", formData.kids_course);
-
-//       // SEO
-//       if (formData.meta_title) submitData.append("meta_title", formData.meta_title);
-//       if (formData.meta_description) submitData.append("meta_description", formData.meta_description);
-//       if (formData.keywords) submitData.append("keywords", formData.keywords);
-
-//       // Files (only if changed)
-//       if (formData.image) submitData.append("image", formData.image);
-//       if (formData.banner_img) submitData.append("banner_img", formData.banner_img);
-//       if (formData.icon) submitData.append("icon", formData.icon);
-//       if (formData.image2) submitData.append("image2", formData.image2);
-//       if (formData.pdf_file) submitData.append("pdf_file", formData.pdf_file);
-
-//       // Trigger mutation
-//       mutation.mutate({ id, formData: submitData });
-//     } catch (err) {
-//       console.error("Submit error:", err);
-//       setErrorMessage("Something went wrong. Please try again.");
-//       showToast("Network error. Please check your connection.", "error");
-//       setSaving(false);
-//     }
-//   };
-
-//   // ── Toggle Switch Component ──
-//   const ToggleSwitch = ({ label, description, name, checked, onChange }) => (
-//     <div className="flex items-center justify-between py-2">
-//       <div>
-//         <p className="text-sm font-semibold text-gray-700">{label}</p>
-//         {description && <p className="text-xs text-gray-400">{description}</p>}
-//       </div>
-//       <button
-//         type="button"
-//         role="switch"
-//         aria-checked={checked}
-//         onClick={() => onChange(name, !checked)}
-//         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
-//           checked ? "bg-indigo-600" : "bg-gray-200"
-//         }`}
-//       >
-//         <span
-//           className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-//             checked ? "translate-x-6" : "translate-x-1"
-//           }`}
-//         />
-//       </button>
-//     </div>
-//   );
-
-//   // ── Reusable Image Upload Box with error styling ──
-//   const ImageUploadBox = ({
-//     preview,
-//     existingUrl,
-//     onRemove,
-//     inputId,
-//     inputName,
-//     label,
-//     hint,
-//     iconBg,
-//     iconColor,
-//     error,
-//   }) => {
-//     const hasPreview = preview || existingUrl;
-//     const previewSrc = preview || getImageUrl(existingUrl);
-//     const isNew = !!preview;
-
-//     return (
-//       <div
-//         className={`bg-white rounded-2xl border shadow-sm p-6 ${
-//           error ? "border-red-500" : "border-gray-200"
-//         }`}
-//       >
-//         <div className="flex items-center gap-3 mb-4">
-//           <div
-//             className={`w-9 h-9 ${iconBg} rounded-xl flex items-center justify-center flex-shrink-0`}
-//           >
-//             <ImagePlus size={16} className={iconColor} />
-//           </div>
-//           <div>
-//             <p className="text-base font-semibold text-gray-800">{label}</p>
-//             <p className="text-xs text-gray-400 mt-0.5">{hint}</p>
-//           </div>
-//         </div>
-
-//         {!hasPreview ? (
-//           <div
-//             onClick={() => document.getElementById(inputId)?.click()}
-//             className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center cursor-pointer hover:border-indigo-300 hover:bg-indigo-50/50 transition-all select-none"
-//           >
-//             <div className="w-12 h-12 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-3">
-//               <Upload size={20} className="text-gray-400" />
-//             </div>
-//             <p className="text-base font-semibold text-gray-700 mb-1">
-//               Click to upload
-//             </p>
-//             <p className="text-xs text-gray-400">
-//               <span className="text-indigo-500 font-medium">Browse files</span>{" "}
-//               · {hint}
-//             </p>
-//           </div>
-//         ) : (
-//           <div className="relative rounded-xl overflow-hidden border border-gray-200 group">
-//             <img
-//               src={previewSrc}
-//               alt="preview"
-//               className="w-full max-h-48 object-cover block"
-//               onError={(e) => {
-//                 e.target.onerror = null;
-//                 e.target.src =
-//                   "https://via.placeholder.com/400x200?text=Image+Error";
-//               }}
-//             />
-//             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all pointer-events-none" />
-
-//             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent px-4 py-3 pointer-events-none">
-//               {isNew ? (
-//                 <p className="text-xs text-emerald-300 font-semibold">
-//                   ✓ New image selected — will replace existing
-//                 </p>
-//               ) : (
-//                 <p className="text-xs text-white/70 font-medium">
-//                   Current image
-//                 </p>
-//               )}
-//             </div>
-
-//             <button
-//               type="button"
-//               onClick={() => document.getElementById(inputId)?.click()}
-//               className="absolute top-3 left-3 px-3 py-1.5 bg-white/90 backdrop-blur-sm rounded-lg text-xs font-semibold text-gray-700 hover:bg-white shadow-sm transition-all"
-//             >
-//               Change
-//             </button>
-
-//             <button
-//               type="button"
-//               onClick={onRemove}
-//               className="absolute top-3 right-3 w-8 h-8 bg-white rounded-full shadow-md flex items-center justify-center text-gray-500 hover:text-red-500 hover:shadow-lg transition-all"
-//             >
-//               <X size={15} />
-//             </button>
-//           </div>
-//         )}
-//         <input
-//           type="file"
-//           name={inputName}
-//           accept="image/*"
-//           onChange={handleFileChange}
-//           className="hidden"
-//           id={inputId}
-//         />
-//       </div>
-//     );
-//   };
-
-//   // ── PDF Upload Box with error styling ──
-//   const PdfUploadBox = ({ error }) => {
-//     const hasPdf = pdfName || formData.existing_pdf;
-//     const pdfDisplayName =
-//       pdfName ||
-//       (formData.existing_pdf ? formData.existing_pdf.split("/").pop() : "");
-//     const isNew = !!pdfName;
-
-//     return (
-//       <div
-//         className={`bg-white rounded-2xl border shadow-sm p-6 ${
-//           error ? "border-red-500" : "border-gray-200"
-//         }`}
-//       >
-//         <div className="flex items-center gap-3 mb-4">
-//           <div className="w-9 h-9 bg-red-50 rounded-xl flex items-center justify-center flex-shrink-0">
-//             <FileText size={16} className="text-red-500" />
-//           </div>
-//           <div>
-//             <p className="text-base font-semibold text-gray-800">
-//               Syllabus PDF <span className="text-red-500">*</span>
-//             </p>
-//           </div>
-//         </div>
-
-//         {!hasPdf ? (
-//           <div
-//             onClick={() => document.getElementById("pdf-upload")?.click()}
-//             className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center cursor-pointer hover:border-indigo-300 hover:bg-indigo-50/50 transition-all select-none"
-//           >
-//             <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center mx-auto mb-3">
-//               <Upload size={20} className="text-indigo-500" />
-//             </div>
-//             <p className="text-base font-semibold text-gray-700 mb-1">
-//               Upload Syllabus
-//             </p>
-//             <p className="text-xs text-gray-400">
-//               <span className="text-indigo-500 font-medium">Browse files</span>{" "}
-//               · PDF only up to 10MB
-//             </p>
-//           </div>
-//         ) : (
-//           <div className="space-y-3">
-//             <div
-//               className={`relative flex items-center gap-3 p-4 rounded-xl border ${
-//                 isNew
-//                   ? "bg-emerald-50 border-emerald-100"
-//                   : "bg-indigo-50 border-indigo-100"
-//               }`}
-//             >
-//               <div
-//                 className={`w-10 h-10 ${
-//                   isNew ? "bg-emerald-100" : "bg-indigo-100"
-//                 } rounded-xl flex items-center justify-center flex-shrink-0`}
-//               >
-//                 <FileText
-//                   size={18}
-//                   className={isNew ? "text-emerald-600" : "text-indigo-600"}
-//                 />
-//               </div>
-
-//               <div className="flex-1 min-w-0">
-//                 <p className="text-base font-semibold text-gray-800 truncate">
-//                   {pdfDisplayName}
-//                 </p>
-//                 <p
-//                   className={`text-xs mt-0.5 ${
-//                     isNew ? "text-emerald-500" : "text-indigo-400"
-//                   }`}
-//                 >
-//                   {isNew
-//                     ? "New file — will replace existing"
-//                     : "Current syllabus"}
-//                 </p>
-//               </div>
-
-//               <button
-//                 type="button"
-//                 onClick={() => removeFile("pdf_file", !pdfName)}
-//                 className="w-8 h-8 bg-white rounded-full shadow-sm flex items-center justify-center text-gray-400 hover:text-indigo-500 transition-all flex-shrink-0"
-//               >
-//                 <X size={15} />
-//               </button>
-//             </div>
-
-//             <button
-//               type="button"
-//               onClick={() => document.getElementById("pdf-upload")?.click()}
-//               className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-500 hover:bg-indigo-100 rounded-xl text-xs font-semibold transition-all"
-//             >
-//               <Upload size={13} />
-//               Replace PDF
-//             </button>
-//           </div>
-//         )}
-//         <input
-//           type="file"
-//           name="pdf_file"
-//           accept=".pdf"
-//           onChange={handleFileChange}
-//           id="pdf-upload"
-//           className="hidden"
-//         />
-//       </div>
-//     );
-//   };
-
-//   // ── Section Header ──
-//   const SectionHeader = ({
-//     icon: Icon,
-//     label,
-//     iconBg,
-//     iconColor,
-//     description,
-//     required,
-//   }) => (
-//     <div className="flex items-center gap-3 pt-2">
-//       <div
-//         className={`w-9 h-9 ${iconBg} rounded-xl flex items-center justify-center flex-shrink-0`}
-//       >
-//         <Icon size={16} className={iconColor} />
-//       </div>
-//       <div>
-//         <p className="text-base font-bold text-gray-800 flex items-center">
-//           {label}
-//           {required && <span className="text-red-500 ml-1">*</span>}
-//         </p>
-//         {description && <p className="text-xs text-gray-400">{description}</p>}
-//       </div>
-//     </div>
-//   );
-
-//   // ── Loading State ──
-//   if (courseLoading || categoriesLoading) {
-//     return (
-//       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-//         <div className="text-center">
-//           <div className="w-14 h-14 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4" />
-//           <p className="text-base text-gray-500 font-medium">
-//             Loading course data…
-//           </p>
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div className="min-h-screen bg-gray-50">
-//       {/* Toast notification */}
-//       {toast.show && (
-//         <Toasts
-//           message={toast.message}
-//           type={toast.type}
-//           onClose={closeToast}
-//         />
-//       )}
-
-//       {/* ── Header ── */}
-//       <header className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
-//         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-//           <div className="flex items-center gap-3">
-//             <button
-//               onClick={() => navigate("/course")}
-//               className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-all text-base font-medium"
-//             >
-//               <ArrowLeft size={16} />
-//               <span className="hidden sm:inline">Back</span>
-//             </button>
-//             <div className="w-px h-6 bg-gray-200" />
-//             <div>
-//               <h1 className="text-base sm:text-lg font-bold text-gray-900 leading-tight">
-//                 Edit Course
-//               </h1>
-//             </div>
-//           </div>
-//           <button
-//             onClick={handleSubmit}
-//             disabled={saving}
-//             className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-base font-semibold rounded-xl shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-//           >
-//             {saving ? (
-//               <>
-//                 <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-//                 Updating…
-//               </>
-//             ) : (
-//               <>
-//                 <Save size={15} />
-//                 Update Course
-//               </>
-//             )}
-//           </button>
-//         </div>
-//       </header>
-
-//       {/* ── Main ── */}
-//       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 pb-28 sm:pb-12">
-//         <form onSubmit={handleSubmit} className="space-y-5">
-//           {/* SECTION 1 — Basic Information */}
-//           <SectionHeader
-//             icon={Tag}
-//             label="Basic Information"
-//             iconBg="bg-indigo-50"
-//             iconColor="text-indigo-600"
-//           />
-
-//           {/* Course Name */}
-//           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-//             <label
-//               htmlFor="name"
-//               className="block text-base font-semibold text-gray-800 mb-1"
-//             >
-//               Course Name <span className="text-red-500">*</span>
-//             </label>
-//             <input
-//               id="name"
-//               type="text"
-//               name="name"
-//               value={formData.name}
-//               onChange={handleInputChange}
-//               placeholder="e.g., Advanced React Development"
-//               className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
-//                 fieldErrors.name ? "border-red-500" : "border-gray-200"
-//               }`}
-//               required
-//             />
-//           </div>
-
-//           {/* Slug */}
-//           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-//             <label
-//               htmlFor="slug"
-//               className="block text-base font-semibold text-gray-800 mb-1"
-//             >
-//               Course Slug <span className="text-red-500">*</span>
-//             </label>
-//             <div className="flex rounded-xl overflow-hidden border border-gray-200 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-transparent transition-all">
-//               <span className="inline-flex items-center px-4 py-3 bg-gray-100 text-xs text-gray-500 font-medium border-r border-gray-200 whitespace-nowrap">
-//                 /course/
-//               </span>
-//               <input
-//                 id="slug"
-//                 type="text"
-//                 name="slug"
-//                 value={formData.slug}
-//                 onChange={handleInputChange}
-//                 placeholder="advanced-react-development"
-//                 className={`flex-1 px-4 py-3 bg-gray-50 text-gray-900 text-base placeholder-gray-400 outline-none focus:bg-white transition-all ${
-//                   fieldErrors.slug ? "border-red-500" : ""
-//                 }`}
-//                 required
-//               />
-//             </div>
-//           </div>
-
-//           {/* Categories - Multi-select checkboxes (replaces dropdown) */}
-//           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-//             <label className="block text-base font-semibold text-gray-800 mb-3">
-//               Categories <span className="text-red-500">*</span>
-//             </label>
-//             {categoriesLoading ? (
-//               <div className="text-sm text-gray-500">Loading categories...</div>
-//             ) : categories.length === 0 ? (
-//               <div className="text-sm text-red-500">No categories found</div>
-//             ) : (
-//               <div
-//                 className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 ${
-//                   fieldErrors.categories ? "border-red-500 rounded-lg p-3 bg-red-50" : ""
-//                 }`}
-//               >
-//                 {categories.map((cat) => (
-//                   <label
-//                     key={cat.id}
-//                     className="flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all hover:bg-gray-50"
-//                     style={{
-//                       borderColor: formData.categories.includes(cat.id)
-//                         ? "#6366f1"
-//                         : "#e5e7eb",
-//                       backgroundColor: formData.categories.includes(cat.id)
-//                         ? "#eef2ff"
-//                         : "white",
-//                     }}
-//                   >
-//                     <input
-//                       type="checkbox"
-//                       checked={formData.categories.includes(cat.id)}
-//                       onChange={() => handleCategoryToggle(cat.id)}
-//                       className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-//                     />
-//                     <span className="text-sm font-medium text-gray-700">
-//                       {cat.name}
-//                     </span>
-//                   </label>
-//                 ))}
-//               </div>
-//             )}
-//             {fieldErrors.categories && (
-//               <p className="text-xs text-red-500 mt-2">{fieldErrors.categories}</p>
-//             )}
-//             <p className="text-xs text-gray-400 mt-3">
-//               Select one or more categories that best describe this course.
-//             </p>
-//           </div>
-
-//           {/* Description with tabs */}
-//           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-//             <div className="flex items-center justify-between mb-4">
-//               <label
-//                 htmlFor="text"
-//                 className="block text-base font-semibold text-gray-800"
-//               >
-//                 Description <span className="text-red-500">*</span>
-//               </label>
-//               <div className="flex gap-1 p-1 bg-gray-100 rounded-lg">
-//                 <button
-//                   type="button"
-//                   onClick={() => setEditorMode("tinymce")}
-//                   className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
-//                     editorMode === "tinymce"
-//                       ? "bg-white text-indigo-600 shadow-sm"
-//                       : "text-gray-600 hover:text-gray-900"
-//                   }`}
-//                 >
-//                   TinyMCE
-//                 </button>
-//                 <button
-//                   type="button"
-//                   onClick={() => setEditorMode("html")}
-//                   className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
-//                     editorMode === "html"
-//                       ? "bg-white text-indigo-600 shadow-sm"
-//                       : "text-gray-600 hover:text-gray-900"
-//                   }`}
-//                 >
-//                   HTML
-//                 </button>
-//               </div>
-//             </div>
-
-//             {/* Conditional Editor */}
-//             {editorMode === "tinymce" ? (
-//               <div
-//                 className={`border rounded-xl overflow-hidden ${
-//                   fieldErrors.text ? "border-red-500" : "border-gray-200"
-//                 }`}
-//               >
-//                 <Editor
-//                   apiKey="f45j826wq94pn0e0xseucsvqi8k7xug5idltalwrry8pevjm"
-//                   value={formData.text}
-//                   onEditorChange={(content) => {
-//                     setFormData((prev) => ({ ...prev, text: content }));
-//                     if (fieldErrors.text) {
-//                       setFieldErrors((prev) => ({ ...prev, text: undefined }));
-//                     }
-//                   }}
-//                   init={{
-//                     height: 400,
-//                     menubar: true,
-//                     plugins: [
-//                       "advlist",
-//                       "autolink",
-//                       "lists",
-//                       "link",
-//                       "image",
-//                       "charmap",
-//                       "preview",
-//                       "anchor",
-//                       "searchreplace",
-//                       "visualblocks",
-//                       "code",
-//                       "fullscreen",
-//                       "insertdatetime",
-//                       "media",
-//                       "table",
-//                       "help",
-//                       "wordcount",
-//                     ],
-//                     toolbar:
-//                       "undo redo | blocks | " +
-//                       "bold italic forecolor | alignleft aligncenter " +
-//                       "alignright alignjustify | bullist numlist outdent indent | " +
-//                       "removeformat | code | help",
-//                     content_style:
-//                       "body { font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.6; }",
-//                     placeholder: "Write a detailed description of your course…",
-//                   }}
-//                 />
-//               </div>
-//             ) : (
-//               <textarea
-//                 value={formData.text}
-//                 onChange={(e) => {
-//                   setFormData((prev) => ({ ...prev, text: e.target.value }));
-//                   if (fieldErrors.text) {
-//                     setFieldErrors((prev) => ({ ...prev, text: undefined }));
-//                   }
-//                 }}
-//                 className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base font-mono placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
-//                   fieldErrors.text ? "border-red-500" : "border-gray-200"
-//                 }`}
-//                 rows={12}
-//                 placeholder="<!-- Write HTML here -->"
-//               />
-//             )}
-
-//             <p className="text-xs text-gray-400 text-right mt-2">
-//               {formData.text.length} characters
-//             </p>
-//           </div>
-
-//           {/* Short Description with auto‑generate button */}
-//           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-//             <div className="flex items-center justify-between mb-1">
-//               <label
-//                 htmlFor="short_description"
-//                 className="block text-base font-semibold text-gray-800"
-//               >
-//                 Short Description
-//               </label>
-//               <button
-//                 type="button"
-//                 onClick={generateShortDescription}
-//                 className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-lg transition-all"
-//                 title="Generate from main description"
-//               >
-//                 <Sparkles size={14} />
-//                 Generate
-//               </button>
-//             </div>
-//             <input
-//               id="short_description"
-//               type="text"
-//               name="short_description"
-//               value={formData.short_description}
-//               onChange={handleInputChange}
-//               placeholder="e.g., Learn React from scratch in 40 hours"
-//               className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
-//                 fieldErrors.short_description
-//                   ? "border-red-500"
-//                   : "border-gray-200"
-//               }`}
-//             />
-//           </div>
-
-//           {/* SECTION 2 — Course Details */}
-//           <SectionHeader
-//             icon={BookMarked}
-//             label="Course Details"
-//             iconBg="bg-violet-50"
-//             iconColor="text-violet-600"
-//           />
-
-//           {/* Duration / Lectures / Students / Course Sequence */}
-//           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-//             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-//               {[
-//                 {
-//                   icon: Clock,
-//                   label: "Duration",
-//                   name: "duration",
-//                   placeholder: "e.g., 40",
-//                   bg: "bg-blue-50",
-//                   color: "text-blue-500",
-//                 },
-//                 {
-//                   icon: BookOpen,
-//                   label: "Lectures",
-//                   name: "lecture",
-//                   placeholder: "e.g., 98",
-//                   bg: "bg-emerald-50",
-//                   color: "text-emerald-500",
-//                 },
-//                 {
-//                   icon: Users,
-//                   label: "Students",
-//                   name: "students",
-//                   placeholder: "e.g., 1000",
-//                   bg: "bg-orange-50",
-//                   color: "text-orange-500",
-//                 },
-//                 {
-//                   icon: ListOrdered,
-//                   label: "Course Sequence",
-//                   name: "course_sequence",
-//                   placeholder: "e.g., 1, 2, 3...",
-//                   bg: "bg-cyan-50",
-//                   color: "text-cyan-500",
-//                 },
-//               ].map((field) => (
-//                 <div key={field.name}>
-//                   <div className="flex items-center gap-2 mb-2">
-//                     <div
-//                       className={`w-6 h-6 ${field.bg} rounded-md flex items-center justify-center`}
-//                     >
-//                       <field.icon size={12} className={field.color} />
-//                     </div>
-//                     <label className="text-xs font-semibold text-gray-700">
-//                       {field.label}
-//                       {field.name === "course_sequence" && (
-//                         <span className="text-gray-400 text-xs font-normal ml-1">(Optional)</span>
-//                       )}
-//                     </label>
-//                   </div>
-//                   <input
-//                     type="number"
-//                     min={0}
-//                     step="1"
-//                     name={field.name}
-//                     value={formData[field.name]}
-//                     onChange={handleInputChange}
-//                     placeholder={field.placeholder}
-//                     className={`w-full px-3 py-2.5 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
-//                       fieldErrors[field.name]
-//                         ? "border-red-500"
-//                         : "border-gray-200"
-//                     }`}
-//                   />
-//                   {fieldErrors[field.name] && (
-//                     <p className="text-xs text-red-500 mt-1">
-//                       {fieldErrors[field.name]}
-//                     </p>
-//                   )}
-//                 </div>
-//               ))}
-//             </div>
-//           </div>
-
-//           {/* Level / Language / Certificate */}
-//           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-//             <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-//               {/* Level */}
-//               <div>
-//                 <div className="flex items-center gap-2 mb-2">
-//                   <div className="w-6 h-6 bg-purple-50 rounded-md flex items-center justify-center">
-//                     <Signal size={12} className="text-purple-500" />
-//                   </div>
-//                   <label className="text-xs font-semibold text-gray-700">
-//                     Difficulty Level
-//                   </label>
-//                 </div>
-//                 <div className="relative">
-//                   <select
-//                     name="level"
-//                     value={formData.level}
-//                     onChange={handleInputChange}
-//                     className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none"
-//                   >
-//                     <option value="">Select Level</option>
-//                     <option value="Beginner">Beginner</option>
-//                     <option value="Intermediate">Intermediate</option>
-//                     <option value="Advanced">Advanced</option>
-//                     <option value="All Levels">All Levels</option>
-//                     <option value="hard">Hard</option>
-//                   </select>
-//                   <ChevronDown
-//                     size={14}
-//                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-//                   />
-//                 </div>
-//               </div>
-
-//               {/* Language */}
-//               <div>
-//                 <div className="flex items-center gap-2 mb-2">
-//                   <div className="w-6 h-6 bg-teal-50 rounded-md flex items-center justify-center">
-//                     <Globe size={12} className="text-teal-500" />
-//                   </div>
-//                   <label className="text-xs font-semibold text-gray-700">
-//                     Language
-//                   </label>
-//                 </div>
-//                 <input
-//                   type="text"
-//                   name="language"
-//                   value={formData.language}
-//                   onChange={handleInputChange}
-//                   placeholder="e.g., English"
-//                   className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
-//                 />
-//               </div>
-
-//               {/* Certificate */}
-//               <div>
-//                 <div className="flex items-center gap-2 mb-2">
-//                   <div className="w-6 h-6 bg-yellow-50 rounded-md flex items-center justify-center">
-//                     <Award size={12} className="text-yellow-500" />
-//                   </div>
-//                   <label className="text-xs font-semibold text-gray-700">
-//                     Certificate <span className="text-red-500">*</span>
-//                   </label>
-//                 </div>
-//                 <div className="flex gap-2">
-//                   {["No", "Yes"].map((val) => (
-//                     <label
-//                       key={val}
-//                       className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 border-2 rounded-xl cursor-pointer transition-all text-xs font-semibold ${
-//                         formData.certificate === val
-//                           ? "border-indigo-500 bg-indigo-50 text-indigo-700"
-//                           : "border-gray-200 bg-gray-50 text-gray-500 hover:bg-gray-100"
-//                       }`}
-//                     >
-//                       <input
-//                         type="radio"
-//                         name="certificate"
-//                         value={val}
-//                         checked={formData.certificate === val}
-//                         onChange={(e) => {
-//                           setFormData((prev) => ({
-//                             ...prev,
-//                             certificate: e.target.value,
-//                           }));
-//                           if (fieldErrors.certificate) {
-//                             setFieldErrors((prev) => ({
-//                               ...prev,
-//                               certificate: undefined,
-//                             }));
-//                           }
-//                         }}
-//                         className="hidden"
-//                       />
-//                       {val === "Yes" ? <Award size={12} /> : <X size={12} />}
-//                       {val}
-//                     </label>
-//                   ))}
-//                 </div>
-//               </div>
-//             </div>
-//           </div>
-
-//           {/* Additional Options: Featured & Kids Course */}
-//           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-//             <div className="flex items-center gap-3 mb-4">
-//               <div className="w-9 h-9 bg-amber-50 rounded-xl flex items-center justify-center">
-//                 <Sparkles size={16} className="text-amber-500" />
-//               </div>
-//               <div>
-//                 <p className="text-base font-semibold text-gray-800">
-//                   Additional Options
-//                 </p>
-//               </div>
-//             </div>
-//             <div className="space-y-3 divide-y divide-gray-100">
-//               <ToggleSwitch
-//                 label="Featured Course"
-//                 name="featured"
-//                 checked={formData.featured}
-//                 onChange={handleToggleChange}
-//               />
-//               <ToggleSwitch
-//                 label="Kids Course"
-//                 name="kids_course"
-//                 checked={formData.kids_course}
-//                 onChange={handleToggleChange}
-//               />
-//             </div>
-//           </div>
-
-//           {/* SECTION 3 — Media Files */}
-//           <SectionHeader
-//             icon={ImagePlus}
-//             label="Media Files"
-//             iconBg="bg-pink-50"
-//             iconColor="text-pink-500"
-//             required={true}
-//           />
-
-//           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-//             <ImageUploadBox
-//               preview={imagePreview}
-//               existingUrl={formData.existing_image}
-//               onRemove={() => removeFile("image", !imagePreview)}
-//               inputId="image-upload"
-//               inputName="image"
-//               label="Course Image "
-//               iconBg="bg-pink-50"
-//               iconColor="text-pink-500"
-//               error={!!fieldErrors.image}
-//             />
-//             <ImageUploadBox
-//               preview={bannerPreview}
-//               existingUrl={formData.existing_banner}
-//               onRemove={() => removeFile("banner_img", !bannerPreview)}
-//               inputId="banner-upload"
-//               inputName="banner_img"
-//               label="Banner Image "
-//               iconBg="bg-indigo-50"
-//               iconColor="text-indigo-500"
-//               error={!!fieldErrors.banner_img}
-//             />
-//             <ImageUploadBox
-//               preview={iconPreview}
-//               existingUrl={formData.existing_icon}
-//               onRemove={() => removeFile("icon", !iconPreview)}
-//               inputId="icon-upload"
-//               inputName="icon"
-//               label="Course Icon "
-//               iconBg="bg-violet-50"
-//               iconColor="text-violet-500"
-//               error={!!fieldErrors.icon}
-//             />
-//             <ImageUploadBox
-//               preview={image2Preview}
-//               existingUrl={formData.existing_image2}
-//               onRemove={() => removeFile("image2", !image2Preview)}
-//               inputId="image2-upload"
-//               inputName="image2"
-//               label="Additional Image "
-//               iconBg="bg-orange-50"
-//               iconColor="text-orange-500"
-//               error={!!fieldErrors.image2}
-//             />
-//             <PdfUploadBox error={!!fieldErrors.pdf_file} />
-//           </div>
-
-//           {/* SECTION 4 — SEO & Metadata */}
-//           <SectionHeader
-//             icon={Search}
-//             label="SEO & Metadata"
-//             iconBg="bg-emerald-50"
-//             iconColor="text-emerald-600"
-//           />
-
-//           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-5">
-//             {/* Meta Title */}
-//             <div>
-//               <label
-//                 htmlFor="meta_title"
-//                 className="block text-base font-semibold text-gray-800 mb-1"
-//               >
-//                 Meta Title <span className="text-red-500">*</span>
-//               </label>
-//               <input
-//                 id="meta_title"
-//                 type="text"
-//                 name="meta_title"
-//                 value={formData.meta_title}
-//                 onChange={handleInputChange}
-//                 placeholder="SEO optimized title for your course"
-//                 className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
-//                   fieldErrors.meta_title ? "border-red-500" : "border-gray-200"
-//                 }`}
-//               />
-//               <p className="text-xs text-gray-400 text-right mt-1">
-//                 {formData.meta_title.length} / 60
-//               </p>
-//             </div>
-
-//             <div className="h-px bg-gray-100" />
-
-//             {/* Meta Description */}
-//             <div>
-//               <label
-//                 htmlFor="meta_description"
-//                 className="block text-base font-semibold text-gray-800 mb-1"
-//               >
-//                 Meta Description <span className="text-red-500">*</span>
-//               </label>
-//               <textarea
-//                 id="meta_description"
-//                 name="meta_description"
-//                 value={formData.meta_description}
-//                 onChange={handleInputChange}
-//                 rows={3}
-//                 placeholder="Brief description for search engines…"
-//                 className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-none ${
-//                   fieldErrors.meta_description
-//                     ? "border-red-500"
-//                     : "border-gray-200"
-//                 }`}
-//               />
-//               <p className="text-xs text-gray-400 text-right mt-1">
-//                 {formData.meta_description.length} / 160
-//               </p>
-//             </div>
-
-//             <div className="h-px bg-gray-100" />
-
-//             {/* Keywords */}
-//             <div>
-//               <label
-//                 htmlFor="keywords"
-//                 className="block text-base font-semibold text-gray-800 mb-1"
-//               >
-//                 Keywords <span className="text-red-500">*</span>
-//               </label>
-//               <input
-//                 id="keywords"
-//                 type="text"
-//                 name="keywords"
-//                 value={formData.keywords}
-//                 onChange={handleInputChange}
-//                 placeholder="react, javascript, web development, frontend"
-//                 className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
-//                   fieldErrors.keywords ? "border-red-500" : "border-gray-200"
-//                 }`}
-//               />
-//             </div>
-//           </div>
-
-//           {/* Mobile Submit */}
-//           <div className="sm:hidden">
-//             <button
-//               type="submit"
-//               disabled={saving}
-//               className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-base font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-//             >
-//               {saving ? (
-//                 <>
-//                   <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-//                   Updating…
-//                 </>
-//               ) : (
-//                 <>
-//                   <Save size={16} />
-//                   Update Course
-//                 </>
-//               )}
-//             </button>
-//           </div>
-//         </form>
-//       </main>
-//     </div>
-//   );
-// }
-
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -1545,7 +99,7 @@ export default function EditCourse() {
     id: "",
     name: "",
     slug: "",
-    categories: [],
+    categories: [], // <-- changed from 'category' to array
     text: "",
     short_description: "",
     duration: "",
@@ -1611,6 +165,8 @@ export default function EditCourse() {
   // Populate form when course data arrives
   useEffect(() => {
     if (courseData) {
+      // Extract category IDs from the course's categories array (if present)
+      // Fallback to single 'category' field if needed
       let selectedCategories = [];
       if (courseData.categories && Array.isArray(courseData.categories)) {
         selectedCategories = courseData.categories.map((cat) =>
@@ -1702,6 +258,7 @@ export default function EditCourse() {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
 
+    // For numeric fields, allow only numbers
     if (name === "students") {
       const numericValue = value.replace(/[^0-9]/g, "");
       setFormData((prev) => ({ ...prev, [name]: numericValue }));
@@ -1734,6 +291,7 @@ export default function EditCourse() {
         : [...prev.categories, categoryId];
       return { ...prev, categories: newCategories };
     });
+    // Clear error for categories if any
     if (fieldErrors.categories) {
       setFieldErrors((prev) => ({ ...prev, categories: undefined }));
     }
@@ -1783,7 +341,7 @@ export default function EditCourse() {
     }
   };
 
-  // Remove file – for required fields (image, banner, image2) we set error if both existing and new are empty; for optional fields we just clear.
+  // Remove file – if no existing file remains, mark field as error
   const removeFile = (field, isExisting = false) => {
     if (isExisting) {
       setFormData((prev) => ({ ...prev, [`existing_${field}`]: "" }));
@@ -1809,39 +367,55 @@ export default function EditCourse() {
       }
     }
 
-    // Only set errors for required fields (image, banner_img, image2)
-    const requiredFields = ["image", "banner_img", "image2"];
-    if (requiredFields.includes(field)) {
-      const hasExisting = formData[`existing_${field}`];
-      const hasNew = formData[field];
-      const empty = !hasExisting && !hasNew;
-      if (empty) {
-        setFieldErrors((prev) => ({ ...prev, [field]: `${field} is required` }));
-      } else {
-        setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
-      }
+    const hasExisting = formData[`existing_${field}`];
+    const hasNew = formData[field];
+    const empty = !hasExisting && !hasNew;
+    if (empty) {
+      setFieldErrors((prev) => ({ ...prev, [field]: `${field} is required` }));
     } else {
-      // Optional fields – clear error if any
       setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
     }
   };
 
-  // Validate the entire form – only required: name, certificate, image, banner_img, image2
+  // Validate the entire form before submission
   const validateForm = () => {
     const errors = {};
 
     if (!formData.name.trim()) errors.name = "Course name is required";
+    if (!formData.slug.trim()) errors.slug = "Course slug is required";
+    if (formData.categories.length === 0) errors.categories = "Please select at least one category";
+    if (!formData.text.trim()) errors.text = "Description is required";
     if (!formData.certificate) errors.certificate = "Certificate is required";
 
-    // File validations (only required ones)
+    // Validate numeric fields
+    if (formData.duration && isNaN(parseFloat(formData.duration))) {
+      errors.duration = "Duration must be a number";
+    }
+    if (formData.lecture && isNaN(parseFloat(formData.lecture))) {
+      errors.lecture = "Lectures must be a number";
+    }
+    if (formData.students && !/^\d+$/.test(formData.students)) {
+      errors.students = "Students must be a number";
+    }
+    if (formData.course_sequence && !/^\d+$/.test(formData.course_sequence)) {
+      errors.course_sequence = "Course sequence must be a number";
+    }
+
+    // File validations
     if (!formData.existing_image && !formData.image) {
       errors.image = "Course image is required";
     }
     if (!formData.existing_banner && !formData.banner_img) {
       errors.banner_img = "Banner image is required";
     }
+    if (!formData.existing_icon && !formData.icon) {
+      errors.icon = "Course icon is required";
+    }
     if (!formData.existing_image2 && !formData.image2) {
       errors.image2 = "Additional image is required";
+    }
+    if (!formData.existing_pdf && !formData.pdf_file) {
+      errors.pdf_file = "Syllabus PDF is required";
     }
 
     setFieldErrors(errors);
@@ -1855,7 +429,7 @@ export default function EditCourse() {
     setErrorMessage("");
 
     if (!validateForm()) {
-      showToast("Please fill all required fields", "error");
+      showToast("Please fill required fields correctly", "error");
       return;
     }
 
@@ -1867,16 +441,17 @@ export default function EditCourse() {
       // Basic fields
       submitData.append("name", formData.name.trim());
       submitData.append("slug", formData.slug.trim());
-      // Append each selected category ID (optional)
+      // Append each selected category ID
       formData.categories.forEach((catId) => {
         submitData.append("categories", catId);
       });
-      if (formData.text) submitData.append("text", formData.text);
+      submitData.append("text", formData.text);
+
       if (formData.short_description?.trim()) {
         submitData.append("short_description", formData.short_description.trim());
       }
 
-      // Numeric fields (optional)
+      // Numeric fields
       if (formData.duration) submitData.append("duration", Number(formData.duration));
       if (formData.lecture) submitData.append("lecture", Number(formData.lecture));
       if (formData.students) submitData.append("students", Number(formData.students));
@@ -1891,7 +466,7 @@ export default function EditCourse() {
       submitData.append("featured", formData.featured);
       submitData.append("kids_course", formData.kids_course);
 
-      // SEO (optional)
+      // SEO
       if (formData.meta_title) submitData.append("meta_title", formData.meta_title);
       if (formData.meta_description) submitData.append("meta_description", formData.meta_description);
       if (formData.keywords) submitData.append("keywords", formData.keywords);
@@ -1950,7 +525,6 @@ export default function EditCourse() {
     iconBg,
     iconColor,
     error,
-    required = false,
   }) => {
     const hasPreview = preview || existingUrl;
     const previewSrc = preview || getImageUrl(existingUrl);
@@ -1969,9 +543,7 @@ export default function EditCourse() {
             <ImagePlus size={16} className={iconColor} />
           </div>
           <div>
-            <p className="text-base font-semibold text-gray-800">
-              {label} {required && <span className="text-red-500">*</span>}
-            </p>
+            <p className="text-base font-semibold text-gray-800">{label}</p>
             <p className="text-xs text-gray-400 mt-0.5">{hint}</p>
           </div>
         </div>
@@ -2047,7 +619,7 @@ export default function EditCourse() {
     );
   };
 
-  // ── PDF Upload Box (optional) ──
+  // ── PDF Upload Box with error styling ──
   const PdfUploadBox = ({ error }) => {
     const hasPdf = pdfName || formData.existing_pdf;
     const pdfDisplayName =
@@ -2067,7 +639,7 @@ export default function EditCourse() {
           </div>
           <div>
             <p className="text-base font-semibold text-gray-800">
-              Syllabus PDF <span className="text-gray-400 text-sm font-normal">(Optional)</span>
+              Syllabus PDF <span className="text-red-500">*</span>
             </p>
           </div>
         </div>
@@ -2161,7 +733,7 @@ export default function EditCourse() {
     iconBg,
     iconColor,
     description,
-    required = false,
+    required,
   }) => (
     <div className="flex items-center gap-3 pt-2">
       <div
@@ -2170,9 +742,9 @@ export default function EditCourse() {
         <Icon size={16} className={iconColor} />
       </div>
       <div>
-        <p className="text-base font-bold text-gray-800">
+        <p className="text-base font-bold text-gray-800 flex items-center">
           {label}
-          {required && <span className="text-red-400 ml-1">*</span>}
+          {required && <span className="text-red-500 ml-1">*</span>}
         </p>
         {description && <p className="text-xs text-gray-400">{description}</p>}
       </div>
@@ -2253,7 +825,7 @@ export default function EditCourse() {
             iconColor="text-indigo-600"
           />
 
-          {/* Course Name (Required) */}
+          {/* Course Name */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <label
               htmlFor="name"
@@ -2271,19 +843,17 @@ export default function EditCourse() {
               className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
                 fieldErrors.name ? "border-red-500" : "border-gray-200"
               }`}
+              required
             />
-            {fieldErrors.name && (
-              <p className="text-xs text-red-500 mt-1">{fieldErrors.name}</p>
-            )}
           </div>
 
-          {/* Slug (Optional) */}
+          {/* Slug */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <label
               htmlFor="slug"
               className="block text-base font-semibold text-gray-800 mb-1"
             >
-              Course Slug <span className="text-gray-400 text-sm font-normal">(Auto-generated)</span>
+              Course Slug <span className="text-red-500">*</span>
             </label>
             <div className="flex rounded-xl overflow-hidden border border-gray-200 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-transparent transition-all">
               <span className="inline-flex items-center px-4 py-3 bg-gray-100 text-xs text-gray-500 font-medium border-r border-gray-200 whitespace-nowrap">
@@ -2296,22 +866,29 @@ export default function EditCourse() {
                 value={formData.slug}
                 onChange={handleInputChange}
                 placeholder="advanced-react-development"
-                className="flex-1 px-4 py-3 bg-gray-50 text-gray-900 text-base placeholder-gray-400 outline-none focus:bg-white transition-all"
+                className={`flex-1 px-4 py-3 bg-gray-50 text-gray-900 text-base placeholder-gray-400 outline-none focus:bg-white transition-all ${
+                  fieldErrors.slug ? "border-red-500" : ""
+                }`}
+                required
               />
             </div>
           </div>
 
-          {/* Categories (Optional) */}
+          {/* Categories - Multi-select checkboxes (replaces dropdown) */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <label className="block text-base font-semibold text-gray-800 mb-3">
-              Categories <span className="text-gray-400 text-sm font-normal">(Optional)</span>
+              Categories <span className="text-red-500">*</span>
             </label>
             {categoriesLoading ? (
               <div className="text-sm text-gray-500">Loading categories...</div>
             ) : categories.length === 0 ? (
               <div className="text-sm text-red-500">No categories found</div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              <div
+                className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 ${
+                  fieldErrors.categories ? "border-red-500 rounded-lg p-3 bg-red-50" : ""
+                }`}
+              >
                 {categories.map((cat) => (
                   <label
                     key={cat.id}
@@ -2338,19 +915,22 @@ export default function EditCourse() {
                 ))}
               </div>
             )}
+            {fieldErrors.categories && (
+              <p className="text-xs text-red-500 mt-2">{fieldErrors.categories}</p>
+            )}
             <p className="text-xs text-gray-400 mt-3">
-              Select one or more categories that best describe this course (optional).
+              Select one or more categories that best describe this course.
             </p>
           </div>
 
-          {/* Description with tabs (Optional) */}
+          {/* Description with tabs */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <div className="flex items-center justify-between mb-4">
               <label
                 htmlFor="text"
                 className="block text-base font-semibold text-gray-800"
               >
-                Description <span className="text-gray-400 text-sm font-normal">(Optional)</span>
+                Description <span className="text-red-500">*</span>
               </label>
               <div className="flex gap-1 p-1 bg-gray-100 rounded-lg">
                 <button
@@ -2378,8 +958,13 @@ export default function EditCourse() {
               </div>
             </div>
 
+            {/* Conditional Editor */}
             {editorMode === "tinymce" ? (
-              <div className="border rounded-xl overflow-hidden border-gray-200">
+              <div
+                className={`border rounded-xl overflow-hidden ${
+                  fieldErrors.text ? "border-red-500" : "border-gray-200"
+                }`}
+              >
                 <Editor
                   apiKey="f45j826wq94pn0e0xseucsvqi8k7xug5idltalwrry8pevjm"
                   value={formData.text}
@@ -2431,7 +1016,9 @@ export default function EditCourse() {
                     setFieldErrors((prev) => ({ ...prev, text: undefined }));
                   }
                 }}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base font-mono placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base font-mono placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
+                  fieldErrors.text ? "border-red-500" : "border-gray-200"
+                }`}
                 rows={12}
                 placeholder="<!-- Write HTML here -->"
               />
@@ -2442,14 +1029,14 @@ export default function EditCourse() {
             </p>
           </div>
 
-          {/* Short Description with auto‑generate button (Optional) */}
+          {/* Short Description with auto‑generate button */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <div className="flex items-center justify-between mb-1">
               <label
                 htmlFor="short_description"
                 className="block text-base font-semibold text-gray-800"
               >
-                Short Description <span className="text-gray-400 text-sm font-normal">(Optional)</span>
+                Short Description
               </label>
               <button
                 type="button"
@@ -2468,11 +1055,15 @@ export default function EditCourse() {
               value={formData.short_description}
               onChange={handleInputChange}
               placeholder="e.g., Learn React from scratch in 40 hours"
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+              className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
+                fieldErrors.short_description
+                  ? "border-red-500"
+                  : "border-gray-200"
+              }`}
             />
           </div>
 
-          {/* SECTION 2 — Course Details (All Optional) */}
+          {/* SECTION 2 — Course Details */}
           <SectionHeader
             icon={BookMarked}
             label="Course Details"
@@ -2480,6 +1071,7 @@ export default function EditCourse() {
             iconColor="text-violet-600"
           />
 
+          {/* Duration / Lectures / Students / Course Sequence */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
               {[
@@ -2525,6 +1117,9 @@ export default function EditCourse() {
                     </div>
                     <label className="text-xs font-semibold text-gray-700">
                       {field.label}
+                      {field.name === "course_sequence" && (
+                        <span className="text-gray-400 text-xs font-normal ml-1">(Optional)</span>
+                      )}
                     </label>
                   </div>
                   <input
@@ -2535,17 +1130,26 @@ export default function EditCourse() {
                     value={formData[field.name]}
                     onChange={handleInputChange}
                     placeholder={field.placeholder}
-                    className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                    className={`w-full px-3 py-2.5 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
+                      fieldErrors[field.name]
+                        ? "border-red-500"
+                        : "border-gray-200"
+                    }`}
                   />
+                  {fieldErrors[field.name] && (
+                    <p className="text-xs text-red-500 mt-1">
+                      {fieldErrors[field.name]}
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Level / Language / Certificate (Certificate is Required) */}
+          {/* Level / Language / Certificate */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-              {/* Level (Optional) */}
+              {/* Level */}
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-6 h-6 bg-purple-50 rounded-md flex items-center justify-center">
@@ -2576,7 +1180,7 @@ export default function EditCourse() {
                 </div>
               </div>
 
-              {/* Language (Optional) */}
+              {/* Language */}
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-6 h-6 bg-teal-50 rounded-md flex items-center justify-center">
@@ -2596,7 +1200,7 @@ export default function EditCourse() {
                 />
               </div>
 
-              {/* Certificate (Required) */}
+              {/* Certificate */}
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-6 h-6 bg-yellow-50 rounded-md flex items-center justify-center">
@@ -2640,14 +1244,11 @@ export default function EditCourse() {
                     </label>
                   ))}
                 </div>
-                {fieldErrors.certificate && (
-                  <p className="text-xs text-red-500 mt-1">{fieldErrors.certificate}</p>
-                )}
               </div>
             </div>
           </div>
 
-          {/* Additional Options (Optional) */}
+          {/* Additional Options: Featured & Kids Course */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-9 h-9 bg-amber-50 rounded-xl flex items-center justify-center">
@@ -2675,7 +1276,7 @@ export default function EditCourse() {
             </div>
           </div>
 
-          {/* SECTION 3 — Media Files (image, banner_img, image2 required; icon and pdf optional) */}
+          {/* SECTION 3 — Media Files */}
           <SectionHeader
             icon={ImagePlus}
             label="Media Files"
@@ -2691,12 +1292,10 @@ export default function EditCourse() {
               onRemove={() => removeFile("image", !imagePreview)}
               inputId="image-upload"
               inputName="image"
-              label="Course Image"
-              hint="Required"
+              label="Course Image "
               iconBg="bg-pink-50"
               iconColor="text-pink-500"
               error={!!fieldErrors.image}
-              required={true}
             />
             <ImageUploadBox
               preview={bannerPreview}
@@ -2704,12 +1303,10 @@ export default function EditCourse() {
               onRemove={() => removeFile("banner_img", !bannerPreview)}
               inputId="banner-upload"
               inputName="banner_img"
-              label="Banner Image"
-              hint="Required"
+              label="Banner Image "
               iconBg="bg-indigo-50"
               iconColor="text-indigo-500"
               error={!!fieldErrors.banner_img}
-              required={true}
             />
             <ImageUploadBox
               preview={iconPreview}
@@ -2717,12 +1314,10 @@ export default function EditCourse() {
               onRemove={() => removeFile("icon", !iconPreview)}
               inputId="icon-upload"
               inputName="icon"
-              label="Course Icon"
-              hint="Optional"
+              label="Course Icon "
               iconBg="bg-violet-50"
               iconColor="text-violet-500"
               error={!!fieldErrors.icon}
-              required={false}
             />
             <ImageUploadBox
               preview={image2Preview}
@@ -2730,17 +1325,15 @@ export default function EditCourse() {
               onRemove={() => removeFile("image2", !image2Preview)}
               inputId="image2-upload"
               inputName="image2"
-              label="Additional Image"
-              hint="Required"
+              label="Additional Image "
               iconBg="bg-orange-50"
               iconColor="text-orange-500"
               error={!!fieldErrors.image2}
-              required={true}
             />
             <PdfUploadBox error={!!fieldErrors.pdf_file} />
           </div>
 
-          {/* SECTION 4 — SEO & Metadata (All Optional) */}
+          {/* SECTION 4 — SEO & Metadata */}
           <SectionHeader
             icon={Search}
             label="SEO & Metadata"
@@ -2749,12 +1342,13 @@ export default function EditCourse() {
           />
 
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-5">
+            {/* Meta Title */}
             <div>
               <label
                 htmlFor="meta_title"
                 className="block text-base font-semibold text-gray-800 mb-1"
               >
-                Meta Title <span className="text-gray-400 text-sm font-normal">(Optional)</span>
+                Meta Title <span className="text-red-500">*</span>
               </label>
               <input
                 id="meta_title"
@@ -2763,7 +1357,9 @@ export default function EditCourse() {
                 value={formData.meta_title}
                 onChange={handleInputChange}
                 placeholder="SEO optimized title for your course"
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
+                  fieldErrors.meta_title ? "border-red-500" : "border-gray-200"
+                }`}
               />
               <p className="text-xs text-gray-400 text-right mt-1">
                 {formData.meta_title.length} / 60
@@ -2772,12 +1368,13 @@ export default function EditCourse() {
 
             <div className="h-px bg-gray-100" />
 
+            {/* Meta Description */}
             <div>
               <label
                 htmlFor="meta_description"
                 className="block text-base font-semibold text-gray-800 mb-1"
               >
-                Meta Description <span className="text-gray-400 text-sm font-normal">(Optional)</span>
+                Meta Description <span className="text-red-500">*</span>
               </label>
               <textarea
                 id="meta_description"
@@ -2786,7 +1383,11 @@ export default function EditCourse() {
                 onChange={handleInputChange}
                 rows={3}
                 placeholder="Brief description for search engines…"
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-none"
+                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-none ${
+                  fieldErrors.meta_description
+                    ? "border-red-500"
+                    : "border-gray-200"
+                }`}
               />
               <p className="text-xs text-gray-400 text-right mt-1">
                 {formData.meta_description.length} / 160
@@ -2795,12 +1396,13 @@ export default function EditCourse() {
 
             <div className="h-px bg-gray-100" />
 
+            {/* Keywords */}
             <div>
               <label
                 htmlFor="keywords"
                 className="block text-base font-semibold text-gray-800 mb-1"
               >
-                Keywords <span className="text-gray-400 text-sm font-normal">(Optional)</span>
+                Keywords <span className="text-red-500">*</span>
               </label>
               <input
                 id="keywords"
@@ -2809,7 +1411,9 @@ export default function EditCourse() {
                 value={formData.keywords}
                 onChange={handleInputChange}
                 placeholder="react, javascript, web development, frontend"
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
+                  fieldErrors.keywords ? "border-red-500" : "border-gray-200"
+                }`}
               />
             </div>
           </div>
