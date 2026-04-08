@@ -559,7 +559,7 @@ export default function EditBlog() {
                 {editorMode === "tinymce" ? (
                   <div className={`border rounded-xl overflow-hidden ${fieldErrors.content ? "border-red-500" : "border-gray-200"}`}>
                     <Editor
-                      apiKey="f45j826wq94pn0e0xseucsvqi8k7xug5idltalwrry8pevjm"
+                      apiKey="hfmyrqcpu7tzbxxrtv9vtu5nwvcywu1d6lq9idlficqer5gv"
                       onInit={(evt, editor) => (editorRef.current = editor)}
                       value={formData.content}
                       onEditorChange={(content) => {
