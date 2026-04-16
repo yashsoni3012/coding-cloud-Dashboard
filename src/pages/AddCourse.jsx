@@ -2230,7 +2230,7 @@ export default function AddCourse() {
                 }`}
               >
                 <Editor
-                  apiKey="hfmyrqcpu7tzbxxrtv9vtu5nwvcywu1d6lq9idlficqer5gv"
+                  apiKey="wry1dezpoungi06fmopvf4whj06bm09zlyu8czfd9wv5wk1j"
                   value={formData.text}
                   onEditorChange={handleEditorChange}
                   init={{
