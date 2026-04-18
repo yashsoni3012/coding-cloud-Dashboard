@@ -69,6 +69,7 @@
 
 //   const [editorMode, setEditorMode] = useState("tinymce");
 //   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
+//   const [tinyMceError, setTinyMceError] = useState(false);
 
 //   const [formData, setFormData] = useState({
 //     title: "",
@@ -105,6 +106,14 @@
 //       }
 //     }
 //   }, [formData.title, slugManuallyEdited]);
+
+//   // ✅ NEW: Auto-set publish date when status changes to "Published" and no date exists
+//   useEffect(() => {
+//     if (formData.status === "Published" && !formData.publish_date) {
+//       const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+//       setFormData((prev) => ({ ...prev, publish_date: today }));
+//     }
+//   }, [formData.status]);
 
 //   // React Query mutation
 //   const mutation = useMutation({
@@ -174,6 +183,10 @@
 //         setError("Please select a valid image file");
 //         return;
 //       }
+//       if (file.size > 5 * 1024 * 1024) {
+//         setError("Image size must be less than 5MB");
+//         return;
+//       }
 //       setFormData((prev) => ({ ...prev, featured_image: file }));
 //       const reader = new FileReader();
 //       reader.onloadend = () => setImagePreview(reader.result);
@@ -200,7 +213,7 @@
 //     if (fileInputRef.current) fileInputRef.current.value = "";
 //   };
 
-//   // Only validate required fields: title, content, slug, status, hashtag
+//   // Validate required fields
 //   const validateForm = () => {
 //     const errors = {};
 
@@ -235,12 +248,14 @@
 
 //     if (formData.short_description.trim())
 //       payload.append("short_description", formData.short_description.trim());
+
 //     if (formData.publish_date) {
-//       const formattedDate = formData.publish_date.includes("T")
-//         ? formData.publish_date
-//         : `${formData.publish_date}T00:00:00Z`;
+//       // Use local date without timezone shift
+//       const localDate = new Date(formData.publish_date);
+//       const formattedDate = localDate.toISOString().split("T")[0] + "T00:00:00Z";
 //       payload.append("publish_date", formattedDate);
 //     }
+
 //     if (formData.meta_title.trim())
 //       payload.append("meta_title", formData.meta_title.trim());
 //     if (formData.meta_descrtiption.trim())
@@ -403,7 +418,7 @@
 //                 {fieldErrors.slug && <p className="text-xs text-red-500 mt-1">{fieldErrors.slug}</p>}
 //               </div>
 
-//               {/* Short Description (optional) - NO length counter */}
+//               {/* Short Description (optional) */}
 //               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
 //                 <label htmlFor="short_description" className="block text-base font-semibold text-gray-800 mb-1">
 //                   Short Description <span className="text-gray-400 text-sm font-normal">(Optional)</span>
@@ -447,11 +462,17 @@
 //                   </div>
 //                 </div>
 
-//                 {editorMode === "tinymce" ? (
+//                 {editorMode === "tinymce" && !tinyMceError ? (
 //                   <div className={`border rounded-xl overflow-hidden ${fieldErrors.content ? "border-red-500" : "border-gray-200"}`}>
 //                     <Editor
 //                       apiKey="wry1dezpoungi06fmopvf4whj06bm09zlyu8czfd9wv5wk1j"
-//                       onInit={(evt, editor) => (editorRef.current = editor)}
+//                       onInit={(evt, editor) => {
+//                         editorRef.current = editor;
+//                       }}
+//                       onError={() => {
+//                         console.error("TinyMCE failed to load");
+//                         setTinyMceError(true);
+//                       }}
 //                       value={formData.content}
 //                       onEditorChange={(content) => {
 //                         setFormData((prev) => ({ ...prev, content }));
@@ -490,7 +511,7 @@
 //                 {fieldErrors.content && <p className="text-xs text-red-500 mt-1">{fieldErrors.content}</p>}
 //               </div>
 
-//               {/* SEO & Metadata (all optional) - NO character counters */}
+//               {/* SEO & Metadata (all optional) */}
 //               <SectionHeader
 //                 icon={Search}
 //                 label="SEO & Metadata"
@@ -715,6 +736,8 @@ import {
   Save,
   X,
   FileText,
+  AlertCircle,
+  CheckCircle2,
   Calendar,
   Tag,
   Globe,
@@ -725,47 +748,63 @@ import {
   ImagePlus,
 } from "lucide-react";
 
-// ─── API ────────────────────────────────────────────────────────────────────
-const createBlog = async (payload) => {
+// API function to create a blog
+const createBlog = async (formData) => {
   const response = await fetch(
     "https://codingcloudapi.codingcloud.co.in/blogs/",
-    { method: "POST", body: payload }
+    { method: "POST", body: formData }
   );
 
   if (!response.ok) {
     const errorText = await response.text();
+    let errorMessage;
     try {
       const errorData = JSON.parse(errorText);
       if (errorData.errors) {
         const backendErrors = {};
         Object.keys(errorData.errors).forEach((key) => {
-          backendErrors[key] = Array.isArray(errorData.errors[key])
-            ? errorData.errors[key].join(", ")
-            : errorData.errors[key];
+          backendErrors[key] = errorData.errors[key].join(", ");
         });
         throw new Error(JSON.stringify(backendErrors));
       }
-      throw new Error(
-        errorData.message || errorData.detail || JSON.stringify(errorData)
-      );
-    } catch (e) {
-      if (e.message !== errorText) throw e;
-      throw new Error(errorText || `HTTP error ${response.status}`);
+      errorMessage =
+        errorData.message || errorData.detail || JSON.stringify(errorData);
+    } catch {
+      errorMessage = errorText || `HTTP error ${response.status}`;
     }
+    throw new Error(errorMessage);
   }
 
   return response.json();
 };
 
-// ─── Helper ─────────────────────────────────────────────────────────────────
-const toSlug = (title) =>
-  title
+// Helper: generate slug from title
+const generateSlugFromTitle = (title) => {
+  return title
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "")
     .substring(0, 100);
+};
 
-// ─── Component ──────────────────────────────────────────────────────────────
+// Helper: check if blog title already exists
+const checkTitleExists = async (title, currentBlogId = null) => {
+  try {
+    const response = await fetch("https://codingcloudapi.codingcloud.co.in/blogs/");
+    if (!response.ok) return false;
+    const data = await response.json();
+    const blogs = data.data || data || [];
+    const normalizedTitle = title.trim().toLowerCase();
+    return blogs.some(blog => 
+      blog.title?.trim().toLowerCase() === normalizedTitle &&
+      (currentBlogId === null || blog.id !== currentBlogId)
+    );
+  } catch (error) {
+    console.error("Failed to check title uniqueness:", error);
+    return false; // Assume not duplicate if check fails
+  }
+};
+
 export default function AddBlog() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -774,12 +813,10 @@ export default function AddBlog() {
 
   const [editorMode, setEditorMode] = useState("tinymce");
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
-  const [imagePreview, setImagePreview] = useState(null);
-  const [dragOver, setDragOver] = useState(false);
-  const [fieldErrors, setFieldErrors] = useState({});
-  const [toast, setToast] = useState({ show: false, message: "", type: "success" });
+  const [tinyMceError, setTinyMceError] = useState(false);
+  const [checkingTitle, setCheckingTitle] = useState(false);
 
-  const [form, setForm] = useState({
+  const [formData, setFormData] = useState({
     title: "",
     content: "",
     slug: "",
@@ -787,79 +824,123 @@ export default function AddBlog() {
     status: "Drafts",
     publish_date: "",
     meta_title: "",
-    meta_descrtiption: "",   // kept as-is to match API field name
+    meta_descrtiption: "",
     meta_keyword: "",
     hashtag: "",
     featured_image: null,
   });
 
-  // Auto-generate slug from title
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [imagePreview, setImagePreview] = useState(null);
+  const [dragOver, setDragOver] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [toast, setToast] = useState({
+    show: false,
+    message: "",
+    type: "success",
+  });
+
+  // Auto-generate slug from title when title changes and slug not manually edited
   useEffect(() => {
-    if (!slugManuallyEdited && form.title) {
-      setForm((prev) => ({ ...prev, slug: toSlug(form.title) }));
-      clearFieldError("slug");
+    if (!slugManuallyEdited && formData.title) {
+      const newSlug = generateSlugFromTitle(formData.title);
+      setFormData((prev) => ({ ...prev, slug: newSlug }));
+      if (fieldErrors.slug) {
+        setFieldErrors((prev) => ({ ...prev, slug: undefined }));
+      }
     }
-  }, [form.title, slugManuallyEdited]);
+  }, [formData.title, slugManuallyEdited]);
 
-  const clearFieldError = (name) =>
-    setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
+  // Auto-set publish date when status changes to "Published" and no date exists
+  useEffect(() => {
+    if (formData.status === "Published" && !formData.publish_date) {
+      const today = new Date().toISOString().split("T")[0];
+      setFormData((prev) => ({ ...prev, publish_date: today }));
+    }
+  }, [formData.status]);
 
-  const showToast = (message, type) =>
-    setToast({ show: true, message, type });
-
-  // ─── Mutation ─────────────────────────────────────────────────────────────
+  // React Query mutation
   const mutation = useMutation({
     mutationFn: createBlog,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["blogs"] });
-      showToast("Blog added successfully!", "success");
+      setToast({
+        show: true,
+        message: "Blog added successfully!",
+        type: "success",
+      });
       setTimeout(() => navigate("/blogs"), 2000);
     },
     onError: (err) => {
+      let errorMsg = err.message;
       try {
-        const parsed = JSON.parse(err.message);
+        const parsed = JSON.parse(errorMsg);
         if (typeof parsed === "object") {
           setFieldErrors(parsed);
-          showToast("Please correct the errors below", "error");
+          setToast({
+            show: true,
+            message: "Please correct the errors below",
+            type: "error",
+          });
           return;
         }
       } catch {
-        // plain string error
+        // Not JSON, treat as regular error
       }
-      showToast(err.message, "error");
+      setToast({
+        show: true,
+        message: errorMsg,
+        type: "error",
+      });
     },
   });
 
-  // ─── Handlers ─────────────────────────────────────────────────────────────
-  const handleChange = (e) => {
+  const statusOptions = ["Drafts", "Published", "Scheduled"];
+
+  const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-    clearFieldError(name);
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
+    setError("");
   };
 
   const handleSlugChange = (e) => {
-    const sanitized = e.target.value
+    const rawValue = e.target.value;
+    const sanitized = rawValue
       .toLowerCase()
       .replace(/[^a-z0-9-]/g, "-")
       .replace(/-+/g, "-")
       .replace(/^-|-$/g, "");
-    setForm((prev) => ({ ...prev, slug: sanitized }));
+    setFormData((prev) => ({ ...prev, slug: sanitized }));
     setSlugManuallyEdited(true);
-    clearFieldError("slug");
+    if (fieldErrors.slug) {
+      setFieldErrors((prev) => ({ ...prev, slug: undefined }));
+    }
   };
 
   const handleImageChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      showToast("Please select a valid image file", "error");
-      return;
+    const file = e.target.files[0];
+    if (file) {
+      if (!file.type.startsWith("image/")) {
+        setError("Please select a valid image file");
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        setError("Image size must be less than 5MB");
+        return;
+      }
+      setFormData((prev) => ({ ...prev, featured_image: file }));
+      const reader = new FileReader();
+      reader.onloadend = () => setImagePreview(reader.result);
+      reader.readAsDataURL(file);
+      setError("");
+      if (fieldErrors.featured_image) {
+        setFieldErrors((prev) => ({ ...prev, featured_image: undefined }));
+      }
     }
-    setForm((prev) => ({ ...prev, featured_image: file }));
-    const reader = new FileReader();
-    reader.onloadend = () => setImagePreview(reader.result);
-    reader.readAsDataURL(file);
-    clearFieldError("featured_image");
   };
 
   const handleDrop = (e) => {
@@ -869,98 +950,112 @@ export default function AddBlog() {
     if (file) handleImageChange({ target: { files: [file] } });
   };
 
+  const triggerFileInput = () => fileInputRef.current?.click();
+
   const removeImage = () => {
-    setForm((prev) => ({ ...prev, featured_image: null }));
+    setFormData((prev) => ({ ...prev, featured_image: null }));
     setImagePreview(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  // ─── Validation (only required fields) ───────────────────────────────────
-  const validate = () => {
+  // Validate required fields
+  const validateForm = () => {
     const errors = {};
-    if (!form.title.trim())   errors.title   = "Title is required";
-    if (!form.content.trim()) errors.content = "Content is required";
-    if (!form.slug.trim())    errors.slug    = "Slug is required";
-    if (!form.hashtag.trim()) errors.hashtag = "Hashtag is required";
+
+    if (!formData.title.trim()) errors.title = "Title is required";
+    if (!formData.content.trim()) errors.content = "Content is required";
+    if (!formData.slug.trim()) errors.slug = "Slug is required";
+    if (!formData.status) errors.status = "Status is required";
+    if (!formData.hashtag.trim()) errors.hashtag = "Hashtag is required";
+
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
-  // ─── Submit ───────────────────────────────────────────────────────────────
-  const handleSubmit = (e) => {
-    e?.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-    if (!validate()) {
-      showToast("Please fill all required fields", "error");
+    if (!validateForm()) {
+      setToast({
+        show: true,
+        message: "Please fill all required fields",
+        type: "error",
+      });
+      return;
+    }
+
+    // Check for duplicate title
+    setCheckingTitle(true);
+    const titleExists = await checkTitleExists(formData.title);
+    setCheckingTitle(false);
+
+    if (titleExists) {
+      setToast({
+        show: true,
+        message: "Blog title already exists. Please use a different title.",
+        type: "error",
+      });
       return;
     }
 
     const payload = new FormData();
+    payload.append("title", formData.title.trim());
+    payload.append("content", formData.content.trim());
+    payload.append("slug", formData.slug.trim());
+    payload.append("status", formData.status);
+    payload.append("hashtag", formData.hashtag.trim());
 
-    // Required fields
-    payload.append("title",   form.title.trim());
-    payload.append("content", form.content.trim());
-    payload.append("slug",    form.slug.trim());
-    payload.append("hashtag", form.hashtag.trim());
-    payload.append("status",  form.status);
+    if (formData.short_description.trim())
+      payload.append("short_description", formData.short_description.trim());
 
-    // Optional fields — only send when the user has filled them in
-    if (form.short_description)
-      payload.append("short_description", form.short_description);
-
-    if (form.publish_date) {
-      const iso = form.publish_date.includes("T")
-        ? form.publish_date
-        : `${form.publish_date}T00:00:00Z`;
-      payload.append("publish_date", iso);
+    if (formData.publish_date) {
+      const localDate = new Date(formData.publish_date);
+      const formattedDate = localDate.toISOString().split("T")[0] + "T00:00:00Z";
+      payload.append("publish_date", formattedDate);
     }
 
-    if (form.meta_title)
-      payload.append("meta_title", form.meta_title);
-
-    if (form.meta_descrtiption)
-      payload.append("meta_descrtiption", form.meta_descrtiption);
-
-    if (form.meta_keyword)
-      payload.append("meta_keyword", form.meta_keyword);
-
-    if (form.featured_image instanceof File)
-      payload.append("featured_image", form.featured_image);
+    if (formData.meta_title.trim())
+      payload.append("meta_title", formData.meta_title.trim());
+    if (formData.meta_descrtiption.trim())
+      payload.append("meta_descrtiption", formData.meta_descrtiption.trim());
+    if (formData.meta_keyword.trim())
+      payload.append("meta_keyword", formData.meta_keyword.trim());
+    if (formData.featured_image instanceof File)
+      payload.append("featured_image", formData.featured_image);
 
     mutation.mutate(payload);
   };
 
-  // ─── Shared styles ────────────────────────────────────────────────────────
-  const inputBase =
-    "w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all";
-
-  const SectionHeader = ({ icon: Icon, label, iconBg, iconColor }) => (
+  const SectionHeader = ({ icon: Icon, label, iconBg, iconColor, description, badge }) => (
     <div className="flex items-center gap-3 pt-2">
       <div className={`w-9 h-9 ${iconBg} rounded-xl flex items-center justify-center flex-shrink-0`}>
         <Icon size={16} className={iconColor} />
       </div>
-      <p className="text-base font-bold text-gray-800">{label}</p>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <p className="text-base font-bold text-gray-800">{label}</p>
+          {badge && <span className="text-xs text-gray-400 font-normal">{badge}</span>}
+        </div>
+        {description && <p className="text-xs text-gray-400">{description}</p>}
+      </div>
     </div>
   );
 
   const statusColor = {
     Published: "bg-emerald-100 text-emerald-700",
     Scheduled: "bg-blue-100 text-blue-700",
-    Drafts:    "bg-gray-100 text-gray-600",
+    Drafts: "bg-gray-100 text-gray-600",
   };
 
-  // ─── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-gray-50">
       {toast.show && (
         <Toasts
           message={toast.message}
           type={toast.type}
-          onClose={() => setToast((p) => ({ ...p, show: false }))}
+          onClose={() => setToast((prev) => ({ ...prev, show: false }))}
         />
       )}
-
-      {/* ── Header ── */}
       <header className="sticky top-0 z-10 bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -972,37 +1067,66 @@ export default function AddBlog() {
               <span className="hidden sm:inline">Back</span>
             </button>
             <div className="w-px h-6 bg-gray-200" />
-            <h1 className="text-base sm:text-lg font-bold text-gray-900">Add New Blog</h1>
+            <div>
+              <h1 className="text-base sm:text-lg font-bold text-gray-900 leading-tight">
+                Add New Blog
+              </h1>
+            </div>
           </div>
-
-          <button
-            onClick={handleSubmit}
-            disabled={mutation.isPending}
-            className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-base font-semibold rounded-xl shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {mutation.isPending ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                Saving…
-              </>
-            ) : (
-              <>
-                <Save size={15} />
-                Save Blog
-              </>
-            )}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleSubmit}
+              disabled={mutation.isPending || checkingTitle}
+              className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-base font-semibold rounded-xl shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {mutation.isPending || checkingTitle ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  {checkingTitle ? "Checking..." : "Saving…"}
+                </>
+              ) : (
+                <>
+                  <Save size={15} />
+                  Save Blog
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </header>
 
-      {/* ── Main ── */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 pb-28 sm:pb-12">
+        {error && (
+          <div className="flex items-start gap-3 p-4 mb-6 bg-red-50 border border-red-200 rounded-2xl text-base text-red-700">
+            <AlertCircle size={18} className="mt-0.5 flex-shrink-0 text-red-500" />
+            <div className="flex-1">
+              <p className="font-semibold">Error</p>
+              <p className="mt-0.5">{error}</p>
+            </div>
+            <button onClick={() => setError("")} className="text-red-400 hover:text-red-600">
+              <X size={16} />
+            </button>
+          </div>
+        )}
+
+        {success && (
+          <div className="flex items-center gap-3 p-4 mb-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-base text-emerald-700">
+            <CheckCircle2 size={18} className="flex-shrink-0 text-emerald-500" />
+            <span className="flex-1 font-medium">{success}</span>
+            <span className="text-emerald-400 text-xs">Redirecting to blogs…</span>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-            {/* ════ LEFT COLUMN ════ */}
+            {/* LEFT COLUMN */}
             <div className="lg:col-span-2 space-y-5">
-              <SectionHeader icon={FileText} label="General Information" iconBg="bg-indigo-50" iconColor="text-indigo-600" />
+              <SectionHeader
+                icon={FileText}
+                label="General Information"
+                iconBg="bg-indigo-50"
+                iconColor="text-indigo-600"
+              />
 
               {/* Title */}
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
@@ -1015,15 +1139,16 @@ export default function AddBlog() {
                     id="title"
                     type="text"
                     name="title"
-                    value={form.title}
-                    onChange={handleChange}
+                    value={formData.title}
+                    onChange={handleInputChange}
                     placeholder="Enter the title of the blog post"
-                    className={`${inputBase} pl-11 ${fieldErrors.title ? "border-red-500" : "border-gray-200"}`}
+                    className={`w-full pl-11 pr-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
+                      fieldErrors.title ? "border-red-500" : "border-gray-200"
+                    }`}
+                    required
                   />
                 </div>
-                {fieldErrors.title && (
-                  <p className="text-xs text-red-500 mt-1">{fieldErrors.title}</p>
-                )}
+                {fieldErrors.title && <p className="text-xs text-red-500 mt-1">{fieldErrors.title}</p>}
               </div>
 
               {/* Slug */}
@@ -1031,7 +1156,7 @@ export default function AddBlog() {
                 <label htmlFor="slug" className="block text-base font-semibold text-gray-800 mb-1">
                   Slug / URL Path <span className="text-red-500">*</span>
                 </label>
-                <div className={`flex rounded-xl overflow-hidden border focus-within:ring-2 focus-within:ring-indigo-500 ${fieldErrors.slug ? "border-red-500" : "border-gray-200"}`}>
+                <div className="flex rounded-xl overflow-hidden border border-gray-200 focus-within:ring-2 focus-within:ring-indigo-500">
                   <span className="inline-flex items-center px-4 py-3 bg-gray-100 text-xs text-gray-500 border-r border-gray-200 whitespace-nowrap">
                     /blog/
                   </span>
@@ -1039,67 +1164,77 @@ export default function AddBlog() {
                     id="slug"
                     type="text"
                     name="slug"
-                    value={form.slug}
+                    value={formData.slug}
                     onChange={handleSlugChange}
                     placeholder="auto-generated-from-title"
-                    className="flex-1 px-4 py-3 bg-gray-50 text-gray-900 text-base placeholder-gray-400 outline-none focus:bg-white transition-all"
+                    className={`flex-1 px-4 py-3 bg-gray-50 text-gray-900 text-base placeholder-gray-400 outline-none focus:bg-white transition-all ${
+                      fieldErrors.slug ? "border-red-500" : ""
+                    }`}
+                    required
                   />
                 </div>
-                {fieldErrors.slug && (
-                  <p className="text-xs text-red-500 mt-1">{fieldErrors.slug}</p>
-                )}
+                {fieldErrors.slug && <p className="text-xs text-red-500 mt-1">{fieldErrors.slug}</p>}
               </div>
 
-              {/* Short Description */}
+              {/* Short Description (optional) */}
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
                 <label htmlFor="short_description" className="block text-base font-semibold text-gray-800 mb-1">
-                  Short Description{" "}
-                  <span className="text-gray-400 text-sm font-normal">(Optional)</span>
+                  Short Description <span className="text-gray-400 text-sm font-normal">(Optional)</span>
                 </label>
                 <textarea
                   id="short_description"
                   name="short_description"
-                  value={form.short_description}
-                  onChange={handleChange}
+                  value={formData.short_description}
+                  onChange={handleInputChange}
                   rows={3}
                   placeholder="A brief summary of the blog post…"
-                  className={`${inputBase} resize-y border-gray-200`}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-y"
                 />
               </div>
 
-              {/* Content */}
+              {/* Main Content */}
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
                 <div className="flex items-center justify-between mb-2">
                   <label className="block text-base font-semibold text-gray-800">
                     Content <span className="text-red-500">*</span>
                   </label>
                   <div className="flex gap-1 p-1 bg-gray-100 rounded-lg">
-                    {["tinymce", "html"].map((mode) => (
-                      <button
-                        key={mode}
-                        type="button"
-                        onClick={() => setEditorMode(mode)}
-                        className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
-                          editorMode === mode
-                            ? "bg-white text-indigo-600 shadow-sm"
-                            : "text-gray-600 hover:text-gray-900"
-                        }`}
-                      >
-                        {mode === "tinymce" ? "TinyMCE" : "HTML"}
-                      </button>
-                    ))}
+                    <button
+                      type="button"
+                      onClick={() => setEditorMode("tinymce")}
+                      className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
+                        editorMode === "tinymce" ? "bg-white text-indigo-600 shadow-sm" : "text-gray-600 hover:text-gray-900"
+                      }`}
+                    >
+                      TinyMCE
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditorMode("html")}
+                      className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
+                        editorMode === "html" ? "bg-white text-indigo-600 shadow-sm" : "text-gray-600 hover:text-gray-900"
+                      }`}
+                    >
+                      HTML
+                    </button>
                   </div>
                 </div>
 
-                {editorMode === "tinymce" ? (
+                {editorMode === "tinymce" && !tinyMceError ? (
                   <div className={`border rounded-xl overflow-hidden ${fieldErrors.content ? "border-red-500" : "border-gray-200"}`}>
                     <Editor
                       apiKey="wry1dezpoungi06fmopvf4whj06bm09zlyu8czfd9wv5wk1j"
-                      onInit={(_, editor) => (editorRef.current = editor)}
-                      value={form.content}
+                      onInit={(evt, editor) => {
+                        editorRef.current = editor;
+                      }}
+                      onError={() => {
+                        console.error("TinyMCE failed to load");
+                        setTinyMceError(true);
+                      }}
+                      value={formData.content}
                       onEditorChange={(content) => {
-                        setForm((prev) => ({ ...prev, content }));
-                        clearFieldError("content");
+                        setFormData((prev) => ({ ...prev, content }));
+                        if (fieldErrors.content) setFieldErrors((prev) => ({ ...prev, content: undefined }));
                       }}
                       init={{
                         height: 500,
@@ -1112,212 +1247,178 @@ export default function AddBlog() {
                         toolbar:
                           "undo redo | blocks | bold italic forecolor | alignleft aligncenter " +
                           "alignright alignjustify | bullist numlist outdent indent | removeformat | code | help",
-                        content_style:
-                          "body { font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.6; }",
+                        content_style: "body { font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.6; }",
                         placeholder: "Write the full content of the blog post here…",
                       }}
                     />
                   </div>
                 ) : (
                   <textarea
-                    value={form.content}
+                    value={formData.content}
                     onChange={(e) => {
-                      setForm((prev) => ({ ...prev, content: e.target.value }));
-                      clearFieldError("content");
+                      setFormData((prev) => ({ ...prev, content: e.target.value }));
+                      if (fieldErrors.content) setFieldErrors((prev) => ({ ...prev, content: undefined }));
                     }}
+                    className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base font-mono placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
+                      fieldErrors.content ? "border-red-500" : "border-gray-200"
+                    }`}
                     rows={16}
                     placeholder="<!-- Write HTML here -->"
-                    className={`${inputBase} font-mono resize-y ${fieldErrors.content ? "border-red-500" : "border-gray-200"}`}
                   />
                 )}
-                {fieldErrors.content && (
-                  <p className="text-xs text-red-500 mt-1">{fieldErrors.content}</p>
-                )}
+                {fieldErrors.content && <p className="text-xs text-red-500 mt-1">{fieldErrors.content}</p>}
               </div>
 
-              {/* SEO & Metadata */}
-              <SectionHeader icon={Search} label="SEO & Metadata" iconBg="bg-emerald-50" iconColor="text-emerald-600" />
+              {/* SEO & Metadata (all optional) */}
+              <SectionHeader
+                icon={Search}
+                label="SEO & Metadata"
+                iconBg="bg-emerald-50"
+                iconColor="text-emerald-600"
+              />
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-5">
-                {/* Meta Title */}
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <Globe size={13} className="text-gray-400" />
                     <label htmlFor="meta_title" className="text-base font-semibold text-gray-800">
-                      Meta Title{" "}
-                      <span className="text-gray-400 text-sm font-normal">(Optional)</span>
+                      Meta Title <span className="text-gray-400 text-sm font-normal">(Optional)</span>
                     </label>
                   </div>
                   <input
                     id="meta_title"
                     type="text"
                     name="meta_title"
-                    value={form.meta_title}
-                    onChange={handleChange}
+                    value={formData.meta_title}
+                    onChange={handleInputChange}
                     placeholder="SEO title for the blog"
-                    className={`${inputBase} border-gray-200`}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
                   />
                 </div>
-
                 <div className="h-px bg-gray-100" />
-
-                {/* Meta Description — field name intentionally keeps API typo */}
                 <div>
                   <label htmlFor="meta_descrtiption" className="block text-base font-semibold text-gray-800 mb-1">
-                    Meta Description{" "}
-                    <span className="text-gray-400 text-sm font-normal">(Optional)</span>
+                    Meta Description <span className="text-gray-400 text-sm font-normal">(Optional)</span>
                   </label>
                   <textarea
                     id="meta_descrtiption"
                     name="meta_descrtiption"
-                    value={form.meta_descrtiption}
-                    onChange={handleChange}
+                    value={formData.meta_descrtiption}
+                    onChange={handleInputChange}
                     rows={3}
                     placeholder="SEO description for search engines…"
-                    className={`${inputBase} resize-none border-gray-200`}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-none"
                   />
                 </div>
-
                 <div className="h-px bg-gray-100" />
-
-                {/* Meta Keywords */}
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <Tag size={13} className="text-gray-400" />
                     <label htmlFor="meta_keyword" className="text-base font-semibold text-gray-800">
-                      Meta Keywords{" "}
-                      <span className="text-gray-400 text-sm font-normal">(Optional)</span>
+                      Meta Keywords <span className="text-gray-400 text-sm font-normal">(Optional)</span>
                     </label>
                   </div>
                   <input
                     id="meta_keyword"
                     type="text"
                     name="meta_keyword"
-                    value={form.meta_keyword}
-                    onChange={handleChange}
+                    value={formData.meta_keyword}
+                    onChange={handleInputChange}
                     placeholder="coding, cloud, blog, tutorial"
-                    className={`${inputBase} border-gray-200`}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
                   />
                 </div>
               </div>
             </div>
 
-            {/* ════ RIGHT COLUMN ════ */}
+            {/* RIGHT COLUMN */}
             <div className="space-y-5">
               <SectionHeader icon={Calendar} label="Publishing" iconBg="bg-amber-50" iconColor="text-amber-600" />
-
-              {/* Status + Publish Date */}
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-5">
-                {/* Status */}
                 <div>
                   <label htmlFor="status" className="block text-base font-semibold text-gray-800 mb-1">
-                    Status{" "}
-                    <span className="text-gray-400 text-sm font-normal">(Optional)</span>
+                    Status <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <select
                       id="status"
                       name="status"
-                      value={form.status}
-                      onChange={handleChange}
-                      className={`${inputBase} appearance-none cursor-pointer border-gray-200`}
+                      value={formData.status}
+                      onChange={handleInputChange}
+                      className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none cursor-pointer ${
+                        fieldErrors.status ? "border-red-500" : "border-gray-200"
+                      }`}
                     >
-                      <option value="Drafts">Drafts</option>
-                      <option value="Published">Published</option>
-                      <option value="Scheduled">Scheduled</option>
+                      {statusOptions.map((status) => (
+                        <option key={status} value={status}>{status}</option>
+                      ))}
                     </select>
-                    <ChevronDown
-                      size={16}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                    />
+                    <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                   </div>
+                  {fieldErrors.status && <p className="text-xs text-red-500 mt-1">{fieldErrors.status}</p>}
                 </div>
-
                 <div className="h-px bg-gray-100" />
-
-                {/* Publish Date */}
                 <div>
                   <label htmlFor="publish_date" className="block text-base font-semibold text-gray-800 mb-1">
-                    Publish Date{" "}
-                    <span className="text-gray-400 text-sm font-normal">(Optional)</span>
+                    Publish Date <span className="text-gray-400 text-sm font-normal">(Optional)</span>
                   </label>
                   <input
                     id="publish_date"
                     type="date"
                     name="publish_date"
-                    value={form.publish_date}
-                    onChange={handleChange}
-                    className={`${inputBase} border-gray-200`}
+                    value={formData.publish_date}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
                   />
                 </div>
-
-                {/* Status preview */}
                 <div className="bg-gray-50 border border-gray-100 rounded-xl p-3">
                   <p className="text-xs text-gray-400 mb-2 font-medium">Preview</p>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span
-                      className={`px-2.5 py-1 text-xs font-semibold rounded-full ${
-                        statusColor[form.status] || "bg-gray-100 text-gray-600"
-                      }`}
-                    >
-                      {form.status}
+                    <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${statusColor[formData.status] || "bg-gray-100 text-gray-600"}`}>
+                      {formData.status}
                     </span>
                     <span className="text-xs text-gray-500">
-                      {form.publish_date
-                        ? new Date(form.publish_date).toLocaleDateString("en-US", {
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric",
-                          })
-                        : "No date set"}
+                      {formData.publish_date ? new Date(formData.publish_date).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      }) : "Not set"}
                     </span>
                   </div>
                 </div>
               </div>
 
-              {/* Featured Image */}
+              {/* Featured Image (optional) */}
               <SectionHeader icon={ImagePlus} label="Featured Image" iconBg="bg-pink-50" iconColor="text-pink-500" />
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
                 {!imagePreview ? (
                   <div
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={triggerFileInput}
                     onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
                     onDragLeave={() => setDragOver(false)}
                     onDrop={handleDrop}
                     className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all select-none ${
-                      dragOver
-                        ? "border-indigo-400 bg-indigo-50"
-                        : "border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/50"
+                      dragOver ? "border-indigo-400 bg-indigo-50" : "border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/50"
                     }`}
                   >
-                    <div
-                      className={`w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3 transition-all ${
-                        dragOver ? "bg-indigo-100" : "bg-gray-100"
-                      }`}
-                    >
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3 transition-all ${dragOver ? "bg-indigo-100" : "bg-gray-100"}`}>
                       <Upload size={20} className={dragOver ? "text-indigo-500" : "text-gray-400"} />
                     </div>
                     <p className="text-base font-semibold text-gray-700 mb-1">
                       {dragOver ? "Drop your image here!" : "Click to upload or drag & drop"}
                     </p>
                     <p className="text-xs text-indigo-600 font-medium">Browse files</p>
-                    <p className="text-xs text-gray-400 mt-1">PNG, JPG, WEBP (optional)</p>
+                    <p className="text-xs text-gray-400 mt-1">PNG, JPG, WEBP up to 5MB (optional)</p>
                   </div>
                 ) : (
                   <div className="relative rounded-xl overflow-hidden border border-gray-200 group">
-                    <img
-                      src={imagePreview}
-                      alt="Preview"
-                      className="w-full max-h-56 object-cover block"
-                    />
+                    <img src={imagePreview} alt="Preview" className="w-full max-h-56 object-cover block" />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all pointer-events-none" />
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent px-3 py-2 pointer-events-none">
-                      <p className="text-xs text-white/80 font-medium truncate">
-                        {form.featured_image?.name}
-                      </p>
+                      <p className="text-xs text-white/80 font-medium truncate">{formData.featured_image?.name}</p>
                     </div>
                     <button
                       type="button"
-                      onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+                      onClick={(e) => { e.stopPropagation(); triggerFileInput(); }}
                       className="absolute top-3 left-3 px-3 py-1.5 bg-white/90 backdrop-blur-sm rounded-lg text-xs font-semibold text-gray-700 hover:bg-white shadow-sm transition-all"
                     >
                       Change
@@ -1331,16 +1432,10 @@ export default function AddBlog() {
                     </button>
                   </div>
                 )}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="hidden"
-                />
+                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
               </div>
 
-              {/* Hashtag */}
+              {/* Hashtag (required) */}
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
                 <div className="flex items-center gap-2 mb-1">
                   <Hash size={13} className="text-gray-400" />
@@ -1352,29 +1447,28 @@ export default function AddBlog() {
                   id="hashtag"
                   type="text"
                   name="hashtag"
-                  value={form.hashtag}
-                  onChange={handleChange}
+                  value={formData.hashtag}
+                  onChange={handleInputChange}
                   placeholder="#coding #cloud #blog"
-                  className={`${inputBase} ${fieldErrors.hashtag ? "border-red-500" : "border-gray-200"}`}
+                  className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
+                    fieldErrors.hashtag ? "border-red-500" : "border-gray-200"
+                  }`}
                 />
-                {fieldErrors.hashtag && (
-                  <p className="text-xs text-red-500 mt-1">{fieldErrors.hashtag}</p>
-                )}
+                {fieldErrors.hashtag && <p className="text-xs text-red-500 mt-1">{fieldErrors.hashtag}</p>}
               </div>
             </div>
           </div>
 
-          {/* Mobile save button */}
           <div className="sm:hidden mt-4">
             <button
               type="submit"
-              disabled={mutation.isPending}
+              disabled={mutation.isPending || checkingTitle}
               className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white text-base font-semibold rounded-2xl shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {mutation.isPending ? (
+              {mutation.isPending || checkingTitle ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                  Saving…
+                  {checkingTitle ? "Checking..." : "Saving…"}
                 </>
               ) : (
                 <>
