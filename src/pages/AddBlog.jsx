@@ -1,5 +1,6 @@
 
 
+
 // import { useState, useRef, useEffect } from "react";
 // import { useNavigate } from "react-router-dom";
 // import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -26,7 +27,7 @@
 // const createBlog = async (formData) => {
 //   const response = await fetch(
 //     "https://codingcloudapi.codingcloud.co.in/blogs/",
-//     { method: "POST", body: formData },
+//     { method: "POST", body: formData }
 //   );
 
 //   if (!response.ok) {
@@ -61,6 +62,33 @@
 //     .substring(0, 100);
 // };
 
+// // Helper: check if blog title already exists
+// const checkTitleExists = async (title, currentBlogId = null) => {
+//   try {
+//     const response = await fetch(
+//       "https://codingcloudapi.codingcloud.co.in/blogs/"
+//     );
+//     if (!response.ok) return false;
+//     const data = await response.json();
+//     const blogs = data.data || data || [];
+//     const normalizedTitle = title.trim().toLowerCase();
+//     return blogs.some(
+//       (blog) =>
+//         blog.title?.trim().toLowerCase() === normalizedTitle &&
+//         (currentBlogId === null || blog.id !== currentBlogId)
+//     );
+//   } catch (error) {
+//     console.error("Failed to check title uniqueness:", error);
+//     return false;
+//   }
+// };
+
+// // Helper: count words in a string
+// const getWordCount = (str) => {
+//   if (!str || !str.trim()) return 0;
+//   return str.trim().split(/\s+/).length;
+// };
+
 // export default function AddBlog() {
 //   const navigate = useNavigate();
 //   const queryClient = useQueryClient();
@@ -70,6 +98,7 @@
 //   const [editorMode, setEditorMode] = useState("tinymce");
 //   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
 //   const [tinyMceError, setTinyMceError] = useState(false);
+//   const [checkingTitle, setCheckingTitle] = useState(false);
 
 //   const [formData, setFormData] = useState({
 //     title: "",
@@ -79,7 +108,7 @@
 //     status: "Drafts",
 //     publish_date: "",
 //     meta_title: "",
-//     meta_descrtiption: "",
+//     meta_description: "",
 //     meta_keyword: "",
 //     hashtag: "",
 //     featured_image: null,
@@ -107,10 +136,10 @@
 //     }
 //   }, [formData.title, slugManuallyEdited]);
 
-//   // ✅ NEW: Auto-set publish date when status changes to "Published" and no date exists
+//   // Auto-set publish date when status changes to "Published" and no date exists
 //   useEffect(() => {
 //     if (formData.status === "Published" && !formData.publish_date) {
-//       const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+//       const today = new Date().toISOString().split("T")[0];
 //       setFormData((prev) => ({ ...prev, publish_date: today }));
 //     }
 //   }, [formData.status]);
@@ -141,7 +170,7 @@
 //           return;
 //         }
 //       } catch {
-//         // Not JSON, treat as regular error
+//         // Not JSON
 //       }
 //       setToast({
 //         show: true,
@@ -153,10 +182,31 @@
 
 //   const statusOptions = ["Drafts", "Published", "Scheduled"];
 
+//   // Validate word limits for SEO fields
+//   const validateWordLimit = (name, value) => {
+//     const wordCount = getWordCount(value);
+//     if (wordCount > 300) {
+//       setFieldErrors((prev) => ({
+//         ...prev,
+//         [name]: `Maximum 300 words allowed. Currently ${wordCount} words.`,
+//       }));
+//       return false;
+//     } else {
+//       setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
+//       return true;
+//     }
+//   };
+
 //   const handleInputChange = (e) => {
 //     const { name, value } = e.target;
 //     setFormData((prev) => ({ ...prev, [name]: value }));
-//     if (fieldErrors[name]) {
+
+//     // Word limit validation for SEO fields
+//     if (name === "meta_title" || name === "meta_description" || name === "meta_keyword") {
+//       validateWordLimit(name, value);
+//     }
+
+//     if (fieldErrors[name] && !fieldErrors[name]?.includes("Maximum 500 words")) {
 //       setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
 //     }
 //     setError("");
@@ -213,7 +263,7 @@
 //     if (fileInputRef.current) fileInputRef.current.value = "";
 //   };
 
-//   // Validate required fields
+//   // Validate required fields + word limits
 //   const validateForm = () => {
 //     const errors = {};
 
@@ -222,6 +272,20 @@
 //     if (!formData.slug.trim()) errors.slug = "Slug is required";
 //     if (!formData.status) errors.status = "Status is required";
 //     if (!formData.hashtag.trim()) errors.hashtag = "Hashtag is required";
+
+//     // Word limit checks for SEO fields
+//     const metaTitleWords = getWordCount(formData.meta_title);
+//     if (metaTitleWords > 500) {
+//       errors.meta_title = `Maximum 500 words allowed. Currently ${metaTitleWords} words.`;
+//     }
+//     const metaDescWords = getWordCount(formData.meta_description);
+//     if (metaDescWords > 500) {
+//       errors.meta_description = `Maximum 500 words allowed. Currently ${metaDescWords} words.`;
+//     }
+//     const metaKeywordWords = getWordCount(formData.meta_keyword);
+//     if (metaKeywordWords > 500) {
+//       errors.meta_keyword = `Maximum 500 words allowed. Currently ${metaKeywordWords} words.`;
+//     }
 
 //     setFieldErrors(errors);
 //     return Object.keys(errors).length === 0;
@@ -233,7 +297,21 @@
 //     if (!validateForm()) {
 //       setToast({
 //         show: true,
-//         message: "Please fill all required fields",
+//         message: "Please correct the errors above (max 300 words for SEO fields).",
+//         type: "error",
+//       });
+//       return;
+//     }
+
+//     // Check for duplicate title
+//     setCheckingTitle(true);
+//     const titleExists = await checkTitleExists(formData.title);
+//     setCheckingTitle(false);
+
+//     if (titleExists) {
+//       setToast({
+//         show: true,
+//         message: "Blog title already exists. Please use a different title.",
 //         type: "error",
 //       });
 //       return;
@@ -250,16 +328,16 @@
 //       payload.append("short_description", formData.short_description.trim());
 
 //     if (formData.publish_date) {
-//       // Use local date without timezone shift
 //       const localDate = new Date(formData.publish_date);
-//       const formattedDate = localDate.toISOString().split("T")[0] + "T00:00:00Z";
+//       const formattedDate =
+//         localDate.toISOString().split("T")[0] + "T00:00:00Z";
 //       payload.append("publish_date", formattedDate);
 //     }
 
 //     if (formData.meta_title.trim())
 //       payload.append("meta_title", formData.meta_title.trim());
-//     if (formData.meta_descrtiption.trim())
-//       payload.append("meta_descrtiption", formData.meta_descrtiption.trim());
+//     if (formData.meta_description.trim())
+//       payload.append("meta_description", formData.meta_description.trim());
 //     if (formData.meta_keyword.trim())
 //       payload.append("meta_keyword", formData.meta_keyword.trim());
 //     if (formData.featured_image instanceof File)
@@ -268,15 +346,26 @@
 //     mutation.mutate(payload);
 //   };
 
-//   const SectionHeader = ({ icon: Icon, label, iconBg, iconColor, description, badge }) => (
+//   const SectionHeader = ({
+//     icon: Icon,
+//     label,
+//     iconBg,
+//     iconColor,
+//     description,
+//     badge,
+//   }) => (
 //     <div className="flex items-center gap-3 pt-2">
-//       <div className={`w-9 h-9 ${iconBg} rounded-xl flex items-center justify-center flex-shrink-0`}>
+//       <div
+//         className={`w-9 h-9 ${iconBg} rounded-xl flex items-center justify-center flex-shrink-0`}
+//       >
 //         <Icon size={16} className={iconColor} />
 //       </div>
 //       <div className="flex-1 min-w-0">
 //         <div className="flex items-center gap-2">
 //           <p className="text-base font-bold text-gray-800">{label}</p>
-//           {badge && <span className="text-xs text-gray-400 font-normal">{badge}</span>}
+//           {badge && (
+//             <span className="text-xs text-gray-400 font-normal">{badge}</span>
+//           )}
 //         </div>
 //         {description && <p className="text-xs text-gray-400">{description}</p>}
 //       </div>
@@ -318,13 +407,13 @@
 //           <div className="flex items-center gap-2">
 //             <button
 //               onClick={handleSubmit}
-//               disabled={mutation.isPending}
+//               disabled={mutation.isPending || checkingTitle}
 //               className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-base font-semibold rounded-xl shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
 //             >
-//               {mutation.isPending ? (
+//               {mutation.isPending || checkingTitle ? (
 //                 <>
 //                   <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-//                   Saving…
+//                   {checkingTitle ? "Checking..." : "Saving…"}
 //                 </>
 //               ) : (
 //                 <>
@@ -340,12 +429,18 @@
 //       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 pb-28 sm:pb-12">
 //         {error && (
 //           <div className="flex items-start gap-3 p-4 mb-6 bg-red-50 border border-red-200 rounded-2xl text-base text-red-700">
-//             <AlertCircle size={18} className="mt-0.5 flex-shrink-0 text-red-500" />
+//             <AlertCircle
+//               size={18}
+//               className="mt-0.5 flex-shrink-0 text-red-500"
+//             />
 //             <div className="flex-1">
 //               <p className="font-semibold">Error</p>
 //               <p className="mt-0.5">{error}</p>
 //             </div>
-//             <button onClick={() => setError("")} className="text-red-400 hover:text-red-600">
+//             <button
+//               onClick={() => setError("")}
+//               className="text-red-400 hover:text-red-600"
+//             >
 //               <X size={16} />
 //             </button>
 //           </div>
@@ -353,9 +448,14 @@
 
 //         {success && (
 //           <div className="flex items-center gap-3 p-4 mb-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-base text-emerald-700">
-//             <CheckCircle2 size={18} className="flex-shrink-0 text-emerald-500" />
+//             <CheckCircle2
+//               size={18}
+//               className="flex-shrink-0 text-emerald-500"
+//             />
 //             <span className="flex-1 font-medium">{success}</span>
-//             <span className="text-emerald-400 text-xs">Redirecting to blogs…</span>
+//             <span className="text-emerald-400 text-xs">
+//               Redirecting to blogs…
+//             </span>
 //           </div>
 //         )}
 
@@ -372,11 +472,17 @@
 
 //               {/* Title */}
 //               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-//                 <label htmlFor="title" className="block text-base font-semibold text-gray-800 mb-1">
+//                 <label
+//                   htmlFor="title"
+//                   className="block text-base font-semibold text-gray-800 mb-1"
+//                 >
 //                   Blog Title <span className="text-red-500">*</span>
 //                 </label>
 //                 <div className="relative">
-//                   <FileText size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+//                   <FileText
+//                     size={16}
+//                     className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+//                   />
 //                   <input
 //                     id="title"
 //                     type="text"
@@ -390,12 +496,19 @@
 //                     required
 //                   />
 //                 </div>
-//                 {fieldErrors.title && <p className="text-xs text-red-500 mt-1">{fieldErrors.title}</p>}
+//                 {fieldErrors.title && (
+//                   <p className="text-xs text-red-500 mt-1">
+//                     {fieldErrors.title}
+//                   </p>
+//                 )}
 //               </div>
 
 //               {/* Slug */}
 //               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-//                 <label htmlFor="slug" className="block text-base font-semibold text-gray-800 mb-1">
+//                 <label
+//                   htmlFor="slug"
+//                   className="block text-base font-semibold text-gray-800 mb-1"
+//                 >
 //                   Slug / URL Path <span className="text-red-500">*</span>
 //                 </label>
 //                 <div className="flex rounded-xl overflow-hidden border border-gray-200 focus-within:ring-2 focus-within:ring-indigo-500">
@@ -415,13 +528,23 @@
 //                     required
 //                   />
 //                 </div>
-//                 {fieldErrors.slug && <p className="text-xs text-red-500 mt-1">{fieldErrors.slug}</p>}
+//                 {fieldErrors.slug && (
+//                   <p className="text-xs text-red-500 mt-1">
+//                     {fieldErrors.slug}
+//                   </p>
+//                 )}
 //               </div>
 
 //               {/* Short Description (optional) */}
 //               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-//                 <label htmlFor="short_description" className="block text-base font-semibold text-gray-800 mb-1">
-//                   Short Description <span className="text-gray-400 text-sm font-normal">(Optional)</span>
+//                 <label
+//                   htmlFor="short_description"
+//                   className="block text-base font-semibold text-gray-800 mb-1"
+//                 >
+//                   Short Description{" "}
+//                   <span className="text-gray-400 text-sm font-normal">
+//                     (Optional)
+//                   </span>
 //                 </label>
 //                 <textarea
 //                   id="short_description"
@@ -445,7 +568,9 @@
 //                       type="button"
 //                       onClick={() => setEditorMode("tinymce")}
 //                       className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
-//                         editorMode === "tinymce" ? "bg-white text-indigo-600 shadow-sm" : "text-gray-600 hover:text-gray-900"
+//                         editorMode === "tinymce"
+//                           ? "bg-white text-indigo-600 shadow-sm"
+//                           : "text-gray-600 hover:text-gray-900"
 //                       }`}
 //                     >
 //                       TinyMCE
@@ -454,7 +579,9 @@
 //                       type="button"
 //                       onClick={() => setEditorMode("html")}
 //                       className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
-//                         editorMode === "html" ? "bg-white text-indigo-600 shadow-sm" : "text-gray-600 hover:text-gray-900"
+//                         editorMode === "html"
+//                           ? "bg-white text-indigo-600 shadow-sm"
+//                           : "text-gray-600 hover:text-gray-900"
 //                       }`}
 //                     >
 //                       HTML
@@ -463,7 +590,9 @@
 //                 </div>
 
 //                 {editorMode === "tinymce" && !tinyMceError ? (
-//                   <div className={`border rounded-xl overflow-hidden ${fieldErrors.content ? "border-red-500" : "border-gray-200"}`}>
+//                   <div
+//                     className={`border rounded-xl overflow-hidden ${fieldErrors.content ? "border-red-500" : "border-gray-200"}`}
+//                   >
 //                     <Editor
 //                       apiKey="wry1dezpoungi06fmopvf4whj06bm09zlyu8czfd9wv5wk1j"
 //                       onInit={(evt, editor) => {
@@ -476,21 +605,41 @@
 //                       value={formData.content}
 //                       onEditorChange={(content) => {
 //                         setFormData((prev) => ({ ...prev, content }));
-//                         if (fieldErrors.content) setFieldErrors((prev) => ({ ...prev, content: undefined }));
+//                         if (fieldErrors.content)
+//                           setFieldErrors((prev) => ({
+//                             ...prev,
+//                             content: undefined,
+//                           }));
 //                       }}
 //                       init={{
 //                         height: 500,
 //                         menubar: true,
 //                         plugins: [
-//                           "advlist", "autolink", "lists", "link", "image", "charmap", "preview",
-//                           "anchor", "searchreplace", "visualblocks", "code", "fullscreen",
-//                           "insertdatetime", "media", "table", "help", "wordcount",
+//                           "advlist",
+//                           "autolink",
+//                           "lists",
+//                           "link",
+//                           "image",
+//                           "charmap",
+//                           "preview",
+//                           "anchor",
+//                           "searchreplace",
+//                           "visualblocks",
+//                           "code",
+//                           "fullscreen",
+//                           "insertdatetime",
+//                           "media",
+//                           "table",
+//                           "help",
+//                           "wordcount",
 //                         ],
 //                         toolbar:
 //                           "undo redo | blocks | bold italic forecolor | alignleft aligncenter " +
 //                           "alignright alignjustify | bullist numlist outdent indent | removeformat | code | help",
-//                         content_style: "body { font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.6; }",
-//                         placeholder: "Write the full content of the blog post here…",
+//                         content_style:
+//                           "body { font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.6; }",
+//                         placeholder:
+//                           "Write the full content of the blog post here…",
 //                       }}
 //                     />
 //                   </div>
@@ -498,8 +647,15 @@
 //                   <textarea
 //                     value={formData.content}
 //                     onChange={(e) => {
-//                       setFormData((prev) => ({ ...prev, content: e.target.value }));
-//                       if (fieldErrors.content) setFieldErrors((prev) => ({ ...prev, content: undefined }));
+//                       setFormData((prev) => ({
+//                         ...prev,
+//                         content: e.target.value,
+//                       }));
+//                       if (fieldErrors.content)
+//                         setFieldErrors((prev) => ({
+//                           ...prev,
+//                           content: undefined,
+//                         }));
 //                     }}
 //                     className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base font-mono placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
 //                       fieldErrors.content ? "border-red-500" : "border-gray-200"
@@ -508,10 +664,14 @@
 //                     placeholder="<!-- Write HTML here -->"
 //                   />
 //                 )}
-//                 {fieldErrors.content && <p className="text-xs text-red-500 mt-1">{fieldErrors.content}</p>}
+//                 {fieldErrors.content && (
+//                   <p className="text-xs text-red-500 mt-1">
+//                     {fieldErrors.content}
+//                   </p>
+//                 )}
 //               </div>
 
-//               {/* SEO & Metadata (all optional) */}
+//               {/* SEO & Metadata (all optional) with 500-word limit */}
 //               <SectionHeader
 //                 icon={Search}
 //                 label="SEO & Metadata"
@@ -522,8 +682,14 @@
 //                 <div>
 //                   <div className="flex items-center gap-2 mb-1">
 //                     <Globe size={13} className="text-gray-400" />
-//                     <label htmlFor="meta_title" className="text-base font-semibold text-gray-800">
-//                       Meta Title <span className="text-gray-400 text-sm font-normal">(Optional)</span>
+//                     <label
+//                       htmlFor="meta_title"
+//                       className="text-base font-semibold text-gray-800"
+//                     >
+//                       Meta Title{" "}
+//                       <span className="text-gray-400 text-sm font-normal">
+//                         (Optional, max 300 words)
+//                       </span>
 //                     </label>
 //                   </div>
 //                   <input
@@ -533,30 +699,62 @@
 //                     value={formData.meta_title}
 //                     onChange={handleInputChange}
 //                     placeholder="SEO title for the blog"
-//                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+//                     className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
+//                       fieldErrors.meta_title ? "border-red-500" : "border-gray-200"
+//                     }`}
 //                   />
+//                   <div className="flex justify-between items-center mt-1">
+//                     <p className="text-xs text-gray-400">
+//                       Word count: {getWordCount(formData.meta_title)} / 500
+//                     </p>
+//                     {fieldErrors.meta_title && (
+//                       <p className="text-xs text-red-500">{fieldErrors.meta_title}</p>
+//                     )}
+//                   </div>
 //                 </div>
 //                 <div className="h-px bg-gray-100" />
 //                 <div>
-//                   <label htmlFor="meta_descrtiption" className="block text-base font-semibold text-gray-800 mb-1">
-//                     Meta Description <span className="text-gray-400 text-sm font-normal">(Optional)</span>
+//                   <label
+//                     htmlFor="meta_description"
+//                     className="block text-base font-semibold text-gray-800 mb-1"
+//                   >
+//                     Meta Description{" "}
+//                     <span className="text-gray-400 text-sm font-normal">
+//                       (Optional, max 300 words)
+//                     </span>
 //                   </label>
 //                   <textarea
-//                     id="meta_descrtiption"
-//                     name="meta_descrtiption"
-//                     value={formData.meta_descrtiption}
+//                     id="meta_description"
+//                     name="meta_description"
+//                     value={formData.meta_description}
 //                     onChange={handleInputChange}
 //                     rows={3}
 //                     placeholder="SEO description for search engines…"
-//                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-none"
+//                     className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-none ${
+//                       fieldErrors.meta_description ? "border-red-500" : "border-gray-200"
+//                     }`}
 //                   />
+//                   <div className="flex justify-between items-center mt-1">
+//                     <p className="text-xs text-gray-400">
+//                       Word count: {getWordCount(formData.meta_description)} / 500
+//                     </p>
+//                     {fieldErrors.meta_description && (
+//                       <p className="text-xs text-red-500">{fieldErrors.meta_description}</p>
+//                     )}
+//                   </div>
 //                 </div>
 //                 <div className="h-px bg-gray-100" />
 //                 <div>
 //                   <div className="flex items-center gap-2 mb-1">
 //                     <Tag size={13} className="text-gray-400" />
-//                     <label htmlFor="meta_keyword" className="text-base font-semibold text-gray-800">
-//                       Meta Keywords <span className="text-gray-400 text-sm font-normal">(Optional)</span>
+//                     <label
+//                       htmlFor="meta_keyword"
+//                       className="text-base font-semibold text-gray-800"
+//                     >
+//                       Meta Keywords{" "}
+//                       <span className="text-gray-400 text-sm font-normal">
+//                         (Optional, max 300 words)
+//                       </span>
 //                     </label>
 //                   </div>
 //                   <input
@@ -566,18 +764,36 @@
 //                     value={formData.meta_keyword}
 //                     onChange={handleInputChange}
 //                     placeholder="coding, cloud, blog, tutorial"
-//                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+//                     className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
+//                       fieldErrors.meta_keyword ? "border-red-500" : "border-gray-200"
+//                     }`}
 //                   />
+//                   <div className="flex justify-between items-center mt-1">
+//                     <p className="text-xs text-gray-400">
+//                       Word count: {getWordCount(formData.meta_keyword)} / 500
+//                     </p>
+//                     {fieldErrors.meta_keyword && (
+//                       <p className="text-xs text-red-500">{fieldErrors.meta_keyword}</p>
+//                     )}
+//                   </div>
 //                 </div>
 //               </div>
 //             </div>
 
 //             {/* RIGHT COLUMN */}
 //             <div className="space-y-5">
-//               <SectionHeader icon={Calendar} label="Publishing" iconBg="bg-amber-50" iconColor="text-amber-600" />
+//               <SectionHeader
+//                 icon={Calendar}
+//                 label="Publishing"
+//                 iconBg="bg-amber-50"
+//                 iconColor="text-amber-600"
+//               />
 //               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-5">
 //                 <div>
-//                   <label htmlFor="status" className="block text-base font-semibold text-gray-800 mb-1">
+//                   <label
+//                     htmlFor="status"
+//                     className="block text-base font-semibold text-gray-800 mb-1"
+//                   >
 //                     Status <span className="text-red-500">*</span>
 //                   </label>
 //                   <div className="relative">
@@ -587,21 +803,38 @@
 //                       value={formData.status}
 //                       onChange={handleInputChange}
 //                       className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none cursor-pointer ${
-//                         fieldErrors.status ? "border-red-500" : "border-gray-200"
+//                         fieldErrors.status
+//                           ? "border-red-500"
+//                           : "border-gray-200"
 //                       }`}
 //                     >
 //                       {statusOptions.map((status) => (
-//                         <option key={status} value={status}>{status}</option>
+//                         <option key={status} value={status}>
+//                           {status}
+//                         </option>
 //                       ))}
 //                     </select>
-//                     <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+//                     <ChevronDown
+//                       size={16}
+//                       className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+//                     />
 //                   </div>
-//                   {fieldErrors.status && <p className="text-xs text-red-500 mt-1">{fieldErrors.status}</p>}
+//                   {fieldErrors.status && (
+//                     <p className="text-xs text-red-500 mt-1">
+//                       {fieldErrors.status}
+//                     </p>
+//                   )}
 //                 </div>
 //                 <div className="h-px bg-gray-100" />
 //                 <div>
-//                   <label htmlFor="publish_date" className="block text-base font-semibold text-gray-800 mb-1">
-//                     Publish Date <span className="text-gray-400 text-sm font-normal">(Optional)</span>
+//                   <label
+//                     htmlFor="publish_date"
+//                     className="block text-base font-semibold text-gray-800 mb-1"
+//                   >
+//                     Publish Date{" "}
+//                     <span className="text-gray-400 text-sm font-normal">
+//                       (Optional)
+//                     </span>
 //                   </label>
 //                   <input
 //                     id="publish_date"
@@ -613,75 +846,128 @@
 //                   />
 //                 </div>
 //                 <div className="bg-gray-50 border border-gray-100 rounded-xl p-3">
-//                   <p className="text-xs text-gray-400 mb-2 font-medium">Preview</p>
+//                   <p className="text-xs text-gray-400 mb-2 font-medium">
+//                     Preview
+//                   </p>
 //                   <div className="flex items-center gap-2 flex-wrap">
-//                     <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${statusColor[formData.status] || "bg-gray-100 text-gray-600"}`}>
+//                     <span
+//                       className={`px-2.5 py-1 text-xs font-semibold rounded-full ${statusColor[formData.status] || "bg-gray-100 text-gray-600"}`}
+//                     >
 //                       {formData.status}
 //                     </span>
 //                     <span className="text-xs text-gray-500">
-//                       {formData.publish_date ? new Date(formData.publish_date).toLocaleDateString("en-US", {
-//                         year: "numeric",
-//                         month: "short",
-//                         day: "numeric",
-//                       }) : "Not set"}
+//                       {formData.publish_date
+//                         ? new Date(formData.publish_date).toLocaleDateString(
+//                             "en-US",
+//                             {
+//                               year: "numeric",
+//                               month: "short",
+//                               day: "numeric",
+//                             }
+//                           )
+//                         : "Not set"}
 //                     </span>
 //                   </div>
 //                 </div>
 //               </div>
 
 //               {/* Featured Image (optional) */}
-//               <SectionHeader icon={ImagePlus} label="Featured Image" iconBg="bg-pink-50" iconColor="text-pink-500" />
+//               <SectionHeader
+//                 icon={ImagePlus}
+//                 label="Featured Image"
+//                 iconBg="bg-pink-50"
+//                 iconColor="text-pink-500"
+//               />
 //               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
 //                 {!imagePreview ? (
 //                   <div
 //                     onClick={triggerFileInput}
-//                     onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+//                     onDragOver={(e) => {
+//                       e.preventDefault();
+//                       setDragOver(true);
+//                     }}
 //                     onDragLeave={() => setDragOver(false)}
 //                     onDrop={handleDrop}
 //                     className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all select-none ${
-//                       dragOver ? "border-indigo-400 bg-indigo-50" : "border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/50"
+//                       dragOver
+//                         ? "border-indigo-400 bg-indigo-50"
+//                         : "border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/50"
 //                     }`}
 //                   >
-//                     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3 transition-all ${dragOver ? "bg-indigo-100" : "bg-gray-100"}`}>
-//                       <Upload size={20} className={dragOver ? "text-indigo-500" : "text-gray-400"} />
+//                     <div
+//                       className={`w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3 transition-all ${dragOver ? "bg-indigo-100" : "bg-gray-100"}`}
+//                     >
+//                       <Upload
+//                         size={20}
+//                         className={
+//                           dragOver ? "text-indigo-500" : "text-gray-400"
+//                         }
+//                       />
 //                     </div>
 //                     <p className="text-base font-semibold text-gray-700 mb-1">
-//                       {dragOver ? "Drop your image here!" : "Click to upload or drag & drop"}
+//                       {dragOver
+//                         ? "Drop your image here!"
+//                         : "Click to upload or drag & drop"}
 //                     </p>
-//                     <p className="text-xs text-indigo-600 font-medium">Browse files</p>
-//                     <p className="text-xs text-gray-400 mt-1">PNG, JPG, WEBP up to 5MB (optional)</p>
+//                     <p className="text-xs text-indigo-600 font-medium">
+//                       Browse files
+//                     </p>
+//                     <p className="text-xs text-gray-400 mt-1">
+//                       PNG, JPG, WEBP up to 5MB (optional)
+//                     </p>
 //                   </div>
 //                 ) : (
 //                   <div className="relative rounded-xl overflow-hidden border border-gray-200 group">
-//                     <img src={imagePreview} alt="Preview" className="w-full max-h-56 object-cover block" />
+//                     <img
+//                       src={imagePreview}
+//                       alt="Preview"
+//                       className="w-full max-h-56 object-cover block"
+//                     />
 //                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all pointer-events-none" />
 //                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent px-3 py-2 pointer-events-none">
-//                       <p className="text-xs text-white/80 font-medium truncate">{formData.featured_image?.name}</p>
+//                       <p className="text-xs text-white/80 font-medium truncate">
+//                         {formData.featured_image?.name}
+//                       </p>
 //                     </div>
 //                     <button
 //                       type="button"
-//                       onClick={(e) => { e.stopPropagation(); triggerFileInput(); }}
+//                       onClick={(e) => {
+//                         e.stopPropagation();
+//                         triggerFileInput();
+//                       }}
 //                       className="absolute top-3 left-3 px-3 py-1.5 bg-white/90 backdrop-blur-sm rounded-lg text-xs font-semibold text-gray-700 hover:bg-white shadow-sm transition-all"
 //                     >
 //                       Change
 //                     </button>
 //                     <button
 //                       type="button"
-//                       onClick={(e) => { e.stopPropagation(); removeImage(); }}
+//                       onClick={(e) => {
+//                         e.stopPropagation();
+//                         removeImage();
+//                       }}
 //                       className="absolute top-3 right-3 w-8 h-8 bg-white rounded-full shadow-md flex items-center justify-center text-gray-500 hover:text-red-500 hover:shadow-lg transition-all"
 //                     >
 //                       <X size={15} />
 //                     </button>
 //                   </div>
 //                 )}
-//                 <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+//                 <input
+//                   ref={fileInputRef}
+//                   type="file"
+//                   accept="image/*"
+//                   onChange={handleImageChange}
+//                   className="hidden"
+//                 />
 //               </div>
 
 //               {/* Hashtag (required) */}
 //               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
 //                 <div className="flex items-center gap-2 mb-1">
 //                   <Hash size={13} className="text-gray-400" />
-//                   <label htmlFor="hashtag" className="text-base font-semibold text-gray-800">
+//                   <label
+//                     htmlFor="hashtag"
+//                     className="text-base font-semibold text-gray-800"
+//                   >
 //                     Hashtags <span className="text-red-500">*</span>
 //                   </label>
 //                 </div>
@@ -696,7 +982,11 @@
 //                     fieldErrors.hashtag ? "border-red-500" : "border-gray-200"
 //                   }`}
 //                 />
-//                 {fieldErrors.hashtag && <p className="text-xs text-red-500 mt-1">{fieldErrors.hashtag}</p>}
+//                 {fieldErrors.hashtag && (
+//                   <p className="text-xs text-red-500 mt-1">
+//                     {fieldErrors.hashtag}
+//                   </p>
+//                 )}
 //               </div>
 //             </div>
 //           </div>
@@ -704,13 +994,13 @@
 //           <div className="sm:hidden mt-4">
 //             <button
 //               type="submit"
-//               disabled={mutation.isPending}
+//               disabled={mutation.isPending || checkingTitle}
 //               className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white text-base font-semibold rounded-2xl shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
 //             >
-//               {mutation.isPending ? (
+//               {mutation.isPending || checkingTitle ? (
 //                 <>
 //                   <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-//                   Saving…
+//                   {checkingTitle ? "Checking..." : "Saving…"}
 //                 </>
 //               ) : (
 //                 <>
@@ -790,19 +1080,28 @@ const generateSlugFromTitle = (title) => {
 // Helper: check if blog title already exists
 const checkTitleExists = async (title, currentBlogId = null) => {
   try {
-    const response = await fetch("https://codingcloudapi.codingcloud.co.in/blogs/");
+    const response = await fetch(
+      "https://codingcloudapi.codingcloud.co.in/blogs/"
+    );
     if (!response.ok) return false;
     const data = await response.json();
     const blogs = data.data || data || [];
     const normalizedTitle = title.trim().toLowerCase();
-    return blogs.some(blog => 
-      blog.title?.trim().toLowerCase() === normalizedTitle &&
-      (currentBlogId === null || blog.id !== currentBlogId)
+    return blogs.some(
+      (blog) =>
+        blog.title?.trim().toLowerCase() === normalizedTitle &&
+        (currentBlogId === null || blog.id !== currentBlogId)
     );
   } catch (error) {
     console.error("Failed to check title uniqueness:", error);
-    return false; // Assume not duplicate if check fails
+    return false;
   }
+};
+
+// Helper: count words in a string
+const countWords = (str) => {
+  if (!str || typeof str !== "string") return 0;
+  return str.trim().split(/\s+/).filter(word => word.length > 0).length;
 };
 
 export default function AddBlog() {
@@ -824,7 +1123,7 @@ export default function AddBlog() {
     status: "Drafts",
     publish_date: "",
     meta_title: "",
-    meta_descrtiption: "",
+    meta_description: "",
     meta_keyword: "",
     hashtag: "",
     featured_image: null,
@@ -877,7 +1176,13 @@ export default function AddBlog() {
       try {
         const parsed = JSON.parse(errorMsg);
         if (typeof parsed === "object") {
-          setFieldErrors(parsed);
+          // Map backend field names to frontend field names if needed
+          const mappedErrors = {};
+          Object.keys(parsed).forEach(key => {
+            // Keep the same field name for meta fields
+            mappedErrors[key] = parsed[key];
+          });
+          setFieldErrors(mappedErrors);
           setToast({
             show: true,
             message: "Please correct the errors below",
@@ -886,7 +1191,7 @@ export default function AddBlog() {
           return;
         }
       } catch {
-        // Not JSON, treat as regular error
+        // Not JSON
       }
       setToast({
         show: true,
@@ -958,7 +1263,7 @@ export default function AddBlog() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  // Validate required fields
+  // Validate required fields and meta field word limits
   const validateForm = () => {
     const errors = {};
 
@@ -967,6 +1272,17 @@ export default function AddBlog() {
     if (!formData.slug.trim()) errors.slug = "Slug is required";
     if (!formData.status) errors.status = "Status is required";
     if (!formData.hashtag.trim()) errors.hashtag = "Hashtag is required";
+
+    // Meta field word count validation (max 100 words each)
+    if (formData.meta_title && countWords(formData.meta_title) > 100) {
+      errors.meta_title = "Meta title must not exceed 100 words";
+    }
+    if (formData.meta_description && countWords(formData.meta_description) > 100) {
+      errors.meta_description = "Meta description must not exceed 100 words";
+    }
+    if (formData.meta_keyword && countWords(formData.meta_keyword) > 100) {
+      errors.meta_keyword = "Meta keywords must not exceed 100 words";
+    }
 
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
@@ -978,7 +1294,7 @@ export default function AddBlog() {
     if (!validateForm()) {
       setToast({
         show: true,
-        message: "Please fill all required fields",
+        message: "Please fill all required fields and fix validation errors",
         type: "error",
       });
       return;
@@ -1010,14 +1326,15 @@ export default function AddBlog() {
 
     if (formData.publish_date) {
       const localDate = new Date(formData.publish_date);
-      const formattedDate = localDate.toISOString().split("T")[0] + "T00:00:00Z";
+      const formattedDate =
+        localDate.toISOString().split("T")[0] + "T00:00:00Z";
       payload.append("publish_date", formattedDate);
     }
 
     if (formData.meta_title.trim())
       payload.append("meta_title", formData.meta_title.trim());
-    if (formData.meta_descrtiption.trim())
-      payload.append("meta_descrtiption", formData.meta_descrtiption.trim());
+    if (formData.meta_description.trim())
+      payload.append("meta_description", formData.meta_description.trim());
     if (formData.meta_keyword.trim())
       payload.append("meta_keyword", formData.meta_keyword.trim());
     if (formData.featured_image instanceof File)
@@ -1026,15 +1343,26 @@ export default function AddBlog() {
     mutation.mutate(payload);
   };
 
-  const SectionHeader = ({ icon: Icon, label, iconBg, iconColor, description, badge }) => (
+  const SectionHeader = ({
+    icon: Icon,
+    label,
+    iconBg,
+    iconColor,
+    description,
+    badge,
+  }) => (
     <div className="flex items-center gap-3 pt-2">
-      <div className={`w-9 h-9 ${iconBg} rounded-xl flex items-center justify-center flex-shrink-0`}>
+      <div
+        className={`w-9 h-9 ${iconBg} rounded-xl flex items-center justify-center flex-shrink-0`}
+      >
         <Icon size={16} className={iconColor} />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <p className="text-base font-bold text-gray-800">{label}</p>
-          {badge && <span className="text-xs text-gray-400 font-normal">{badge}</span>}
+          {badge && (
+            <span className="text-xs text-gray-400 font-normal">{badge}</span>
+          )}
         </div>
         {description && <p className="text-xs text-gray-400">{description}</p>}
       </div>
@@ -1098,12 +1426,18 @@ export default function AddBlog() {
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 pb-28 sm:pb-12">
         {error && (
           <div className="flex items-start gap-3 p-4 mb-6 bg-red-50 border border-red-200 rounded-2xl text-base text-red-700">
-            <AlertCircle size={18} className="mt-0.5 flex-shrink-0 text-red-500" />
+            <AlertCircle
+              size={18}
+              className="mt-0.5 flex-shrink-0 text-red-500"
+            />
             <div className="flex-1">
               <p className="font-semibold">Error</p>
               <p className="mt-0.5">{error}</p>
             </div>
-            <button onClick={() => setError("")} className="text-red-400 hover:text-red-600">
+            <button
+              onClick={() => setError("")}
+              className="text-red-400 hover:text-red-600"
+            >
               <X size={16} />
             </button>
           </div>
@@ -1111,9 +1445,14 @@ export default function AddBlog() {
 
         {success && (
           <div className="flex items-center gap-3 p-4 mb-6 bg-emerald-50 border border-emerald-200 rounded-2xl text-base text-emerald-700">
-            <CheckCircle2 size={18} className="flex-shrink-0 text-emerald-500" />
+            <CheckCircle2
+              size={18}
+              className="flex-shrink-0 text-emerald-500"
+            />
             <span className="flex-1 font-medium">{success}</span>
-            <span className="text-emerald-400 text-xs">Redirecting to blogs…</span>
+            <span className="text-emerald-400 text-xs">
+              Redirecting to blogs…
+            </span>
           </div>
         )}
 
@@ -1130,11 +1469,17 @@ export default function AddBlog() {
 
               {/* Title */}
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-                <label htmlFor="title" className="block text-base font-semibold text-gray-800 mb-1">
+                <label
+                  htmlFor="title"
+                  className="block text-base font-semibold text-gray-800 mb-1"
+                >
                   Blog Title <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
-                  <FileText size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <FileText
+                    size={16}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                  />
                   <input
                     id="title"
                     type="text"
@@ -1148,12 +1493,19 @@ export default function AddBlog() {
                     required
                   />
                 </div>
-                {fieldErrors.title && <p className="text-xs text-red-500 mt-1">{fieldErrors.title}</p>}
+                {fieldErrors.title && (
+                  <p className="text-xs text-red-500 mt-1">
+                    {fieldErrors.title}
+                  </p>
+                )}
               </div>
 
               {/* Slug */}
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-                <label htmlFor="slug" className="block text-base font-semibold text-gray-800 mb-1">
+                <label
+                  htmlFor="slug"
+                  className="block text-base font-semibold text-gray-800 mb-1"
+                >
                   Slug / URL Path <span className="text-red-500">*</span>
                 </label>
                 <div className="flex rounded-xl overflow-hidden border border-gray-200 focus-within:ring-2 focus-within:ring-indigo-500">
@@ -1173,13 +1525,23 @@ export default function AddBlog() {
                     required
                   />
                 </div>
-                {fieldErrors.slug && <p className="text-xs text-red-500 mt-1">{fieldErrors.slug}</p>}
+                {fieldErrors.slug && (
+                  <p className="text-xs text-red-500 mt-1">
+                    {fieldErrors.slug}
+                  </p>
+                )}
               </div>
 
               {/* Short Description (optional) */}
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-                <label htmlFor="short_description" className="block text-base font-semibold text-gray-800 mb-1">
-                  Short Description <span className="text-gray-400 text-sm font-normal">(Optional)</span>
+                <label
+                  htmlFor="short_description"
+                  className="block text-base font-semibold text-gray-800 mb-1"
+                >
+                  Short Description{" "}
+                  <span className="text-gray-400 text-sm font-normal">
+                    (Optional)
+                  </span>
                 </label>
                 <textarea
                   id="short_description"
@@ -1203,7 +1565,9 @@ export default function AddBlog() {
                       type="button"
                       onClick={() => setEditorMode("tinymce")}
                       className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
-                        editorMode === "tinymce" ? "bg-white text-indigo-600 shadow-sm" : "text-gray-600 hover:text-gray-900"
+                        editorMode === "tinymce"
+                          ? "bg-white text-indigo-600 shadow-sm"
+                          : "text-gray-600 hover:text-gray-900"
                       }`}
                     >
                       TinyMCE
@@ -1212,7 +1576,9 @@ export default function AddBlog() {
                       type="button"
                       onClick={() => setEditorMode("html")}
                       className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${
-                        editorMode === "html" ? "bg-white text-indigo-600 shadow-sm" : "text-gray-600 hover:text-gray-900"
+                        editorMode === "html"
+                          ? "bg-white text-indigo-600 shadow-sm"
+                          : "text-gray-600 hover:text-gray-900"
                       }`}
                     >
                       HTML
@@ -1221,7 +1587,9 @@ export default function AddBlog() {
                 </div>
 
                 {editorMode === "tinymce" && !tinyMceError ? (
-                  <div className={`border rounded-xl overflow-hidden ${fieldErrors.content ? "border-red-500" : "border-gray-200"}`}>
+                  <div
+                    className={`border rounded-xl overflow-hidden ${fieldErrors.content ? "border-red-500" : "border-gray-200"}`}
+                  >
                     <Editor
                       apiKey="wry1dezpoungi06fmopvf4whj06bm09zlyu8czfd9wv5wk1j"
                       onInit={(evt, editor) => {
@@ -1234,21 +1602,41 @@ export default function AddBlog() {
                       value={formData.content}
                       onEditorChange={(content) => {
                         setFormData((prev) => ({ ...prev, content }));
-                        if (fieldErrors.content) setFieldErrors((prev) => ({ ...prev, content: undefined }));
+                        if (fieldErrors.content)
+                          setFieldErrors((prev) => ({
+                            ...prev,
+                            content: undefined,
+                          }));
                       }}
                       init={{
                         height: 500,
                         menubar: true,
                         plugins: [
-                          "advlist", "autolink", "lists", "link", "image", "charmap", "preview",
-                          "anchor", "searchreplace", "visualblocks", "code", "fullscreen",
-                          "insertdatetime", "media", "table", "help", "wordcount",
+                          "advlist",
+                          "autolink",
+                          "lists",
+                          "link",
+                          "image",
+                          "charmap",
+                          "preview",
+                          "anchor",
+                          "searchreplace",
+                          "visualblocks",
+                          "code",
+                          "fullscreen",
+                          "insertdatetime",
+                          "media",
+                          "table",
+                          "help",
+                          "wordcount",
                         ],
                         toolbar:
                           "undo redo | blocks | bold italic forecolor | alignleft aligncenter " +
                           "alignright alignjustify | bullist numlist outdent indent | removeformat | code | help",
-                        content_style: "body { font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.6; }",
-                        placeholder: "Write the full content of the blog post here…",
+                        content_style:
+                          "body { font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.6; }",
+                        placeholder:
+                          "Write the full content of the blog post here…",
                       }}
                     />
                   </div>
@@ -1256,8 +1644,15 @@ export default function AddBlog() {
                   <textarea
                     value={formData.content}
                     onChange={(e) => {
-                      setFormData((prev) => ({ ...prev, content: e.target.value }));
-                      if (fieldErrors.content) setFieldErrors((prev) => ({ ...prev, content: undefined }));
+                      setFormData((prev) => ({
+                        ...prev,
+                        content: e.target.value,
+                      }));
+                      if (fieldErrors.content)
+                        setFieldErrors((prev) => ({
+                          ...prev,
+                          content: undefined,
+                        }));
                     }}
                     className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base font-mono placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
                       fieldErrors.content ? "border-red-500" : "border-gray-200"
@@ -1266,10 +1661,14 @@ export default function AddBlog() {
                     placeholder="<!-- Write HTML here -->"
                   />
                 )}
-                {fieldErrors.content && <p className="text-xs text-red-500 mt-1">{fieldErrors.content}</p>}
+                {fieldErrors.content && (
+                  <p className="text-xs text-red-500 mt-1">
+                    {fieldErrors.content}
+                  </p>
+                )}
               </div>
 
-              {/* SEO & Metadata (all optional) */}
+              {/* SEO & Metadata */}
               <SectionHeader
                 icon={Search}
                 label="SEO & Metadata"
@@ -1278,11 +1677,24 @@ export default function AddBlog() {
               />
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-5">
                 <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <Globe size={13} className="text-gray-400" />
-                    <label htmlFor="meta_title" className="text-base font-semibold text-gray-800">
-                      Meta Title <span className="text-gray-400 text-sm font-normal">(Optional)</span>
-                    </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-2">
+                      <Globe size={13} className="text-gray-400" />
+                      <label
+                        htmlFor="meta_title"
+                        className="text-base font-semibold text-gray-800"
+                      >
+                        Meta Title{" "}
+                        <span className="text-gray-400 text-sm font-normal">
+                          (Optional, max 100 words)
+                        </span>
+                      </label>
+                    </div>
+                    {formData.meta_title && (
+                      <span className={`text-xs ${countWords(formData.meta_title) > 100 ? 'text-red-500' : 'text-gray-400'}`}>
+                        {countWords(formData.meta_title)}/100 words
+                      </span>
+                    )}
                   </div>
                   <input
                     id="meta_title"
@@ -1291,31 +1703,71 @@ export default function AddBlog() {
                     value={formData.meta_title}
                     onChange={handleInputChange}
                     placeholder="SEO title for the blog"
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                    className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
+                      fieldErrors.meta_title ? "border-red-500" : "border-gray-200"
+                    }`}
                   />
+                  {fieldErrors.meta_title && (
+                    <p className="text-xs text-red-500 mt-1">
+                      {fieldErrors.meta_title}
+                    </p>
+                  )}
                 </div>
                 <div className="h-px bg-gray-100" />
                 <div>
-                  <label htmlFor="meta_descrtiption" className="block text-base font-semibold text-gray-800 mb-1">
-                    Meta Description <span className="text-gray-400 text-sm font-normal">(Optional)</span>
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label
+                      htmlFor="meta_description"
+                      className="block text-base font-semibold text-gray-800"
+                    >
+                      Meta Description{" "}
+                      <span className="text-gray-400 text-sm font-normal">
+                        (Optional, max 100 words)
+                      </span>
+                    </label>
+                    {formData.meta_description && (
+                      <span className={`text-xs ${countWords(formData.meta_description) > 100 ? 'text-red-500' : 'text-gray-400'}`}>
+                        {countWords(formData.meta_description)}/100 words
+                      </span>
+                    )}
+                  </div>
                   <textarea
-                    id="meta_descrtiption"
-                    name="meta_descrtiption"
-                    value={formData.meta_descrtiption}
+                    id="meta_description"
+                    name="meta_description"
+                    value={formData.meta_description}
                     onChange={handleInputChange}
                     rows={3}
                     placeholder="SEO description for search engines…"
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-none"
+                    className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all resize-none ${
+                      fieldErrors.meta_description ? "border-red-500" : "border-gray-200"
+                    }`}
                   />
+                  {fieldErrors.meta_description && (
+                    <p className="text-xs text-red-500 mt-1">
+                      {fieldErrors.meta_description}
+                    </p>
+                  )}
                 </div>
                 <div className="h-px bg-gray-100" />
                 <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <Tag size={13} className="text-gray-400" />
-                    <label htmlFor="meta_keyword" className="text-base font-semibold text-gray-800">
-                      Meta Keywords <span className="text-gray-400 text-sm font-normal">(Optional)</span>
-                    </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-2">
+                      <Tag size={13} className="text-gray-400" />
+                      <label
+                        htmlFor="meta_keyword"
+                        className="text-base font-semibold text-gray-800"
+                      >
+                        Meta Keywords{" "}
+                        <span className="text-gray-400 text-sm font-normal">
+                          (Optional, max 100 words)
+                        </span>
+                      </label>
+                    </div>
+                    {formData.meta_keyword && (
+                      <span className={`text-xs ${countWords(formData.meta_keyword) > 100 ? 'text-red-500' : 'text-gray-400'}`}>
+                        {countWords(formData.meta_keyword)}/100 words
+                      </span>
+                    )}
                   </div>
                   <input
                     id="meta_keyword"
@@ -1324,18 +1776,33 @@ export default function AddBlog() {
                     value={formData.meta_keyword}
                     onChange={handleInputChange}
                     placeholder="coding, cloud, blog, tutorial"
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all"
+                    className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base placeholder-gray-400 outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all ${
+                      fieldErrors.meta_keyword ? "border-red-500" : "border-gray-200"
+                    }`}
                   />
+                  {fieldErrors.meta_keyword && (
+                    <p className="text-xs text-red-500 mt-1">
+                      {fieldErrors.meta_keyword}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
 
             {/* RIGHT COLUMN */}
             <div className="space-y-5">
-              <SectionHeader icon={Calendar} label="Publishing" iconBg="bg-amber-50" iconColor="text-amber-600" />
+              <SectionHeader
+                icon={Calendar}
+                label="Publishing"
+                iconBg="bg-amber-50"
+                iconColor="text-amber-600"
+              />
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-5">
                 <div>
-                  <label htmlFor="status" className="block text-base font-semibold text-gray-800 mb-1">
+                  <label
+                    htmlFor="status"
+                    className="block text-base font-semibold text-gray-800 mb-1"
+                  >
                     Status <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
@@ -1345,21 +1812,38 @@ export default function AddBlog() {
                       value={formData.status}
                       onChange={handleInputChange}
                       className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-base outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent focus:bg-white transition-all appearance-none cursor-pointer ${
-                        fieldErrors.status ? "border-red-500" : "border-gray-200"
+                        fieldErrors.status
+                          ? "border-red-500"
+                          : "border-gray-200"
                       }`}
                     >
                       {statusOptions.map((status) => (
-                        <option key={status} value={status}>{status}</option>
+                        <option key={status} value={status}>
+                          {status}
+                        </option>
                       ))}
                     </select>
-                    <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                    <ChevronDown
+                      size={16}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                    />
                   </div>
-                  {fieldErrors.status && <p className="text-xs text-red-500 mt-1">{fieldErrors.status}</p>}
+                  {fieldErrors.status && (
+                    <p className="text-xs text-red-500 mt-1">
+                      {fieldErrors.status}
+                    </p>
+                  )}
                 </div>
                 <div className="h-px bg-gray-100" />
                 <div>
-                  <label htmlFor="publish_date" className="block text-base font-semibold text-gray-800 mb-1">
-                    Publish Date <span className="text-gray-400 text-sm font-normal">(Optional)</span>
+                  <label
+                    htmlFor="publish_date"
+                    className="block text-base font-semibold text-gray-800 mb-1"
+                  >
+                    Publish Date{" "}
+                    <span className="text-gray-400 text-sm font-normal">
+                      (Optional)
+                    </span>
                   </label>
                   <input
                     id="publish_date"
@@ -1371,75 +1855,128 @@ export default function AddBlog() {
                   />
                 </div>
                 <div className="bg-gray-50 border border-gray-100 rounded-xl p-3">
-                  <p className="text-xs text-gray-400 mb-2 font-medium">Preview</p>
+                  <p className="text-xs text-gray-400 mb-2 font-medium">
+                    Preview
+                  </p>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${statusColor[formData.status] || "bg-gray-100 text-gray-600"}`}>
+                    <span
+                      className={`px-2.5 py-1 text-xs font-semibold rounded-full ${statusColor[formData.status] || "bg-gray-100 text-gray-600"}`}
+                    >
                       {formData.status}
                     </span>
                     <span className="text-xs text-gray-500">
-                      {formData.publish_date ? new Date(formData.publish_date).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                      }) : "Not set"}
+                      {formData.publish_date
+                        ? new Date(formData.publish_date).toLocaleDateString(
+                            "en-US",
+                            {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                            }
+                          )
+                        : "Not set"}
                     </span>
                   </div>
                 </div>
               </div>
 
               {/* Featured Image (optional) */}
-              <SectionHeader icon={ImagePlus} label="Featured Image" iconBg="bg-pink-50" iconColor="text-pink-500" />
+              <SectionHeader
+                icon={ImagePlus}
+                label="Featured Image"
+                iconBg="bg-pink-50"
+                iconColor="text-pink-500"
+              />
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
                 {!imagePreview ? (
                   <div
                     onClick={triggerFileInput}
-                    onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setDragOver(true);
+                    }}
                     onDragLeave={() => setDragOver(false)}
                     onDrop={handleDrop}
                     className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all select-none ${
-                      dragOver ? "border-indigo-400 bg-indigo-50" : "border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/50"
+                      dragOver
+                        ? "border-indigo-400 bg-indigo-50"
+                        : "border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/50"
                     }`}
                   >
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3 transition-all ${dragOver ? "bg-indigo-100" : "bg-gray-100"}`}>
-                      <Upload size={20} className={dragOver ? "text-indigo-500" : "text-gray-400"} />
+                    <div
+                      className={`w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3 transition-all ${dragOver ? "bg-indigo-100" : "bg-gray-100"}`}
+                    >
+                      <Upload
+                        size={20}
+                        className={
+                          dragOver ? "text-indigo-500" : "text-gray-400"
+                        }
+                      />
                     </div>
                     <p className="text-base font-semibold text-gray-700 mb-1">
-                      {dragOver ? "Drop your image here!" : "Click to upload or drag & drop"}
+                      {dragOver
+                        ? "Drop your image here!"
+                        : "Click to upload or drag & drop"}
                     </p>
-                    <p className="text-xs text-indigo-600 font-medium">Browse files</p>
-                    <p className="text-xs text-gray-400 mt-1">PNG, JPG, WEBP up to 5MB (optional)</p>
+                    <p className="text-xs text-indigo-600 font-medium">
+                      Browse files
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      PNG, JPG, WEBP up to 5MB (optional)
+                    </p>
                   </div>
                 ) : (
                   <div className="relative rounded-xl overflow-hidden border border-gray-200 group">
-                    <img src={imagePreview} alt="Preview" className="w-full max-h-56 object-cover block" />
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      className="w-full max-h-56 object-cover block"
+                    />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all pointer-events-none" />
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent px-3 py-2 pointer-events-none">
-                      <p className="text-xs text-white/80 font-medium truncate">{formData.featured_image?.name}</p>
+                      <p className="text-xs text-white/80 font-medium truncate">
+                        {formData.featured_image?.name}
+                      </p>
                     </div>
                     <button
                       type="button"
-                      onClick={(e) => { e.stopPropagation(); triggerFileInput(); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        triggerFileInput();
+                      }}
                       className="absolute top-3 left-3 px-3 py-1.5 bg-white/90 backdrop-blur-sm rounded-lg text-xs font-semibold text-gray-700 hover:bg-white shadow-sm transition-all"
                     >
                       Change
                     </button>
                     <button
                       type="button"
-                      onClick={(e) => { e.stopPropagation(); removeImage(); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeImage();
+                      }}
                       className="absolute top-3 right-3 w-8 h-8 bg-white rounded-full shadow-md flex items-center justify-center text-gray-500 hover:text-red-500 hover:shadow-lg transition-all"
                     >
                       <X size={15} />
                     </button>
                   </div>
                 )}
-                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="hidden"
+                />
               </div>
 
               {/* Hashtag (required) */}
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
                 <div className="flex items-center gap-2 mb-1">
                   <Hash size={13} className="text-gray-400" />
-                  <label htmlFor="hashtag" className="text-base font-semibold text-gray-800">
+                  <label
+                    htmlFor="hashtag"
+                    className="text-base font-semibold text-gray-800"
+                  >
                     Hashtags <span className="text-red-500">*</span>
                   </label>
                 </div>
@@ -1454,7 +1991,11 @@ export default function AddBlog() {
                     fieldErrors.hashtag ? "border-red-500" : "border-gray-200"
                   }`}
                 />
-                {fieldErrors.hashtag && <p className="text-xs text-red-500 mt-1">{fieldErrors.hashtag}</p>}
+                {fieldErrors.hashtag && (
+                  <p className="text-xs text-red-500 mt-1">
+                    {fieldErrors.hashtag}
+                  </p>
+                )}
               </div>
             </div>
           </div>
