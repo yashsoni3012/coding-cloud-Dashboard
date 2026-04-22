@@ -32,6 +32,9 @@ import Register from "./pages/Register";
 import SEO from "./pages/SEO";
 import Add_SEO from "./pages/Add_SEO";
 import Edit_SEO from "./pages/Edit_SEO";
+import Tags from "./pages/Tags";
+import AddTag from "./pages/AddTag";
+import EditTag from "./pages/EditTag";
 
 
 // import Users from './pages/Users'
@@ -101,6 +104,11 @@ export default function App() {
           <Route path="/SEO" element={<SEO />} />
           <Route path="/add-SEO" element={<Add_SEO />} />
           <Route path="/edit-SEO/:id" element={<Edit_SEO />} />
+
+
+          <Route path="/tags" element={<Tags />} />
+          <Route path="/add-tag" element={<AddTag />} />
+          <Route path="/edit-tag/:id" element={<EditTag />} />
 
           {/* <Route path="users" element={<Users />} />
           <Route path="analytics" element={<Analytics />} />

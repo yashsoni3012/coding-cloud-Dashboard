@@ -355,6 +355,7 @@ import {
   X,
   ClipboardList,
   Globe,
+  Tags
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
@@ -371,6 +372,7 @@ const navItems = [
   { to: "/contact", icon: Mail, label: "Contact" },
   { to: "register", icon: ClipboardList, label: "Register Users" },
   { to: "testimonials", icon: Star, label: "Testimonials" },
+  { to: "/tags", icon: Tags, label: "tags" },
 ];
 
 function RippleNavLink({ to, icon: Icon, label, onLinkClick }) {
